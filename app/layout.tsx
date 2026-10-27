@@ -47,11 +47,11 @@ export default function RootLayout({
               Prumo <span className="text-[color:var(--coral)]">Web</span>
             </a>
             <nav className="hidden items-center gap-8 text-sm text-[color:var(--ink-soft)] md:flex">
-              <a href="#craft" className="hover:text-[color:var(--ink)]">
-                Craft
+              <a href="#como" className="hover:text-[color:var(--ink)]">
+                Como fazemos
               </a>
-              <a href="#pilares" className="hover:text-[color:var(--ink)]">
-                Pilares
+              <a href="#servicos" className="hover:text-[color:var(--ink)]">
+                Serviços
               </a>
               <a href="#metodo" className="hover:text-[color:var(--ink)]">
                 Método

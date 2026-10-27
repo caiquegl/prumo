@@ -9,8 +9,6 @@
   --coral-deep: #d45f4b;
   --line: rgba(26, 25, 23, 0.12);
   --glass: rgba(243, 238, 230, 0.72);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
 }
 
 @theme inline {
@@ -74,60 +72,52 @@ body {
   transform: none;
 }
 
-.device-stage {
-  perspective: 1400px;
-  perspective-origin: 50% 40%;
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.device {
-  transform-style: preserve-3d;
-  will-change: transform;
-  transition: transform 0.08s linear;
+.rise {
+  opacity: 0;
+  animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.device-shell {
-  position: relative;
-  width: min(280px, 68vw);
-  aspect-ratio: 9 / 19.2;
-  border-radius: 2.4rem;
-  background: linear-gradient(160deg, #2a2926 0%, #0f0e0d 55%, #1c1b19 100%);
-  box-shadow:
-    0 40px 80px rgba(26, 25, 23, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-  overflow: hidden;
+@keyframes cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  51% {
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
 }
 
-.device-shell::before {
-  content: "";
-  position: absolute;
-  top: 0.7rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 38%;
-  height: 1.1rem;
-  border-radius: 999px;
-  background: #050505;
-  z-index: 2;
+.scroll-cue {
+  animation: cue 2.2s ease-in-out infinite;
 }
 
-.device-screen {
-  position: absolute;
-  inset: 0.55rem;
-  border-radius: 2rem;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(232, 122, 103, 0.35), transparent 45%),
-    linear-gradient(165deg, #f7f2ea 0%, #e7dfd2 48%, #d9cfc0 100%);
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 
-.device-screen-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(26, 25, 23, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(26, 25, 23, 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(to bottom, black, transparent 90%);
+.caret {
+  animation: blink 1s step-end infinite;
 }
 
 .wa-btn {
@@ -159,11 +149,44 @@ body {
 
 .wa-btn.ghost:hover {
   background: rgba(26, 25, 23, 0.04);
-  color: var(--ink);
 }
 
-.section-rule {
-  height: 1px;
-  width: 100%;
-  background: var(--line);
+.service-row:hover .service-title {
+  transform: translateX(8px);
+}
+
+.service-row:hover .service-arrow {
+  opacity: 1;
+  transform: none;
+}
+
+.service-title,
+.service-arrow {
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.4s ease;
+}
+
+.service-arrow {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .rise {
+    animation: none;
+    opacity: 1;
+  }
+  .scroll-cue,
+  .caret {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

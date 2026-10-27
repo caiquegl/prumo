@@ -1,211 +1,184 @@
-import Image from "next/image";
+import { BuildStory } from "./components/BuildStory";
 import { Reveal } from "./components/Reveal";
-import { ScrollDevice } from "./components/ScrollDevice";
+import { TextReveal } from "./components/TextReveal";
 
 const WA =
   "https://wa.me/5511966331995?text=" +
-  encodeURIComponent(
-    "Olá! Quero um orçamento de site/landing page com a Prumo Web.",
-  );
+  encodeURIComponent("Olá! Quero um orçamento com a Prumo Web.");
 
-const pillars = [
+const services = [
+  {
+    title: "Landing pages",
+    tag: "Conversão",
+    body: "Páginas de campanha focadas em uma única ação: lead, venda ou agendamento.",
+  },
+  {
+    title: "Sites institucionais",
+    tag: "Marca",
+    body: "Presença digital com credibilidade, SEO técnico e fácil de atualizar.",
+  },
+  {
+    title: "Sistemas web",
+    tag: "Produto",
+    body: "Painéis, áreas de cliente e ferramentas internas feitas sob medida.",
+  },
+  {
+    title: "Integrações e automação",
+    tag: "Operação",
+    body: "WhatsApp, CRM, planilhas, pagamentos e APIs conversando entre si.",
+  },
   {
     title: "Segurança",
-    body: "HTTPS, autenticação e tratamento de dados pensados desde o primeiro commit — não como anexo no final.",
+    tag: "Confiança",
+    body: "HTTPS, autenticação, cuidado com dados e dependências sempre atualizadas.",
   },
   {
-    title: "Automação",
-    body: "Fluxos que tiram trabalho repetitivo do caminho: formulários, integrações e operações que rodam sem atrito.",
+    title: "Performance e manutenção",
+    tag: "Evolução",
+    body: "Carregamento rápido, monitoramento e melhorias contínuas depois do lançamento.",
   },
-  {
-    title: "Inovação",
-    body: "Scroll cinematográfico, microinterações e performance — o tipo de detalhe que o cliente sente sem saber nomear.",
-  },
+];
+
+const commitments = [
+  { value: "7–15", unit: "dias", label: "para uma landing page no ar" },
+  { value: "2", unit: "rodadas", label: "de revisão inclusas" },
+  { value: "100%", unit: "", label: "responsivo, do celular ao desktop" },
+  { value: "1", unit: "contato", label: "direto do início ao fim" },
 ];
 
 const steps = [
   {
     n: "01",
     title: "Brief objetivo",
-    body: "Escopo fechado, prazo e valor claros. Sem reuniões eternas.",
+    body: "Escopo, prazo e valor fechados antes de começar. Sem reuniões intermináveis.",
   },
   {
     n: "02",
-    title: "Design + código",
-    body: "Uma composição forte, tipografia expressa e animações com intenção — não decoração.",
+    title: "Design e código",
+    body: "Você aprova o visual, nós desenvolvemos. Prévia online durante todo o projeto.",
   },
   {
     n: "03",
-    title: "No ar",
-    body: "Deploy, ajustes finais e handoff. Até duas rodadas de revisão inclusas.",
+    title: "Lançamento",
+    body: "Deploy, domínio, testes finais e entrega com tudo documentado.",
   },
 ];
 
 export default function Home() {
   return (
     <main id="topo">
-      {/* Hero — one composition */}
       <section className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
           style={{
             background:
-              "radial-gradient(ellipse 80% 55% at 70% -10%, rgba(232,122,103,0.22), transparent 55%), radial-gradient(ellipse 50% 40% at 10% 80%, rgba(26,25,23,0.06), transparent 50%)",
+              "radial-gradient(ellipse 70% 55% at 85% 0%, rgba(232,122,103,0.2), transparent 60%)",
           }}
         />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-14 md:grid-cols-[1.05fr_0.95fr] md:gap-6 md:px-8 md:pb-24 md:pt-20">
-          <div>
-            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--coral)]">
-              Prumo Web Studio
-            </p>
-            <h1 className="display max-w-[11ch] text-[clamp(2.8rem,8vw,5.4rem)] text-[color:var(--ink)]">
-              Sites que <span className="text-[color:var(--coral)]">convertem</span>
-              <span className="text-[color:var(--ink-soft)]">.</span>
-            </h1>
-            <p className="mt-6 max-w-md text-base leading-relaxed text-[color:var(--ink-soft)] md:text-lg">
-              Landing pages e produtos web com acabamento de marca premium —
-              performance, segurança e movimento no scroll, no estilo das
-              melhores vitrines digitais.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <a className="wa-btn" href={WA} target="_blank" rel="noopener noreferrer">
-                Pedir orçamento
-                <span aria-hidden>→</span>
-              </a>
-              <a className="wa-btn ghost" href="#craft">
-                Ver o craft
-              </a>
-            </div>
-            <p className="mt-5 text-sm text-[color:var(--ink-soft)]">
-              WhatsApp{" "}
-              <a
-                className="font-medium text-[color:var(--ink)] underline-offset-4 hover:underline"
-                href={WA}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                (11) 96633-1995
-              </a>
-            </p>
+        <div className="relative mx-auto flex min-h-[calc(100svh-65px)] max-w-6xl flex-col justify-center px-5 py-20 md:px-8">
+          <p className="rise text-xs font-semibold uppercase tracking-[0.28em] text-coral">
+            Prumo Web Studio
+          </p>
+          <h1
+            className="rise display mt-6 max-w-[13ch] text-[clamp(3rem,9vw,6.8rem)]"
+            style={{ animationDelay: "90ms" }}
+          >
+            Sites que trabalham pelo seu <span className="text-coral">negócio</span>.
+          </h1>
+          <p
+            className="rise mt-8 max-w-xl text-lg leading-relaxed text-ink-soft md:text-xl"
+            style={{ animationDelay: "180ms" }}
+          >
+            Landing pages, sites institucionais, sistemas web e integrações — com
+            design autoral, código sob medida e foco em resultado.
+          </p>
+          <div className="rise mt-10 flex flex-wrap gap-3" style={{ animationDelay: "270ms" }}>
+            <a className="wa-btn" href={WA} target="_blank" rel="noopener noreferrer">
+              Pedir orçamento <span aria-hidden>→</span>
+            </a>
+            <a className="wa-btn ghost" href="#como">
+              Ver como fazemos
+            </a>
           </div>
-          <ScrollDevice />
+          <div
+            className="rise mt-20 flex items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-ink-soft"
+            style={{ animationDelay: "400ms" }}
+          >
+            <span className="scroll-cue block h-9 w-px bg-ink/40" />
+            Role para ver o processo
+          </div>
         </div>
       </section>
 
-      <div className="section-rule mx-auto max-w-6xl" />
+      <TextReveal />
 
-      {/* Craft */}
-      <section id="craft" className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
+      <BuildStory />
+
+      <section id="servicos" className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--coral)]">
-            Craft
-          </p>
-          <h2 className="display mt-4 max-w-[16ch] text-[clamp(2rem,5vw,3.4rem)]">
-            Scroll que conta história — sem barulho.
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">Serviços</p>
+          <h2 className="display mt-4 max-w-[15ch] text-[clamp(2.2rem,5vw,3.8rem)]">
+            Tudo que sua presença digital precisa.
           </h2>
         </Reveal>
-        <div className="mt-12 grid gap-10 md:grid-cols-2 md:items-center">
-          <Reveal delay={80}>
-            <p className="text-lg leading-relaxed text-[color:var(--ink-soft)]">
-              Em landing pages de alto nível, o produto responde ao scroll,
-              a tipografia tem respiro e cada seção tem um único trabalho.
-              O resultado é presença — não um carrossel de efeitos.
-            </p>
-            <ul className="mt-8 space-y-4 text-[color:var(--ink)]">
-              {[
-                "Animação guiada pelo scroll (tilt 3D do produto)",
-                "Hierarquia tipográfica forte e poucos elementos no primeiro viewport",
-                "Microinterações só onde aumentam clareza ou desejo",
-              ].map((item) => (
-                <li key={item} className="flex gap-3 text-[0.98rem] leading-snug">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--coral)]" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-          <Reveal delay={160} className="relative">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[1.6rem] bg-[color:var(--bg-deep)]">
-              <Image
-                src="/ig/prumo-feed-13-microinteracoes.jpg"
-                alt="Composição sobre microinterações e acabamento de interface"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 40vw"
-                priority={false}
-              />
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <div className="section-rule mx-auto max-w-6xl" />
-
-      {/* Pilares */}
-      <section id="pilares" className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
-        <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--coral)]">
-            Pilares
-          </p>
-          <h2 className="display mt-4 max-w-[14ch] text-[clamp(2rem,5vw,3.2rem)]">
-            Segurança. Automação. Inovação.
-          </h2>
-        </Reveal>
-        <div className="mt-14 grid gap-8 md:grid-cols-3">
-          {pillars.map((p, i) => (
-            <Reveal key={p.title} delay={i * 90}>
-              <article className="h-full border-t border-[color:var(--line)] pt-6">
-                <h3 className="display text-2xl">{p.title}</h3>
-                <p className="mt-4 text-[0.98rem] leading-relaxed text-[color:var(--ink-soft)]">
-                  {p.body}
-                </p>
-              </article>
+        <ul className="mt-14 border-b border-line">
+          {services.map((service, i) => (
+            <Reveal key={service.title} delay={i * 60}>
+              <li className="service-row grid cursor-default gap-3 border-t border-line py-7 md:grid-cols-[1.1fr_1fr_auto] md:items-center md:gap-8">
+                <h3 className="service-title display text-[clamp(1.6rem,3vw,2.3rem)]">
+                  {service.title}
+                </h3>
+                <p className="text-[0.98rem] leading-relaxed text-ink-soft">{service.body}</p>
+                <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink-soft">
+                  {service.tag}
+                  <span className="service-arrow text-coral" aria-hidden>
+                    →
+                  </span>
+                </span>
+              </li>
             </Reveal>
           ))}
-        </div>
-        <div className="mt-14 grid gap-4 sm:grid-cols-3">
-          {[
-            "/ig/prumo-feed-09-seguranca.jpg",
-            "/ig/prumo-feed-10-automacao.jpg",
-            "/ig/prumo-feed-11-inovacao.jpg",
-          ].map((src, i) => (
-            <Reveal key={src} delay={120 + i * 70} className="relative aspect-square overflow-hidden rounded-2xl">
-              <Image src={src} alt="" fill className="object-cover" sizes="33vw" />
-            </Reveal>
-          ))}
-        </div>
+        </ul>
       </section>
 
-      <div className="section-rule mx-auto max-w-6xl" />
-
-      {/* Método */}
-      <section id="metodo" className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
-        <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--coral)]">
-            Método
-          </p>
-          <h2 className="display mt-4 text-[clamp(2rem,5vw,3.2rem)]">
-            Do brief ao ar, sem surpresa.
-          </h2>
-        </Reveal>
-        <div className="mt-14 grid gap-10 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <Reveal key={s.n} delay={i * 80}>
-              <p className="text-sm font-semibold tracking-[0.2em] text-[color:var(--coral)]">
-                {s.n}
+      <section className="bg-ink text-[#f7f2ea]">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 sm:grid-cols-2 md:grid-cols-4 md:px-8 md:py-24">
+          {commitments.map((item, i) => (
+            <Reveal key={item.label} delay={i * 80}>
+              <p className="display text-[clamp(2.6rem,5vw,3.8rem)]">
+                {item.value}
+                {item.unit && (
+                  <span className="ml-2 font-sans text-base tracking-normal text-[#a9a29a]">
+                    {item.unit}
+                  </span>
+                )}
               </p>
-              <h3 className="display mt-3 text-2xl">{s.title}</h3>
-              <p className="mt-3 text-[0.98rem] leading-relaxed text-[color:var(--ink-soft)]">
-                {s.body}
-              </p>
+              <p className="mt-3 max-w-[22ch] text-sm leading-relaxed text-[#c9c2b8]">{item.label}</p>
             </Reveal>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative overflow-hidden border-t border-[color:var(--line)] bg-[color:var(--ink)] text-[#f7f2ea]">
+      <section id="metodo" className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+        <Reveal>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">Método</p>
+          <h2 className="display mt-4 text-[clamp(2.2rem,5vw,3.6rem)]">Do brief ao ar, sem surpresa.</h2>
+        </Reveal>
+        <div className="mt-14 grid gap-12 md:grid-cols-3">
+          {steps.map((step, i) => (
+            <Reveal key={step.n} delay={i * 80}>
+              <div className="border-t border-line pt-6">
+                <p className="text-sm font-semibold tracking-[0.2em] text-coral">{step.n}</p>
+                <h3 className="display mt-3 text-2xl">{step.title}</h3>
+                <p className="mt-3 text-[0.98rem] leading-relaxed text-ink-soft">{step.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-ink text-[#f7f2ea]">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           aria-hidden
@@ -214,48 +187,57 @@ export default function Home() {
               "radial-gradient(ellipse 60% 80% at 85% 20%, rgba(232,122,103,0.45), transparent 55%)",
           }}
         />
-        <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-8 px-5 py-20 md:flex-row md:items-end md:justify-between md:px-8 md:py-28">
+        <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-10 px-5 py-24 md:flex-row md:items-end md:justify-between md:px-8 md:py-32">
           <Reveal>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--coral)]">
-              Orçamento
-            </p>
-            <h2 className="display mt-4 max-w-[14ch] text-[clamp(2.2rem,5vw,3.6rem)]">
-              Vamos alinhar o próximo lançamento.
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">Orçamento</p>
+            <h2 className="display mt-4 max-w-[14ch] text-[clamp(2.4rem,5.5vw,4rem)]">
+              Vamos tirar seu projeto do papel?
             </h2>
             <p className="mt-5 max-w-md text-[#d6d0c6]">
-              Escopo fechado, comunicação direta e entrega async. Fale no
-              WhatsApp e receba a proposta com prazo e valor.
+              Conte em poucas linhas o que você precisa. Respondemos com proposta,
+              prazo e valor fechados.
             </p>
           </Reveal>
           <Reveal delay={100}>
             <a
-              className="wa-btn !bg-[color:var(--coral)] !text-[color:var(--ink)] hover:!bg-[#f09180]"
+              className="wa-btn !bg-coral !text-ink hover:!bg-[#f09180]"
               href={WA}
               target="_blank"
               rel="noopener noreferrer"
             >
-              Chamar no WhatsApp
-              <span aria-hidden>→</span>
+              Chamar no WhatsApp <span aria-hidden>→</span>
             </a>
             <p className="mt-4 text-sm text-[#a9a29a]">(11) 96633-1995</p>
           </Reveal>
         </div>
       </section>
 
-      <footer className="border-t border-[color:var(--line)] bg-[color:var(--bg-deep)]">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-[color:var(--ink-soft)] md:flex-row md:items-center md:justify-between md:px-8">
-          <p className="display text-base text-[color:var(--ink)]">Prumo Web Studio</p>
-          <p>Sites · landing pages · produtos web</p>
+      <footer className="border-t border-line bg-bg-deep">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-ink-soft md:flex-row md:items-center md:justify-between md:px-8">
+          <p className="display text-base text-ink">Prumo Web Studio</p>
+          <p>Sites · landing pages · sistemas · integrações</p>
           <a
             href="https://instagram.com/prumo264"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-[color:var(--ink)]"
+            className="hover:text-ink"
           >
             @prumo264
           </a>
         </div>
       </footer>
+
+      <a
+        href={WA}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Falar no WhatsApp"
+        className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#2f9e62] text-white shadow-lg transition-transform hover:scale-105"
+      >
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.6-.3Z" />
+        </svg>
+      </a>
     </main>
   );
 }
