@@ -1,4 +1,4 @@
-# Legendas — itens 17–26 (@prumo264), intercalando reel e post
+# Legendas — itens 17–26 (@prumo.web), intercalando reel e post
 
 ## 01 — Reel prazo
 Seu site no ar em 7 a 15 dias.

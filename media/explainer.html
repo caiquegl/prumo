@@ -523,11 +523,11 @@ SCENES.checklist = {
 const sc = SCENES[cfg.scene];
 const [kicker, h1, sub] = sc.head;
 document.getElementById("stage").innerHTML = `
-  <div class="top"><div class="brand"><i>P</i>Prumo Web</div><span>${cfg.counter || "@prumo264"}</span></div>
+  <div class="top"><div class="brand"><i>P</i>Prumo Web</div><span>${cfg.counter || "@prumo.web"}</span></div>
   <div class="head" id="head"><div class="kicker">${kicker}</div><h1>${h1}</h1>${sub ? `<p>${sub}</p>` : ""}</div>
   <div class="box" id="box">${sc.build()}</div>
   <div class="foot" id="foot"><h2>${cfg.headline || "Seu próximo projeto pode começar aqui."}</h2>
-    <p>Orçamento no WhatsApp<br><strong>(11) 96633-1995</strong><br>@prumo264</p></div>`;
+    <p>Orçamento no WhatsApp<br><strong>(11) 96633-1995</strong><br>@prumo.web</p></div>`;
 
 window.render = t => {
   const hp = ease(seg(t, .1, .9));

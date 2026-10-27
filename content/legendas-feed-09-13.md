@@ -1,4 +1,4 @@
-# Legendas — posts 09–13 (@prumo264)
+# Legendas — posts 09–13 (@prumo.web)
 
 ## 09 — Segurança
 Segurança não é um plugin no final.

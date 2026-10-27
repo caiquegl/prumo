@@ -1,4 +1,4 @@
-# Legendas — single page (@prumo264)
+# Legendas — single page (@prumo.web)
 
 ## 01 — Anatomia
 Anatomia de uma single page.

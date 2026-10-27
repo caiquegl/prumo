@@ -217,12 +217,12 @@ export default function Home() {
           <p className="display text-base text-ink">Prumo Web Studio</p>
           <p>Sites · landing pages · sistemas · integrações</p>
           <a
-            href="https://instagram.com/prumo264"
+            href="https://instagram.com/prumo.web"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-ink"
           >
-            @prumo264
+            @prumo.web
           </a>
         </div>
       </footer>

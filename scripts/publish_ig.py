@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish feed images, reels and stories to @prumo264 via the Instagram Graph API.
+"""Publish feed images, reels and stories to @prumo.web via the Instagram Graph API.
 
 Usage: publish_ig.py <section-title> [...]
 Token is read from $PRUMO_PAGE_TOKEN_FILE (default /tmp/prumo-page-token.txt); never commit it.

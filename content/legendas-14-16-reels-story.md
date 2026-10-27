@@ -1,4 +1,4 @@
-# Legendas — projetos autorais 01–05 (@prumo264)
+# Legendas — projetos autorais 01–05 (@prumo.web)
 
 ## Reel 01 — TERRA (com música)
 TERRA — Café especial.
