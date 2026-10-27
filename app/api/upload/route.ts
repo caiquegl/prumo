@@ -1,8 +1,6 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-
 const ALLOWED = new Set([
   "image/jpeg",
   "image/jpg",
