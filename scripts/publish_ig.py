@@ -46,6 +46,10 @@ for key, kind, name, section in [
         spec.update(file=f"{name}.jpg")
     POSTS[key] = spec
 
+for hl, count in [("estrutura", 3), ("orcamento", 2), ("seguranca", 3), ("tecnologias", 3), ("parcerias", 3)]:
+    for i in range(1, count + 1):
+        POSTS[f"hl-{hl}-{i}"] = {"type": "STORIES", "file": f"destaques/hl-{hl}-{i}.jpg", "section": None}
+
 
 def token():
     path = os.environ.get("PRUMO_PAGE_TOKEN_FILE", "/tmp/prumo-page-token.txt")

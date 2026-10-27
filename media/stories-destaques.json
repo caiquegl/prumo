@@ -1,0 +1,80 @@
+{
+  "estrutura": [
+    {"type": "cover", "icon": "nuvem", "label": "Estrutura", "sub": "A nuvem por trás dos nossos projetos.", "page": "1/3"},
+    {"type": "flow", "kicker": "Estrutura", "title": "Do clique ao servidor.", "sub": "Cada camada tem um papel — e uma protege a outra.", "page": "2/3",
+     "nodes": [
+       ["user", "Visitante", "Acessa seu site de qualquer lugar.", "user"],
+       ["shieldNet", "Cloudflare", "DNS, CDN e firewall: entrega rápida e filtra ataques antes do servidor."],
+       ["server", "Fly.io", "Aplicações e APIs rodando perto do usuário, com região em São Paulo."],
+       ["db", "AWS", "Banco de dados, arquivos e filas com backup e escala sob demanda."]
+     ]},
+    {"type": "list", "kicker": "Estrutura", "title": "Por que essa combinação?", "page": "3/3",
+     "items": [
+       ["01", "Velocidade", "Conteúdo em cache na borda e servidor no Brasil: páginas que abrem em menos de 1 s."],
+       ["02", "Disponibilidade", "Infraestrutura redundante: se uma máquina cai, outra assume."],
+       ["03", "Escala sem susto", "Pico de acessos? A estrutura cresce junto e volta ao normal depois."],
+       ["04", "Custo justo", "Você paga pelo que usa — sem servidor parado gerando conta."]
+     ], "cta": ["Chame no WhatsApp", "(11) 96633-1995"]}
+  ],
+  "orcamento": [
+    {"type": "cover", "icon": "orcamento", "label": "Orçamento", "sub": "Escopo e preço fechados antes de começar.", "page": "1/2"},
+    {"type": "list", "kicker": "Orçamento", "title": "Peça o seu em 3 passos.", "page": "2/2",
+     "items": [
+       ["01", "Conte a ideia", "Tipo de projeto, objetivo e prazo desejado."],
+       ["02", "Mande referências", "Sites que você gosta (ou não gosta) ajudam muito."],
+       ["03", "Receba a proposta", "Escopo, prazo e preço por escrito em até 24 h."]
+     ], "cta": ["Chame no WhatsApp", "(11) 96633-1995"]}
+  ],
+  "seguranca": [
+    {"type": "cover", "icon": "escudo", "label": "Segurança", "sub": "O que usamos — e por quê.", "page": "1/3"},
+    {"type": "list", "kicker": "Segurança", "title": "O que usamos.", "page": "2/3",
+     "items": [
+       ["TLS", "HTTPS em tudo", "Certificado automático: os dados trafegam criptografados."],
+       ["WAF", "Firewall e anti-DDoS", "A Cloudflare filtra robôs e ataques antes de chegarem ao site."],
+       ["2FA", "Login seguro", "Senhas com hash forte (Argon2/bcrypt) e verificação em duas etapas."],
+       ["BKP", "Backups diários", "Cópias automáticas e restauração testada."],
+       ["LGPD", "Dados com consentimento", "Cookies, política de privacidade e coleta mínima."]
+     ]},
+    {"type": "list", "kicker": "Segurança", "title": "Por que isso importa?", "page": "3/3",
+     "items": [
+       ["01", "Confiança", "Cadeado no navegador e nenhum alerta: o cliente compra tranquilo."],
+       ["02", "Continuidade", "Ataque ou erro não tira seu negócio do ar por dias."],
+       ["03", "Conformidade", "LGPD em dia evita multa e problema com cliente."],
+       ["04", "Reputação", "Vazamento de dados custa muito mais que prevenção."]
+     ], "cta": ["Chame no WhatsApp", "(11) 96633-1995"]}
+  ],
+  "tecnologias": [
+    {"type": "cover", "icon": "codigo", "label": "Tecnologias", "sub": "As ferramentas que usamos — e por quê.", "page": "1/3"},
+    {"type": "list", "kicker": "Tecnologias", "title": "Nosso stack.", "page": "2/3",
+     "items": [
+       ["N", "Next.js + React", "Páginas rápidas, ótimas para o Google e fáceis de evoluir."],
+       ["TS", "TypeScript", "Código tipado: menos bugs chegando ao cliente."],
+       ["API", "Node.js", "APIs e integrações com ERP, CRM, pagamentos e WhatsApp."],
+       ["DB", "PostgreSQL", "Banco de dados robusto e confiável para sistemas."],
+       ["UI", "Tailwind CSS", "Design consistente em qualquer tamanho de tela."]
+     ]},
+    {"type": "list", "kicker": "Tecnologias", "title": "Por que código sob medida?", "sub": "E não tema pronto ou construtor de arrastar e soltar.", "page": "3/3",
+     "items": [
+       ["01", "Mais rápido", "Só carrega o que a página usa — nada de plugin sobrando."],
+       ["02", "Mais seguro", "Menos peças de terceiros, menos portas de entrada."],
+       ["03", "Sem amarras", "O código é seu: dá para crescer sem refazer do zero."],
+       ["04", "Sem mensalidade de plugin", "Funcionalidade feita uma vez, do jeito certo."]
+     ], "cta": ["Chame no WhatsApp", "(11) 96633-1995"]}
+  ],
+  "parcerias": [
+    {"type": "cover", "icon": "parceria", "label": "Parcerias", "sub": "Agências, software houses e autônomos.", "page": "1/3"},
+    {"type": "list", "kicker": "Parcerias", "title": "Precisa de TI? Vamos juntos.", "sub": "Estamos abertos a parcerias com quem precisa de um time técnico de confiança.", "page": "2/3",
+     "items": [
+       ["MKT", "Agências de marketing", "Sites, landing pages e automações para seus clientes — com a sua marca."],
+       ["DEV", "Empresas de software", "Reforço de time: front-end, integrações, APIs e sustentação."],
+       ["PRO", "Autônomos e consultores", "Seu braço técnico para entregar site, sistema ou automação."]
+     ]},
+    {"type": "list", "kicker": "Parcerias", "title": "Como funciona.", "page": "3/3",
+     "items": [
+       ["01", "White label", "Entregamos com a sua marca; o relacionamento continua seu."],
+       ["02", "Condição de parceiro", "Valores especiais para demanda recorrente."],
+       ["03", "Sigilo", "NDA e acesso só ao que o projeto precisa."],
+       ["04", "Comunicação direta", "Um contato técnico, prazos combinados e acompanhamento."]
+     ], "cta": ["Parcerias no WhatsApp", "(11) 96633-1995"]}
+  ]
+}
