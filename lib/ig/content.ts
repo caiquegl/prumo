@@ -1,5 +1,6 @@
 import bankJson from "@/worker/bank.json";
 import type { FeedItem, IgState } from "./types";
+import { LAYOUTS } from "./types";
 
 const BASE_TAGS = ["prumoweb", "tecnologia", "empresas"];
 
@@ -14,36 +15,38 @@ export function titleOf(it: FeedItem) {
 }
 
 export function buildCaption(it: FeedItem) {
-  let body: string;
+  const bits: string[] = [it.hook, titleOf(it)];
   if (it.layout === "compare" && it.left && it.right) {
-    body = `${it.left.label}:\n${it.left.rows.map((r) => `✕ ${r}`).join("\n")}\n\n${it.right.label}:\n${it.right.rows.map((r) => `✓ ${r}`).join("\n")}`;
-  } else {
-    const mark = (i: number) => (it.layout === "flow" ? `${i + 1}.` : it.layout === "checklist" ? "✓" : "▸");
-    body = (it.items ?? []).map(([t, d], i) => `${mark(i)} ${t}${d ? ` — ${d}` : ""}`).join("\n");
+    bits.push(`${it.left.label}: ${it.left.rows.join(" · ")}\n${it.right.label}: ${it.right.rows.join(" · ")}`);
+  } else if (it.items?.length) {
+    bits.push(it.items.map(([t]) => `· ${t}`).join("\n"));
+  } else if (it.stat) {
+    bits.push(`${it.stat.value} ${it.stat.label}`);
   }
+  bits.push(`${plain(it.headline)} WhatsApp (11) 96633-1995 · link na bio.`);
   const tags = [...new Set([...(it.tags || []), ...BASE_TAGS])]
-    .slice(0, 8)
+    .slice(0, 6)
     .map((t) => `#${t.replace(/[^\p{L}\p{N}_]/gu, "")}`);
-  const titleLine = [titleOf(it), it.sub].filter(Boolean).join(/[?!.:]$/.test(titleOf(it)) ? " " : ": ");
-  return [
-    it.hook,
-    titleLine,
-    body,
-    `${plain(it.headline)} Fale com a Prumo Web: orçamento sem compromisso no WhatsApp (11) 96633-1995 ou pelo link na bio.`,
-    tags.join(" "),
-  ].join("\n\n");
+  bits.push(tags.join(" "));
+  return bits.join("\n\n");
+}
+
+function recentLayouts(state: IgState, n = 2) {
+  return state.published.slice(-n).map((p) => p.layout);
 }
 
 export function pickItem(state: IgState): FeedItem {
+  const avoid = recentLayouts(state, 2);
+  const last = avoid.at(-1);
   const used = new Set(state.published.map((p) => p.id));
-  const fresh = bank.find((it) => !used.has(it.id));
-  if (fresh) return fresh;
-  const oldest = [...bank].sort((a, b) => {
-    const ia = state.published.findLastIndex((p) => p.id === a.id);
-    const ib = state.published.findLastIndex((p) => p.id === b.id);
-    return ia - ib;
-  })[0];
-  return oldest;
+  const unused = bank.filter((it) => !used.has(it.id));
+  const pool = unused.length ? unused : [...bank];
+  const skipTwo = pool.filter((it) => !avoid.includes(it.layout));
+  if (skipTwo.length) return skipTwo[0];
+  const skipOne = pool.filter((it) => it.layout !== last);
+  if (skipOne.length) return skipOne[0];
+  const next = LAYOUTS.find((l) => l !== last) ?? LAYOUTS[0];
+  return bank.find((it) => it.layout === next) ?? pool[0];
 }
 
 export function slotKey(now = new Date()) {
@@ -52,4 +55,11 @@ export function slotKey(now = new Date()) {
   const nearest = slots.reduce((a, b) => (Math.abs(b - hour) < Math.abs(a - hour) ? b : a));
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), nearest));
   return d.toISOString().slice(0, 13);
+}
+
+export function assertNoRepeat(state: IgState, item: FeedItem) {
+  const last = state.published.at(-1);
+  if (last && last.layout === item.layout) {
+    throw new Error(`layout "${item.layout}" repetiria o post anterior`);
+  }
 }

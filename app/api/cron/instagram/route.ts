@@ -1,5 +1,5 @@
 import { put } from "@vercel/blob";
-import { bank, buildCaption, pickItem, slotKey, titleOf } from "@/lib/ig/content";
+import { assertNoRepeat, bank, buildCaption, pickItem, slotKey, titleOf } from "@/lib/ig/content";
 import { account, publishImage, recentCaptions } from "@/lib/ig/publish";
 import { renderFeedImage } from "@/lib/ig/render";
 import { readState, writeState } from "@/lib/ig/state";
@@ -37,7 +37,8 @@ async function run(req: Request) {
   }
 
   const item = pickItem(state);
-  const inverted = state.published.length % 3 === 2;
+  assertNoRepeat(state, item);
+  const inverted = state.published.length % 3 === 2 && item.layout !== "quote";
   const png = await renderFeedImage(item, inverted);
   const imageUrl = await uploadOrPublicUrl(req, png, item.id, inverted);
 

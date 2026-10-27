@@ -95,24 +95,24 @@ const pad2 = n => String(n).padStart(2, "0");
 
 const it = cfg.item || {};
 const LAYOUTS = {
-  list: () => `<div class="grid">${it.items.map(([t, d], i) =>
-    `<div class="card a"><div class="badge">${pad2(i + 1)}</div><div><div class="t">${esc(t)}</div><div class="d">${esc(d)}</div></div></div>`).join("")}</div>`,
-  flow: () => `<div class="flow">${it.items.map(([t, d], i) =>
-    `${i ? '<div class="link"><i class="g"></i></div>' : ""}<div class="card node a"><div class="badge">${pad2(i + 1)}</div><div><div class="t">${esc(t)}</div><div class="d">${esc(d)}</div></div></div>`).join("")}</div>`,
+  cards: () => `<div class="checks">${(it.items||[]).slice(0,3).map(([t], i) =>
+    `<div class="card chk a"><div class="badge">${pad2(i+1)}</div><div><div class="t">${esc(t)}</div></div></div>`).join("")}</div>`,
+  split: () => LAYOUTS.cards(),
   compare: () => {
-    const col = (side, cls, mark) => `<div class="card col ${cls}"><div class="lbl">${esc(side.label)}</div>${side.rows.map(r =>
+    const col = (side, cls, mark) => `<div class="card col ${cls}"><div class="lbl">${esc(side.label)}</div>${(side.rows||[]).map(r =>
       `<div class="row a"><div class="mark">${mark}</div><div class="t">${esc(r)}</div></div>`).join("")}</div>`;
     return `<div class="cmp">${col(it.left, "bad", "✕")}${col(it.right, "good", "✓")}</div>`;
   },
-  checklist: () => `<div class="checks">${it.items.map(([t, d]) =>
-    `<div class="card chk a"><div class="tick">✓</div><div><div class="t">${esc(t)}</div>${d ? `<div class="d">${esc(d)}</div>` : ""}</div></div>`).join("")}</div>`,
+  hero: () => `<div class="card a" style="height:100%;display:flex;align-items:flex-end;padding:40px"><div class="ttl">${rich(it.headline)}</div></div>`,
+  quote: () => `<div class="card a" style="height:100%;background:var(--ink);color:var(--bg);padding:48px;display:flex;align-items:center"><div class="ttl" style="font-size:64px">${rich(it.title)}</div></div>`,
+  stat: () => `<div class="card a" style="height:100%;background:var(--ink);color:var(--bg);padding:48px;display:flex;flex-direction:column;justify-content:flex-end"><div class="num" style="font-size:140px;font-family:Fraunces">${esc(it.stat?.value||"")}</div><div class="txt">${esc(it.stat?.label||"")}</div></div>`,
 };
 
 const stage = document.getElementById("stage");
 stage.innerHTML = `
   <div class="top"><div class="brand"><i>P</i>Prumo Web</div><span>${esc(cfg.counter || "@prumo.web")}</span></div>
   <div class="head" id="head"><div class="kicker">${esc(it.kicker)}</div><h1>${rich(it.title)}</h1>${it.sub ? `<p>${esc(it.sub)}</p>` : ""}</div>
-  <div class="box" id="box">${LAYOUTS[it.layout]()}</div>
+  <div class="box" id="box">${(LAYOUTS[it.layout] || LAYOUTS.hero)()}</div>
   <div class="foot" id="foot"><h2>${rich(it.headline || "Seu próximo projeto pode começar aqui.")}</h2>
     <p>Orçamento no WhatsApp<br><strong>(11) 96633-1995</strong><br>@prumo.web</p></div>`;
 

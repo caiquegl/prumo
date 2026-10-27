@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-const LAYOUTS = ["list", "flow", "compare", "checklist"];
+const LAYOUTS = ["hero", "quote", "split", "stat", "cards", "compare"];
 const BASE_TAGS = ["prumoweb", "tecnologia", "empresas"];
 
 const plain = s => String(s).replace(/<br>/g, " ");
@@ -10,21 +10,14 @@ export function validateItem(it) {
   if (!it || typeof it !== "object") fail("não é um objeto");
   if (!LAYOUTS.includes(it.layout)) fail(`layout inválido (${it.layout})`);
   for (const k of ["id", "kicker", "title", "headline", "hook"]) if (!it[k]) fail(`campo ${k} vazio`);
-  if (plain(it.title).length > 48) fail("título longo demais");
+  if (plain(it.title).length > 56) fail("título longo demais");
   if (it.layout === "compare") {
     for (const side of [it.left, it.right]) {
-      if (!side?.label || !Array.isArray(side.rows) || side.rows.length < 3 || side.rows.length > 5) fail("compare precisa de 3–5 linhas por lado");
-      if (side.rows.some(r => r.length > 44)) fail("linha de comparação longa demais");
-    }
-  } else {
-    const max = it.layout === "list" ? 6 : 5;
-    if (!Array.isArray(it.items) || it.items.length < 3 || it.items.length > max) fail(`${it.layout} precisa de 3–${max} itens`);
-    if (it.layout === "list" && it.items.length % 2) fail("list precisa de número par de itens");
-    for (const [t, d] of it.items) {
-      if (!t || t.length > 40) fail(`item "${t}" vazio ou longo demais`);
-      if (d && d.length > 80) fail(`descrição de "${t}" longa demais`);
+      if (!side?.label || !Array.isArray(side.rows) || side.rows.length < 3) fail("compare precisa de 3 linhas por lado");
     }
   }
+  if (it.layout === "stat" && !it.stat?.value) fail("stat precisa de valor");
+  if (["split", "cards"].includes(it.layout) && (!Array.isArray(it.items) || it.items.length < 3)) fail(`${it.layout} precisa de 3 itens`);
   return it;
 }
 
@@ -35,36 +28,33 @@ export async function loadBank(path) {
 }
 
 export function buildCaption(it) {
-  let body;
-  if (it.layout === "compare") {
-    body = `${it.left.label}:\n${it.left.rows.map(r => `✕ ${r}`).join("\n")}\n\n${it.right.label}:\n${it.right.rows.map(r => `✓ ${r}`).join("\n")}`;
-  } else {
-    const mark = { list: () => "▸", flow: i => `${i + 1}.`, checklist: () => "✓" }[it.layout];
-    body = it.items.map(([t, d], i) => `${mark(i)} ${t}${d ? ` — ${d}` : ""}`).join("\n");
+  const bits = [it.hook, titleOf(it)];
+  if (it.layout === "compare" && it.left && it.right) {
+    bits.push(`${it.left.label}: ${it.left.rows.join(" · ")}\n${it.right.label}: ${it.right.rows.join(" · ")}`);
+  } else if (it.items?.length) {
+    bits.push(it.items.map(([t]) => `· ${t}`).join("\n"));
+  } else if (it.stat) {
+    bits.push(`${it.stat.value} ${it.stat.label}`);
   }
-  const tags = [...new Set([...(it.tags || []), ...BASE_TAGS])].slice(0, 8).map(t => `#${t.replace(/[^\p{L}\p{N}_]/gu, "")}`);
-  return [
-    it.hook,
-    [titleOf(it), it.sub].filter(Boolean).join(/[?!.:]$/.test(titleOf(it)) ? " " : ": "),
-    body,
-    `${plain(it.headline)} Fale com a Prumo Web: orçamento sem compromisso no WhatsApp (11) 96633-1995 ou pelo link na bio.`,
-    tags.join(" "),
-  ].join("\n\n");
+  bits.push(`${plain(it.headline)} WhatsApp (11) 96633-1995 · link na bio.`);
+  const tags = [...new Set([...(it.tags || []), ...BASE_TAGS])].slice(0, 6).map(t => `#${t.replace(/[^\p{L}\p{N}_]/gu, "")}`);
+  bits.push(tags.join(" "));
+  return bits.join("\n\n");
 }
 
 const SYSTEM = `Você escreve posts para o Instagram da Prumo Web (@prumo.web), estúdio brasileiro que cria sites, single pages, sistemas sob medida, automações, integrações e soluções de trade marketing para empresas.
-Objetivo: atrair clientes empresariais, mostrar diferencial e capacidade técnica, com tom profissional, direto e acessível, em português do Brasil.
+Objetivo: atrair clientes empresariais. Tom direto, em português do Brasil. Visual no estilo editorial: pouco texto, uma ideia por post.
 Regras obrigatórias:
 - Não cite marcas, produtos ou empresas de terceiros.
 - Não invente estatísticas, porcentagens ou números de pesquisa.
 - Não fale de celulares/smartphones como produto.
-- Conteúdo prático e útil para donos de negócio e gestores.
+- Título curto, no máximo 2 linhas com <br>. Sem parágrafos no post.
 Responda apenas com JSON no formato:
-{"id": "slug-curto", "layout": "<layout>", "kicker": "até 24 caracteres", "title": "título com <br> no meio, até 44 caracteres", "sub": "frase de apoio até 90 caracteres",
- "items": [["título até 34 caracteres", "descrição até 70 caracteres"], ...],
- "left": {"label": "...", "rows": ["até 38 caracteres", ...]}, "right": {"label": "...", "rows": [...]},
- "headline": "chamada final até 34 caracteres", "hook": "primeira linha da legenda, até 120 caracteres, pode ter 1 emoji", "tags": ["4 hashtags sem #"]}
-Layouts: "list" = 4 ou 6 itens (dicas/causas); "flow" = 4 etapas em sequência; "checklist" = 5 itens verificáveis; "compare" = left (jeito antigo) e right (jeito Prumo) com 4 linhas cada, sem "items".`;
+{"id": "slug-curto", "layout": "<layout>", "visual": "leaves|wire|chart|cloud|mark", "kicker": "até 18 caracteres", "title": "título com <br>, até 44 caracteres",
+ "items": [["rótulo curto"]], "stat": {"value": "7–15", "label": "frase curta"},
+ "left": {"label": "...", "rows": ["até 22 caracteres", "...", "..."]}, "right": {"label": "...", "rows": ["...", "...", "..."]},
+ "headline": "chamada até 28 caracteres", "hook": "primeira linha da legenda, até 110 caracteres", "tags": ["4 hashtags sem #"]}
+Layouts: "hero" = só título + imagem, sem items; "quote" = frase grande, sem items; "stat" = precisa de stat.value; "split" = imagem + 3 rótulos curtos em items; "cards" = 3 rótulos curtos, sem descrição; "compare" = left e right com 3 linhas cada, sem items.`;
 
 export async function generateItem({ apiKey, model, layout, recent }) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -89,14 +79,15 @@ export async function generateItem({ apiKey, model, layout, recent }) {
 }
 
 export async function pickItem({ bank, state, apiKey, model, log }) {
+  const avoid = state.published.slice(-2).map(p => p.layout);
+  const lastLayout = avoid.at(-1);
   const used = new Set(state.published.map(p => p.id));
-  const fresh = bank.find(it => !used.has(it.id));
-  if (fresh) return fresh;
+  const unused = bank.filter(it => !used.has(it.id) && !avoid.includes(it.layout));
+  if (unused.length) return unused[0];
+  const unusedSkipOne = bank.filter(it => !used.has(it.id) && it.layout !== lastLayout);
+  if (unusedSkipOne.length) return unusedSkipOne[0];
 
-  const counts = Object.fromEntries(LAYOUTS.map(l => [l, 0]));
-  state.published.slice(-8).forEach(p => { if (p.layout in counts) counts[p.layout]++; });
-  const layout = LAYOUTS.reduce((a, b) => (counts[b] < counts[a] ? b : a));
-
+  const layout = LAYOUTS.find(l => !avoid.includes(l)) || LAYOUTS.find(l => l !== lastLayout) || LAYOUTS[0];
   if (apiKey) {
     const recent = state.published.slice(-40).map(p => p.title);
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -107,9 +98,8 @@ export async function pickItem({ bank, state, apiKey, model, log }) {
       }
     }
   }
-  log("banco de conteúdo esgotado e sem IA disponível: republicando o item mais antigo");
-  const oldest = bank.map(it => [it, state.published.findLastIndex(p => p.id === it.id)]).sort((a, b) => a[1] - b[1])[0][0];
-  return oldest;
+  const pool = bank.filter(it => it.layout !== lastLayout);
+  return pool.sort((a, b) => state.published.findLastIndex(p => p.id === a.id) - state.published.findLastIndex(p => p.id === b.id))[0];
 }
 
 export const titleOf = it => plain(it.title).replace(/\s+/g, " ").trim();

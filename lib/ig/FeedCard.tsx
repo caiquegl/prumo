@@ -1,111 +1,219 @@
-import type { CSSProperties, ReactNode } from "react";
-import type { FeedItem } from "./types";
+import type { CSSProperties } from "react";
+import type { FeedItem, Visual } from "./types";
+import { Visual as Art } from "./Visual";
 
 const light = {
-  bg: "#f1ebe3",
-  ink: "#1b1a18",
-  soft: "rgba(27,26,24,0.6)",
-  accent: "#e0664f",
+  bg: "#f3eee6",
+  ink: "#1a1916",
+  soft: "rgba(26,25,22,0.52)",
+  accent: "#d4573e",
   card: "#fbf8f3",
-  line: "rgba(27,26,24,0.12)",
-  muted: "rgba(27,26,24,0.08)",
+  line: "rgba(26,25,22,0.1)",
+  muted: "rgba(26,25,22,0.08)",
 };
 
 const dark = {
-  bg: "#151412",
+  bg: "#141311",
   ink: "#f3eee6",
-  soft: "rgba(243,238,230,0.6)",
+  soft: "rgba(243,238,230,0.55)",
   accent: "#ef7a5f",
-  card: "#1f1d1a",
+  card: "#1e1c19",
   line: "rgba(243,238,230,0.12)",
-  muted: "rgba(243,238,230,0.07)",
+  muted: "rgba(243,238,230,0.08)",
 };
 
 type Theme = typeof light;
-
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
-}
 
 function lines(text: string) {
   return text.split(/<br\s*\/?>/i);
 }
 
-function card(theme: Theme, extra?: CSSProperties): CSSProperties {
-  return {
-    display: "flex",
-    background: theme.card,
-    border: `1px solid ${theme.line}`,
-    borderRadius: 24,
-    ...extra,
-  };
-}
-
-function Badge({ theme, children }: { theme: Theme; children: ReactNode }) {
+function Brand({ theme, lightText = false }: { theme: Theme; lightText?: boolean }) {
+  const c = lightText ? "rgba(255,255,255,0.7)" : theme.soft;
+  const ink = lightText ? "#fff" : theme.ink;
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 56,
-        height: 56,
-        borderRadius: 16,
-        background: theme.accent,
-        color: "#fff",
-        fontSize: 20,
-        fontWeight: 700,
-        fontFamily: "Manrope",
-        flexShrink: 0,
-      }}
-    >
-      {children}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", fontSize: 22, color: c }}>
+      <div style={{ display: "flex", alignItems: "center", color: ink, fontWeight: 600 }}>
+        <div
+          style={{
+            display: "flex",
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: theme.accent,
+            color: "#fff",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "Fraunces",
+            fontSize: 16,
+            marginRight: 12,
+          }}
+        >
+          P
+        </div>
+        <div style={{ display: "flex" }}>Prumo Web</div>
+      </div>
+      <div style={{ display: "flex" }}>@prumo.web</div>
     </div>
   );
 }
 
-function List({ item, theme }: { item: FeedItem; theme: Theme }) {
+function Title({ text, size = 88, color }: { text: string; size?: number; color: string }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", width: 920, gap: 18 }}>
-      {(item.items ?? []).map(([t, d], i) => (
-        <div key={t} style={card(theme, { width: 450, padding: 28, gap: 16, flexDirection: "column" })}>
-          <Badge theme={theme}>{pad2(i + 1)}</Badge>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.2, lineHeight: 1.2 }}>{t}</div>
-            <div style={{ marginTop: 8, fontSize: 20, lineHeight: 1.35, color: theme.soft }}>{d}</div>
-          </div>
+    <div style={{ display: "flex", flexDirection: "column", fontFamily: "Fraunces", fontWeight: 500, fontSize: size, lineHeight: 0.95, letterSpacing: -2.2, color }}>
+      {lines(text).map((line) => (
+        <div key={line} style={{ display: "flex" }}>
+          {line}
         </div>
       ))}
     </div>
   );
 }
 
-function Flow({ item, theme }: { item: FeedItem; theme: Theme }) {
-  const items = item.items ?? [];
+function Kicker({ text, color }: { text: string; color: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: 920 }}>
-      {items.map(([t, d], i) => (
-        <div key={t} style={{ display: "flex", flexDirection: "column" }}>
-          {i > 0 ? (
-            <div
-              style={{
-                width: 4,
-                height: 22,
-                marginLeft: 54,
-                background: theme.accent,
-                borderRadius: 4,
-              }}
-            />
-          ) : null}
-          <div style={card(theme, { padding: "22px 28px", alignItems: "center", gap: 24 })}>
-            <Badge theme={theme}>{pad2(i + 1)}</Badge>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.2 }}>{t}</div>
-              <div style={{ marginTop: 6, fontSize: 20, lineHeight: 1.35, color: theme.soft }}>{d}</div>
+    <div style={{ display: "flex", fontSize: 18, letterSpacing: 3.2, textTransform: "uppercase", color, fontWeight: 700 }}>{text}</div>
+  );
+}
+
+function Phone({ color, dim }: { color: string; dim: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", fontSize: 18, color: dim, alignItems: "flex-end" }}>
+      <div style={{ display: "flex", color, fontWeight: 700 }}>(11) 96633-1995</div>
+      <div style={{ display: "flex" }}>WhatsApp</div>
+    </div>
+  );
+}
+
+function Scene({ item, theme, w, h }: { item: FeedItem; theme: Theme; w: number; h: number }) {
+  const kind = (item.visual || "leaves") as Visual;
+  return (
+    <div style={{ display: "flex", width: w, height: h, overflow: "hidden", borderRadius: 36, background: theme.card }}>
+      <Art kind={kind} accent={theme.accent} ink={theme.ink} muted={theme.muted} w={w} h={h} />
+    </div>
+  );
+}
+
+function Hero({ item, theme }: { item: FeedItem; theme: Theme }) {
+  return (
+    <div style={frame(theme)}>
+      <Brand theme={theme} />
+      <div style={{ display: "flex", flex: 1, marginTop: 28, overflow: "hidden", borderRadius: 36 }}>
+        <Scene item={item} theme={theme} w={920} h={960} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 36 }}>
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: 720 }}>
+          <Kicker text={item.kicker} color={theme.accent} />
+          <div style={{ display: "flex", marginTop: 10 }}>
+            <Title text={item.title} size={72} color={theme.ink} />
+          </div>
+        </div>
+        <Phone color={theme.ink} dim={theme.soft} />
+      </div>
+    </div>
+  );
+}
+
+function Quote({ item, theme }: { item: FeedItem; theme: Theme }) {
+  return (
+    <div style={{ ...frame(theme), background: theme.ink, color: theme.bg }}>
+      <Brand theme={theme} lightText />
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center" }}>
+        <Kicker text={item.kicker} color={theme.accent} />
+        <div style={{ display: "flex", marginTop: 32 }}>
+          <Title text={item.title} size={96} color="#fff" />
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <Phone color="#fff" dim="rgba(255,255,255,0.65)" />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ item, theme }: { item: FeedItem; theme: Theme }) {
+  return (
+    <div style={frame(theme)}>
+      <Brand theme={theme} />
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
+        <Kicker text={item.kicker} color={theme.accent} />
+        <div style={{ display: "flex", marginTop: 12 }}>
+          <Title text={item.title} size={64} color={theme.ink} />
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          flex: 1,
+          marginTop: 36,
+          padding: "56px 60px",
+          borderRadius: 40,
+          background: theme.ink,
+          color: theme.bg,
+        }}
+      >
+        <div style={{ display: "flex", fontFamily: "Fraunces", fontSize: 180, lineHeight: 0.82, letterSpacing: -8 }}>{item.stat?.value}</div>
+        <div style={{ display: "flex", marginTop: 28, fontSize: 30, color: "rgba(255,255,255,0.68)", maxWidth: 640 }}>{item.stat?.label}</div>
+      </div>
+    </div>
+  );
+}
+
+function Split({ item, theme }: { item: FeedItem; theme: Theme }) {
+  return (
+    <div style={frame(theme)}>
+      <Brand theme={theme} />
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+        <Kicker text={item.kicker} color={theme.accent} />
+        <div style={{ display: "flex", marginTop: 10 }}>
+          <Title text={item.title} size={70} color={theme.ink} />
+        </div>
+      </div>
+      <div style={{ display: "flex", marginTop: 32, flex: 1 }}>
+        <Scene item={item} theme={theme} w={540} h={780} />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", marginLeft: 28 }}>
+          {(item.items ?? []).slice(0, 3).map(([t], i) => (
+            <div key={t} style={{ display: "flex", flexDirection: "column", marginBottom: 28 }}>
+              <div style={{ display: "flex", fontFamily: "Fraunces", fontSize: 40, color: theme.accent, lineHeight: 1 }}>{String(i + 1).padStart(2, "0")}</div>
+              <div style={{ display: "flex", marginTop: 6, fontSize: 32, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.15 }}>{t}</div>
             </div>
-          </div>
+          ))}
         </div>
-      ))}
+      </div>
+    </div>
+  );
+}
+
+function Cards({ item, theme }: { item: FeedItem; theme: Theme }) {
+  return (
+    <div style={frame(theme)}>
+      <Brand theme={theme} />
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+        <Kicker text={item.kicker} color={theme.accent} />
+        <div style={{ display: "flex", marginTop: 10 }}>
+          <Title text={item.title} size={70} color={theme.ink} />
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 36, flex: 1, justifyContent: "flex-end" }}>
+        {(item.items ?? []).slice(0, 3).map(([t]) => (
+          <div
+            key={t}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "34px 40px",
+              borderRadius: 28,
+              background: theme.card,
+              marginBottom: 20,
+            }}
+          >
+            <div style={{ display: "flex", width: 10, height: 48, borderRadius: 6, background: theme.accent, marginRight: 28 }} />
+            <div style={{ display: "flex", fontFamily: "Fraunces", fontSize: 40, letterSpacing: -0.8, lineHeight: 1.1 }}>{t}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -113,198 +221,73 @@ function Flow({ item, theme }: { item: FeedItem; theme: Theme }) {
 function Compare({ item, theme }: { item: FeedItem; theme: Theme }) {
   const col = (side: { label: string; rows: string[] }, good: boolean) => (
     <div
-      style={card(theme, {
-        width: 450,
-        padding: 28,
+      style={{
+        display: "flex",
         flexDirection: "column",
+        width: 450,
+        padding: 40,
+        borderRadius: 32,
         background: good ? theme.ink : theme.card,
         color: good ? theme.bg : theme.ink,
-        borderColor: good ? "transparent" : theme.line,
-      })}
+        flex: 1,
+      }}
     >
       <div
         style={{
-          fontSize: 18,
-          letterSpacing: 2.2,
+          display: "flex",
+          fontSize: 16,
+          letterSpacing: 2.6,
           textTransform: "uppercase",
           fontWeight: 700,
           color: good ? theme.accent : theme.soft,
-          fontFamily: "Manrope",
         }}
       >
         {side.label}
       </div>
-      {side.rows.map((r) => (
-        <div
-          key={r}
-          style={{
-            display: "flex",
-            gap: 14,
-            alignItems: "center",
-            marginTop: 16,
-            paddingTop: 16,
-            borderTop: `1px solid ${good ? "rgba(127,127,127,0.25)" : theme.line}`,
-          }}
-        >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 17,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              background: good ? theme.accent : theme.muted,
-              color: good ? "#fff" : theme.soft,
-              fontWeight: 700,
-              fontSize: 16,
-            }}
-          >
-            {good ? "✓" : "✕"}
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.25 }}>{r}</div>
+      {side.rows.slice(0, 3).map((r) => (
+        <div key={r} style={{ display: "flex", marginTop: 32, fontFamily: "Fraunces", fontSize: 32, letterSpacing: -0.4, lineHeight: 1.15 }}>
+          {r}
         </div>
       ))}
     </div>
   );
   return (
-    <div style={{ display: "flex", width: 920, gap: 20 }}>
-      {item.left ? col(item.left, false) : null}
-      {item.right ? col(item.right, true) : null}
+    <div style={frame(theme)}>
+      <Brand theme={theme} />
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+        <Kicker text={item.kicker} color={theme.accent} />
+        <div style={{ display: "flex", marginTop: 10 }}>
+          <Title text={item.title} size={70} color={theme.ink} />
+        </div>
+      </div>
+      <div style={{ display: "flex", marginTop: 40, flex: 1, alignItems: "stretch" }}>
+        {item.left ? col(item.left, false) : null}
+        <div style={{ display: "flex", width: 20 }} />
+        {item.right ? col(item.right, true) : null}
+      </div>
     </div>
   );
 }
 
-function Checklist({ item, theme }: { item: FeedItem; theme: Theme }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", width: 920, gap: 16 }}>
-      {(item.items ?? []).map(([t, d]) => (
-        <div key={t} style={card(theme, { padding: "20px 28px", alignItems: "center", gap: 22 })}>
-          <div
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              background: theme.accent,
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              fontSize: 22,
-              flexShrink: 0,
-            }}
-          >
-            ✓
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.2 }}>{t}</div>
-            {d ? <div style={{ marginTop: 6, fontSize: 20, lineHeight: 1.35, color: theme.soft }}>{d}</div> : null}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+function frame(theme: Theme): CSSProperties {
+  return {
+    width: 1080,
+    height: 1350,
+    display: "flex",
+    flexDirection: "column",
+    background: theme.bg,
+    color: theme.ink,
+    fontFamily: "Manrope",
+    padding: "48px 80px 44px",
+  };
 }
 
 export function FeedCard({ item, inverted = false }: { item: FeedItem; inverted?: boolean }) {
-  const theme = inverted ? dark : light;
-  const body =
-    item.layout === "list" ? (
-      <List item={item} theme={theme} />
-    ) : item.layout === "flow" ? (
-      <Flow item={item} theme={theme} />
-    ) : item.layout === "compare" ? (
-      <Compare item={item} theme={theme} />
-    ) : (
-      <Checklist item={item} theme={theme} />
-    );
-
-  return (
-    <div
-      style={{
-        width: 1080,
-        height: 1350,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        background: theme.bg,
-        color: theme.ink,
-        fontFamily: "Manrope",
-        padding: "64px 80px",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 24, color: theme.soft }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, color: theme.ink, fontWeight: 600 }}>
-          <div
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              background: theme.accent,
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "Fraunces",
-              fontSize: 18,
-            }}
-          >
-            P
-          </div>
-          Prumo Web
-        </div>
-        @prumo.web
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <div
-          style={{
-            fontSize: 22,
-            letterSpacing: 3.2,
-            textTransform: "uppercase",
-            color: theme.accent,
-            fontWeight: 700,
-          }}
-        >
-          {item.kicker}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 16, fontFamily: "Fraunces", fontWeight: 500, fontSize: 72, lineHeight: 0.98, letterSpacing: -1.6 }}>
-          {lines(item.title).map((line) => (
-            <div key={line}>{line}</div>
-          ))}
-        </div>
-        {item.sub ? (
-          <div style={{ marginTop: 18, fontSize: 28, lineHeight: 1.35, color: theme.soft, maxWidth: 860 }}>{item.sub}</div>
-        ) : null}
-      </div>
-
-      <div style={{ display: "flex" }}>{body}</div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 40 }}>
-        <div
-          style={{
-            fontFamily: "Fraunces",
-            fontWeight: 500,
-            fontSize: 40,
-            lineHeight: 1.05,
-            letterSpacing: -0.6,
-            maxWidth: 600,
-          }}
-        >
-          {plainHeadline(item.headline)}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", fontSize: 22, lineHeight: 1.4, color: theme.soft, textAlign: "right", alignItems: "flex-end" }}>
-          <div>Orçamento no WhatsApp</div>
-          <div style={{ color: theme.ink, fontWeight: 700 }}>(11) 96633-1995</div>
-          <div>@prumo.web</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function plainHeadline(s: string) {
-  return s.replace(/<br\s*\/?>/gi, " ");
+  const theme = inverted && item.layout !== "quote" ? dark : light;
+  if (item.layout === "hero") return <Hero item={item} theme={theme} />;
+  if (item.layout === "quote") return <Quote item={item} theme={theme} />;
+  if (item.layout === "stat") return <Stat item={item} theme={theme} />;
+  if (item.layout === "split") return <Split item={item} theme={theme} />;
+  if (item.layout === "cards") return <Cards item={item} theme={theme} />;
+  return <Compare item={item} theme={theme} />;
 }
