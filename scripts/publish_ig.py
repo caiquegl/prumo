@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Publish feed images, reels and stories to @prumo264 via the Instagram Graph API.
+
+Usage: publish_ig.py <section-title> [...]
+Token is read from $PRUMO_PAGE_TOKEN_FILE (default /tmp/prumo-page-token.txt); never commit it.
+"""
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+
+API = "https://graph.facebook.com/v26.0"
+IG_ID = "17841427877735853"
+BASE = "https://prumo-tawny.vercel.app/ig"
+CAPTIONS = os.path.join(os.path.dirname(__file__), "..", "content", "legendas-14-16-reels-story.md")
+
+POSTS = {
+    "terra": {"type": "REELS", "file": "prumo-reel-01-terra.mp4", "cover": "prumo-reel-01-terra-cover.jpg", "section": "Reel 01"},
+    "prisma": {"type": "REELS", "file": "prumo-reel-02-prisma.mp4", "cover": "prumo-reel-02-prisma-cover.jpg", "section": "Reel 02"},
+    "lex": {"type": "IMAGE", "file": "prumo-feed-14-lex.jpg", "section": "14"},
+    "pata": {"type": "IMAGE", "file": "prumo-feed-15-pata.jpg", "section": "15"},
+    "motriz": {"type": "IMAGE", "file": "prumo-feed-16-motriz.jpg", "section": "16"},
+    "story": {"type": "STORIES", "file": "prumo-story-01-projetos.jpg", "section": None},
+}
+
+
+def token():
+    path = os.environ.get("PRUMO_PAGE_TOKEN_FILE", "/tmp/prumo-page-token.txt")
+    with open(path) as f:
+        return f.read().strip()
+
+
+def call(method, path, **params):
+    params["access_token"] = token()
+    data = urllib.parse.urlencode(params).encode()
+    url = f"{API}/{path}"
+    if method == "GET":
+        req = urllib.request.Request(f"{url}?{data.decode()}")
+    else:
+        req = urllib.request.Request(url, data=data, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"{method} {path} -> {e.code}: {e.read().decode()}")
+
+
+def caption(section):
+    if not section:
+        return None
+    text = open(CAPTIONS, encoding="utf-8").read()
+    m = re.search(rf"^## {re.escape(section)}\b.*?\n(.*?)(?=^## |\Z)", text, re.S | re.M)
+    return m.group(1).strip() if m else None
+
+
+def publish(key):
+    spec = POSTS[key]
+    params = {}
+    url = f"{BASE}/{spec['file']}"
+    if spec["type"] == "REELS":
+        params.update(media_type="REELS", video_url=url, share_to_feed="true", cover_url=f"{BASE}/{spec['cover']}")
+    elif spec["type"] == "STORIES":
+        params.update(media_type="STORIES", image_url=url)
+    else:
+        params.update(image_url=url)
+    cap = caption(spec["section"])
+    if cap:
+        params["caption"] = cap
+
+    container = call("POST", f"{IG_ID}/media", **params)["id"]
+    for _ in range(60):
+        status = call("GET", container, fields="status_code,status").get("status_code")
+        if status == "FINISHED":
+            break
+        if status == "ERROR":
+            raise SystemExit(f"{key}: container error {call('GET', container, fields='status')}")
+        time.sleep(5)
+    media = call("POST", f"{IG_ID}/media_publish", creation_id=container)["id"]
+    link = call("GET", media, fields="permalink").get("permalink")
+    print(f"{key}: published {media} {link}", flush=True)
+
+
+if __name__ == "__main__":
+    print(call("GET", IG_ID, fields="username,media_count"))
+    for k in sys.argv[1:]:
+        publish(k)
