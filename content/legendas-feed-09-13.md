@@ -29,14 +29,8 @@ Não é tendência. É experiência.
 
 #inovacao #ux #prumoweb #digital
 
-## 12 — Scroll (técnica Apple)
-Sabe aquele site da Apple em que o celular gira enquanto você rola?
-
-Isso é **scroll storytelling**: o produto responde ao gesto.
-
-Usamos a mesma lógica — elegante, sem barulho — em landing pages e produtos web.
-
-#webdesign #scrollanimation #prumoweb #frontend
+## 12 — Scroll (removido do feed)
+Post retirado: não citar marcas de terceiros na comunicação.
 
 ## 13 — Microinterações
 O site “parece caro” nos detalhes.

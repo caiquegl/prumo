@@ -95,7 +95,7 @@ export default function Home() {
 
       <div className="section-rule mx-auto max-w-6xl" />
 
-      {/* Craft / Apple-like technique */}
+      {/* Craft */}
       <section id="craft" className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
         <Reveal>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--coral)]">
@@ -108,10 +108,9 @@ export default function Home() {
         <div className="mt-12 grid gap-10 md:grid-cols-2 md:items-center">
           <Reveal delay={80}>
             <p className="text-lg leading-relaxed text-[color:var(--ink-soft)]">
-              Técnicas usadas em páginas de referência (como a Apple): o
-              dispositivo responde ao scroll, tipografia grande com respiro, e
-              cada seção tem um único trabalho. O resultado é presença — não um
-              carrossel de efeitos.
+              Em landing pages de alto nível, o produto responde ao scroll,
+              a tipografia tem respiro e cada seção tem um único trabalho.
+              O resultado é presença — não um carrossel de efeitos.
             </p>
             <ul className="mt-8 space-y-4 text-[color:var(--ink)]">
               {[
@@ -129,8 +128,8 @@ export default function Home() {
           <Reveal delay={160} className="relative">
             <div className="relative aspect-[4/5] overflow-hidden rounded-[1.6rem] bg-[color:var(--bg-deep)]">
               <Image
-                src="/ig/prumo-feed-12-scroll-apple.jpg"
-                alt="Composição sobre animações de scroll"
+                src="/ig/prumo-feed-13-microinteracoes.jpg"
+                alt="Composição sobre microinterações e acabamento de interface"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 40vw"
