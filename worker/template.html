@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f1ebe3; --ink: #1b1a18; --soft: rgba(27,26,24,.6); --accent: #e0664f;
+    --card: #fbf8f3; --line: rgba(27,26,24,.12); --muted: rgba(27,26,24,.08); --k: 1; --hk: 1;
+  }
+  :root.dark {
+    --bg: #151412; --ink: #f3eee6; --soft: rgba(243,238,230,.6); --accent: #ef7a5f;
+    --card: #1f1d1a; --line: rgba(243,238,230,.12); --muted: rgba(243,238,230,.07);
+  }
+  html, body { width: var(--w); height: var(--h); overflow: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: Manrope, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .stage { position: relative; width: var(--w); height: var(--h); padding: var(--pad) 80px;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 36px; }
+  .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .top { display: flex; justify-content: space-between; align-items: center; font-size: 26px; color: var(--soft); }
+  .brand { display: flex; align-items: center; gap: 14px; color: var(--ink); font-weight: 600; }
+  .brand i { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid;
+    place-items: center; font-style: normal; color: #fff; font-size: 18px; font-family: Fraunces, serif; }
+  .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .head h1 { font-family: Fraunces, serif; font-weight: 500; font-size: calc(var(--h1) * var(--hk)); line-height: 1; letter-spacing: -.03em; margin-top: 18px; }
+  .head p { margin-top: 20px; font-size: calc(30px * var(--hk)); line-height: 1.35; color: var(--soft); max-width: 860px; }
+  .box { width: 920px; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+  .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+  .foot h2 { font-family: Fraunces, serif; font-weight: 400; font-size: var(--fh); line-height: 1.04; letter-spacing: -.02em; max-width: 600px; }
+  .foot p { font-size: 24px; line-height: 1.45; color: var(--soft); text-align: right; flex: none; }
+  .foot p strong { color: var(--ink); font-weight: 700; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 30px 70px -40px rgba(0,0,0,.35); }
+  .badge { display: grid; place-items: center; flex: none; min-width: calc(56px * var(--k)); height: calc(56px * var(--k)); padding: 0 12px;
+    border-radius: 16px; background: var(--accent); color: #fff; font-size: calc(22px * var(--k)); font-weight: 800; }
+  .t { font-size: calc(var(--ct) * var(--k)); font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+  .d { margin-top: 8px; font-size: calc(var(--cp) * var(--k)); line-height: 1.4; color: var(--soft); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid .card { display: flex; flex-direction: column; align-items: flex-start; gap: calc(18px * var(--k)); padding: calc(30px * var(--k)); }
+
+  .flow { display: flex; flex-direction: column; }
+  .node { display: flex; gap: 26px; align-items: center; padding: calc(26px * var(--k)) 30px; }
+  .link { width: 4px; height: calc(var(--gap) * var(--k)); margin-left: 57px; background: var(--muted); border-radius: 4px; overflow: hidden; }
+  .link i { display: block; width: 100%; height: 100%; background: var(--accent); transform-origin: top; }
+
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; }
+  .col { padding: calc(30px * var(--k)); }
+  .col.good { background: var(--ink); color: var(--bg); border-color: transparent; }
+  .col.good .d { color: inherit; opacity: .7; }
+  .lbl { font-size: 20px; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; color: var(--soft); }
+  .col.good .lbl { color: var(--accent); }
+  .row { display: flex; gap: 16px; align-items: flex-start; padding: calc(20px * var(--k)) 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { margin-top: 18px; }
+  .col.good .row { border-color: rgba(127,127,127,.25); }
+  .mark { width: calc(38px * var(--k)); height: calc(38px * var(--k)); border-radius: 50%; flex: none; display: grid; place-items: center;
+    font-weight: 800; font-size: calc(18px * var(--k)); background: var(--muted); color: var(--soft); }
+  .col.good .mark { background: var(--accent); color: #fff; }
+  .row .t { font-size: calc(var(--ct) * .86 * var(--k)); font-weight: 600; }
+
+  .checks { display: flex; flex-direction: column; gap: calc(18px * var(--k)); }
+  .chk { display: flex; gap: 24px; align-items: center; padding: calc(24px * var(--k)) 30px; }
+  .tick { width: calc(48px * var(--k)); height: calc(48px * var(--k)); border-radius: 50%; flex: none; display: grid; place-items: center;
+    border: 3px solid var(--accent); color: #fff; font-weight: 800; font-size: calc(24px * var(--k)); }
+  .tick.on { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+<script>
+const cfg = JSON.parse(decodeURIComponent(location.hash.slice(1) || "{}"));
+const W = 1080, H = cfg.format === "reel" ? 1920 : 1350, REEL = H > 1500;
+const rs = document.documentElement.style;
+rs.zoom = String(1 / (window.devicePixelRatio || 1));
+rs.setProperty("--w", W + "px"); rs.setProperty("--h", H + "px");
+rs.setProperty("--pad", (REEL ? 130 : 64) + "px");
+rs.setProperty("--h1", (REEL ? 104 : 74) + "px");
+rs.setProperty("--fh", (REEL ? 54 : 42) + "px");
+rs.setProperty("--ct", (REEL ? 34 : 27) + "px");
+rs.setProperty("--cp", (REEL ? 25 : 20) + "px");
+rs.setProperty("--gap", (REEL ? 44 : 22) + "px");
+if (cfg.dark) document.documentElement.classList.add("dark");
+
+const clamp = v => Math.min(1, Math.max(0, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const ease = p => 1 - Math.pow(1 - p, 3);
+const show = (el, p, dy = 26) => { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`; };
+const pop = (el, p) => { el.style.opacity = p; el.style.transform = `scale(${.9 + .1 * ease(p)})`; };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const rich = s => esc(s).replace(/&lt;br&gt;/g, "<br>");
+const pad2 = n => String(n).padStart(2, "0");
+
+const it = cfg.item || {};
+const LAYOUTS = {
+  list: () => `<div class="grid">${it.items.map(([t, d], i) =>
+    `<div class="card a"><div class="badge">${pad2(i + 1)}</div><div><div class="t">${esc(t)}</div><div class="d">${esc(d)}</div></div></div>`).join("")}</div>`,
+  flow: () => `<div class="flow">${it.items.map(([t, d], i) =>
+    `${i ? '<div class="link"><i class="g"></i></div>' : ""}<div class="card node a"><div class="badge">${pad2(i + 1)}</div><div><div class="t">${esc(t)}</div><div class="d">${esc(d)}</div></div></div>`).join("")}</div>`,
+  compare: () => {
+    const col = (side, cls, mark) => `<div class="card col ${cls}"><div class="lbl">${esc(side.label)}</div>${side.rows.map(r =>
+      `<div class="row a"><div class="mark">${mark}</div><div class="t">${esc(r)}</div></div>`).join("")}</div>`;
+    return `<div class="cmp">${col(it.left, "bad", "✕")}${col(it.right, "good", "✓")}</div>`;
+  },
+  checklist: () => `<div class="checks">${it.items.map(([t, d]) =>
+    `<div class="card chk a"><div class="tick">✓</div><div><div class="t">${esc(t)}</div>${d ? `<div class="d">${esc(d)}</div>` : ""}</div></div>`).join("")}</div>`,
+};
+
+const stage = document.getElementById("stage");
+stage.innerHTML = `
+  <div class="top"><div class="brand"><i>P</i>Prumo Web</div><span>${esc(cfg.counter || "@prumo.web")}</span></div>
+  <div class="head" id="head"><div class="kicker">${esc(it.kicker)}</div><h1>${rich(it.title)}</h1>${it.sub ? `<p>${esc(it.sub)}</p>` : ""}</div>
+  <div class="box" id="box">${LAYOUTS[it.layout]()}</div>
+  <div class="foot" id="foot"><h2>${rich(it.headline || "Seu próximo projeto pode começar aqui.")}</h2>
+    <p>Orçamento no WhatsApp<br><strong>(11) 96633-1995</strong><br>@prumo.web</p></div>`;
+
+const box = document.getElementById("box");
+const anims = [...box.querySelectorAll(".a")];
+const links = [...box.querySelectorAll(".g")];
+const ticks = [...box.querySelectorAll(".tick")];
+
+function fit() {
+  const over = () => stage.scrollHeight > H + 1 || box.scrollHeight > box.clientHeight + 1;
+  let k = 1, hk = 1;
+  while (over() && k > .62) {
+    k -= .03; rs.setProperty("--k", k);
+    if (k < .85 && hk > .8) { hk -= .03; rs.setProperty("--hk", hk); }
+  }
+  window.__overflow = over();
+}
+
+window.render = t => {
+  show(document.getElementById("head"), ease(seg(t, .1, .9)), 40);
+  const n = anims.length, start = 1.3, span = 7.6;
+  anims.forEach((el, i) => {
+    const a = start + i * (span / n);
+    pop(el, ease(seg(t, a, a + .55)));
+  });
+  links.forEach((el, i) => {
+    const a = start + i * (span / n) + .45;
+    el.parentElement.style.opacity = seg(t, a - .45, a - .1);
+    el.style.transform = `scaleY(${ease(seg(t, a, a + span / n - .2))})`;
+  });
+  ticks.forEach((el, i) => el.classList.toggle("on", t >= start + i * (span / n) + .5));
+  show(document.getElementById("foot"), ease(seg(t, 9.4, 10.2)), 30);
+};
+
+document.fonts.ready.then(() => {
+  fit();
+  window.render(cfg.t ?? 99);
+  window.__ready = true;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+[
+  {
+    "id": "sinais-site-perdendo",
+    "layout": "list",
+    "kicker": "Diagnóstico rápido",
+    "title": "Seu site está<br>perdendo clientes?",
+    "sub": "Seis sinais que aparecem antes da queda nas vendas.",
+    "items": [
+      ["Demora para abrir", "Cada segundo a mais é gente desistindo antes de ver a oferta."],
+      ["Sem botão de contato", "O visitante quer falar com você e não acha por onde."],
+      ["Texto genérico", "Não fica claro o que você faz nem para quem."],
+      ["Quebra em telas pequenas", "Botões minúsculos, textos cortados, menu que não abre."],
+      ["Sem prova social", "Nenhum depoimento, cliente ou resultado à vista."],
+      ["Ninguém mede nada", "Sem saber de onde vêm os contatos, não dá para melhorar."]
+    ],
+    "headline": "Quer um diagnóstico do seu site?",
+    "hook": "Seu site pode estar afastando clientes sem você perceber. 👀",
+    "tags": ["site", "marketingdigital", "conversao", "pequenasempresas"]
+  },
+  {
+    "id": "lead-ate-whatsapp",
+    "layout": "flow",
+    "kicker": "Funil na prática",
+    "title": "Do anúncio ao<br>seu WhatsApp",
+    "sub": "Como um visitante vira conversa — sem nada se perder no caminho.",
+    "items": [
+      ["Anúncio ou busca", "A pessoa chega já com uma necessidade."],
+      ["Página certa", "Promessa clara, prova e um único próximo passo."],
+      ["Formulário curto", "Nome e telefone. O resto se descobre conversando."],
+      ["Aviso na hora", "O contato cai no WhatsApp da equipe em segundos."]
+    ],
+    "headline": "Montamos esse fluxo para você.",
+    "hook": "Lead que espera esfria. O caminho entre o clique e a conversa precisa ser curto.",
+    "tags": ["leads", "whatsapp", "landingpage", "vendas"]
+  },
+  {
+    "id": "planilha-vs-sistema",
+    "layout": "compare",
+    "kicker": "Gestão",
+    "title": "Planilha ou<br>sistema próprio?",
+    "sub": "Planilha é ótima para começar. O problema é quando ela vira o sistema.",
+    "left": { "label": "Planilha", "rows": ["Versões duplicadas por e-mail", "Fórmula quebrada sem ninguém ver", "Sem controle de quem alterou", "Relatório montado à mão"] },
+    "right": { "label": "Sistema sob medida", "rows": ["Uma única fonte de verdade", "Regras validadas na entrada", "Histórico e permissões por usuário", "Relatório pronto em tempo real"] },
+    "headline": "Hora de sair da planilha?",
+    "hook": "Se a sua operação depende de uma planilha que só uma pessoa entende, isso é um risco.",
+    "tags": ["gestao", "sistemas", "automacao", "produtividade"]
+  },
+  {
+    "id": "checklist-antes-no-ar",
+    "layout": "checklist",
+    "kicker": "Checklist",
+    "title": "Antes de colocar<br>o site no ar",
+    "sub": "O que a gente confere em todo projeto antes da entrega.",
+    "items": [
+      ["Certificado de segurança ativo", "Cadeado no navegador e tráfego criptografado."],
+      ["Testado em telas pequenas", "Leitura e botões confortáveis em qualquer tamanho."],
+      ["Velocidade medida", "Imagens otimizadas e carregamento rápido."],
+      ["Formulários chegando", "Teste real de ponta a ponta, não só no papel."],
+      ["Medição configurada", "Visitas e contatos rastreados desde o primeiro dia."]
+    ],
+    "headline": "Entrega com tudo conferido.",
+    "hook": "Site bonito que não funciona não vende. Este é o nosso checklist antes de qualquer entrega. ✅",
+    "tags": ["site", "desenvolvimentoweb", "qualidade", "checklist"]
+  },
+  {
+    "id": "automatizar-primeiro",
+    "layout": "list",
+    "kicker": "Automação",
+    "title": "O que automatizar<br>primeiro",
+    "sub": "Comece pelo que é repetitivo, frequente e fácil de errar.",
+    "items": [
+      ["Confirmação de pedidos", "Mensagem automática assim que o pedido entra."],
+      ["Lembrete de agenda", "Menos faltas, sem ninguém ligando um por um."],
+      ["Relatório semanal", "Números chegando prontos toda segunda de manhã."],
+      ["Cadastro de clientes", "Dados do formulário direto na base, sem digitar de novo."]
+    ],
+    "headline": "Qual tarefa toma seu tempo?",
+    "hook": "Automação não é substituir pessoas. É tirar delas o trabalho repetitivo. 🤖",
+    "tags": ["automacao", "produtividade", "processos", "tecnologia"]
+  },
+  {
+    "id": "trade-visita-relatorio",
+    "layout": "flow",
+    "kicker": "Trade marketing",
+    "title": "Da visita ao<br>relatório pronto",
+    "sub": "O ciclo do promotor no ponto de venda, sem papel e sem retrabalho.",
+    "items": [
+      ["Check-in no PDV", "Registro de loja, data e hora na chegada."],
+      ["Coleta guiada", "Fotos, preços e rupturas em um roteiro padrão."],
+      ["Envio automático", "Os dados sobem assim que a visita termina."],
+      ["Painel do gestor", "Cobertura, ruptura e execução atualizadas no dia."]
+    ],
+    "headline": "Seu trade ainda roda no papel?",
+    "hook": "No trade marketing, informação atrasada vira oportunidade perdida na gôndola.",
+    "tags": ["trademarketing", "pdv", "varejo", "automacao"]
+  },
+  {
+    "id": "pronto-vs-sob-medida",
+    "layout": "compare",
+    "kicker": "Escolha consciente",
+    "title": "Site de modelo ou<br>sob medida?",
+    "sub": "Os dois têm seu lugar. A diferença aparece quando o negócio cresce.",
+    "left": { "label": "Modelo pronto", "rows": ["Visual parecido com o de muitos", "Plugins pesando a página", "Limite no que dá para mudar", "Mensalidade de cada extensão"] },
+    "right": { "label": "Sob medida", "rows": ["Identidade própria do negócio", "Só o código que você precisa", "Evolui junto com a empresa", "Funcionalidade feita uma vez"] },
+    "headline": "Vamos conversar sobre o seu?",
+    "hook": "Modelo pronto resolve no começo. Mas o seu negócio não é igual a todos os outros.",
+    "tags": ["site", "sobmedida", "desenvolvimentoweb", "marca"]
+  },
+  {
+    "id": "seguranca-basica",
+    "layout": "checklist",
+    "kicker": "Segurança",
+    "title": "O básico de<br>segurança no site",
+    "sub": "Não precisa ser banco para levar proteção a sério.",
+    "items": [
+      ["Conexão criptografada", "Todo acesso protegido, sem exceção."],
+      ["Acesso com dois fatores", "Senha vazada sozinha não abre o painel."],
+      ["Backup automático", "Cópia diária guardada fora do servidor."],
+      ["Atualizações em dia", "Brechas conhecidas fechadas antes de virar problema."],
+      ["Proteção contra robôs", "Formulários e logins blindados contra abuso."]
+    ],
+    "headline": "Seu site está protegido?",
+    "hook": "Segurança é o tipo de coisa que só se nota quando falta. 🔒",
+    "tags": ["seguranca", "site", "backup", "tecnologia"]
+  },
+  {
+    "id": "integracoes-horas",
+    "layout": "list",
+    "kicker": "Integrações",
+    "title": "Integrações que<br>devolvem horas",
+    "sub": "Sistemas conversando entre si = menos copiar e colar.",
+    "items": [
+      ["Site + CRM", "Todo contato vira oportunidade registrada."],
+      ["Loja + estoque", "Vendeu, baixou. Sem planilha paralela."],
+      ["Agenda + mensagem", "Confirmação e lembrete enviados sozinhos."],
+      ["Financeiro + relatório", "Fechamento do mês sem montar nada à mão."]
+    ],
+    "headline": "Quais sistemas você usa hoje?",
+    "hook": "Quantas horas por semana sua equipe passa copiando dados de um sistema para outro? ⏱️",
+    "tags": ["integracao", "automacao", "sistemas", "produtividade"]
+  },
+  {
+    "id": "como-funciona-projeto",
+    "layout": "flow",
+    "kicker": "Como trabalhamos",
+    "title": "Seu projeto em<br>quatro etapas",
+    "sub": "Escopo fechado, prazo combinado e você acompanhando tudo.",
+    "items": [
+      ["Briefing", "Entendemos o negócio, o público e o objetivo."],
+      ["Prévia aprovada", "Você vê o layout antes de qualquer linha final."],
+      ["Desenvolvimento", "Construção com testes e ajustes incluídos."],
+      ["No ar", "Publicação, medição configurada e suporte."]
+    ],
+    "headline": "Entrega em 7 a 15 dias.",
+    "hook": "Sem surpresa no meio do caminho: é assim que um projeto com a Prumo acontece.",
+    "tags": ["prumoweb", "projeto", "site", "processo"]
+  },
+  {
+    "id": "agenda-manual-vs-auto",
+    "layout": "compare",
+    "kicker": "Atendimento",
+    "title": "Agenda no braço ou<br>automática?",
+    "sub": "Para clínicas, salões, consultórios e serviços em geral.",
+    "left": { "label": "No braço", "rows": ["Horas respondendo mensagens", "Conflito de horários", "Cliente esquece e falta", "Agenda fecha no fim do expediente"] },
+    "right": { "label": "Automática", "rows": ["Cliente escolhe o horário sozinho", "Agenda sempre sincronizada", "Lembrete enviado na véspera", "Marcação aberta 24 horas"] },
+    "headline": "Vamos automatizar sua agenda?",
+    "hook": "Quem agenda pelo WhatsApp sabe: metade do dia vai embora respondendo \"tem horário?\" 📅",
+    "tags": ["agendamento", "automacao", "atendimento", "servicos"]
+  },
+  {
+    "id": "seo-local",
+    "layout": "checklist",
+    "kicker": "Ser encontrado",
+    "title": "Apareça para quem<br>está perto",
+    "sub": "O básico para negócios locais serem achados na busca.",
+    "items": [
+      ["Cidade e bairro no site", "Diga com clareza onde você atende."],
+      ["Perfil de empresa completo", "Endereço, horário, fotos e categoria certos."],
+      ["Uma página por serviço", "Cada serviço com a sua própria página."],
+      ["Avaliações de clientes", "Peça, responda e mostre no site."],
+      ["Site rápido", "Busca favorece página que abre rápido."]
+    ],
+    "headline": "Seu negócio aparece na busca?",
+    "hook": "Quem procura \"perto de mim\" já está pronto para comprar. Seu negócio aparece? 📍",
+    "tags": ["seolocal", "negociolocal", "google", "marketingdigital"]
+  },
+  {
+    "id": "site-lento",
+    "layout": "list",
+    "kicker": "Performance",
+    "title": "Por que seu site<br>está lento",
+    "sub": "As causas mais comuns — e todas têm solução.",
+    "items": [
+      ["Imagens gigantes", "Foto de câmera publicada sem otimizar."],
+      ["Plugins demais", "Cada extensão adiciona peso e requisições."],
+      ["Hospedagem fraca", "Servidor lotado responde devagar para todos."],
+      ["Sem cache", "A página é montada do zero a cada visita."]
+    ],
+    "headline": "Quer saber o que pesa no seu?",
+    "hook": "Ninguém espera site carregar. Se o seu demora, o visitante volta para a busca. 🐢",
+    "tags": ["performance", "site", "velocidade", "desenvolvimentoweb"]
+  },
+  {
+    "id": "formulario-vira-pedido",
+    "layout": "flow",
+    "kicker": "Automação de vendas",
+    "title": "Formulário que<br>vira pedido",
+    "sub": "Nenhum contato esquecido na caixa de entrada.",
+    "items": [
+      ["Cliente preenche", "Formulário curto, direto ao ponto."],
+      ["Entra no CRM", "Registro automático com origem e data."],
+      ["Equipe é avisada", "Notificação instantânea para quem atende."],
+      ["Resposta rápida", "Mensagem de retorno enviada em minutos."]
+    ],
+    "headline": "Nenhum lead a ver navios.",
+    "hook": "Quanto tempo leva para sua equipe responder um novo contato? Cada hora conta. ⚡",
+    "tags": ["crm", "automacao", "vendas", "leads"]
+  },
+  {
+    "id": "landing-vs-institucional",
+    "layout": "compare",
+    "kicker": "Qual você precisa?",
+    "title": "Landing page ou<br>site completo?",
+    "sub": "Depende do objetivo — e às vezes a resposta é os dois.",
+    "left": { "label": "Landing page", "rows": ["Uma oferta, um objetivo", "Ideal para anúncios", "No ar em poucos dias", "Foco total em conversão"] },
+    "right": { "label": "Site completo", "rows": ["Vários serviços e páginas", "Ideal para busca orgânica", "Conta a história da marca", "Base para crescer com conteúdo"] },
+    "headline": "A gente te ajuda a escolher.",
+    "hook": "Landing page ou site institucional? A resposta certa depende do que você quer agora.",
+    "tags": ["landingpage", "site", "marketingdigital", "conversao"]
+  },
+  {
+    "id": "pedir-no-orcamento",
+    "layout": "checklist",
+    "kicker": "Antes de contratar",
+    "title": "O que pedir num<br>orçamento de site",
+    "sub": "Perguntas que evitam dor de cabeça depois.",
+    "items": [
+      ["Escopo por escrito", "O que entra e o que não entra no projeto."],
+      ["Prazo com etapas", "Datas de prévia, ajustes e publicação."],
+      ["Quem fica com o código", "O site precisa ser seu, não do fornecedor."],
+      ["Custo mensal real", "Hospedagem, domínio e manutenção na conta."],
+      ["Suporte pós-entrega", "Quem resolve se algo parar de funcionar."]
+    ],
+    "headline": "Orçamento claro desde o início.",
+    "hook": "Orçamento barato pode sair caro. Faça estas perguntas antes de fechar qualquer projeto. 📝",
+    "tags": ["orcamento", "site", "dicas", "empreendedorismo"]
+  },
+  {
+    "id": "paineis-gestor",
+    "layout": "list",
+    "kicker": "Dados",
+    "title": "Painéis que todo<br>gestor deveria ter",
+    "sub": "Decidir com número, não com achismo.",
+    "items": [
+      ["Vendas do dia", "Quanto entrou, por canal e por vendedor."],
+      ["Funil de contatos", "Onde os clientes estão parando."],
+      ["Estoque crítico", "O que vai acabar antes de acabar."],
+      ["Atendimento", "Tempo de resposta e chamados abertos."]
+    ],
+    "headline": "Seus números em um só lugar.",
+    "hook": "Se você precisa pedir um relatório para saber como foi a semana, falta um painel. 📊",
+    "tags": ["dashboard", "dados", "gestao", "bi"]
+  },
+  {
+    "id": "backup-que-funciona",
+    "layout": "flow",
+    "kicker": "Continuidade",
+    "title": "Backup que<br>funciona de verdade",
+    "sub": "Backup que nunca foi testado é só uma esperança.",
+    "items": [
+      ["Cópia diária", "Automática, sem depender de alguém lembrar."],
+      ["Guardada fora", "Em outro local, longe do servidor principal."],
+      ["Restauração testada", "Periodicamente, para garantir que volta."],
+      ["Alerta de falha", "Se algo der errado, a equipe fica sabendo."]
+    ],
+    "headline": "Seus dados estão seguros?",
+    "hook": "A pergunta não é se algo vai dar errado. É quanto tempo você leva para voltar. 💾",
+    "tags": ["backup", "seguranca", "ti", "continuidade"]
+  },
+  {
+    "id": "hospedagem-barata",
+    "layout": "compare",
+    "kicker": "Infraestrutura",
+    "title": "Hospedagem barata x<br>infra bem feita",
+    "sub": "O barato aparece no boleto. O caro aparece quando o site cai.",
+    "left": { "label": "Barata", "rows": ["Servidor dividido com milhares", "Lento nos horários de pico", "Sem backup confiável", "Suporte que demora dias"] },
+    "right": { "label": "Bem configurada", "rows": ["Recursos dimensionados", "Rápido em qualquer horário", "Backup e monitoramento", "Escala quando a demanda sobe"] },
+    "headline": "Infra que acompanha você.",
+    "hook": "Site fora do ar em dia de campanha custa mais do que um ano de boa hospedagem. ☁️",
+    "tags": ["hospedagem", "cloud", "infraestrutura", "site"]
+  },
+  {
+    "id": "lgpd-basico",
+    "layout": "checklist",
+    "kicker": "LGPD",
+    "title": "LGPD no site:<br>o básico",
+    "sub": "Transparência com os dados do cliente também vende confiança.",
+    "items": [
+      ["Política de privacidade", "Clara, acessível e atualizada."],
+      ["Aviso de cookies", "Com opção real de aceitar ou recusar."],
+      ["Só o dado necessário", "Formulário pede apenas o que vai usar."],
+      ["Canal para o titular", "Como pedir acesso ou exclusão dos dados."],
+      ["Acesso restrito", "Dados de clientes só para quem precisa."]
+    ],
+    "headline": "Seu site está em dia?",
+    "hook": "LGPD não é só obrigação legal: é mostrar ao cliente que os dados dele estão em boas mãos. 🛡️",
+    "tags": ["lgpd", "privacidade", "seguranca", "site"]
+  },
+  {
+    "id": "automacoes-trade",
+    "layout": "list",
+    "kicker": "Trade marketing",
+    "title": "Automações para<br>o trade marketing",
+    "sub": "Mais tempo no ponto de venda, menos tempo em planilha.",
+    "items": [
+      ["Roteiro do dia", "Rotas e lojas distribuídas automaticamente."],
+      ["Alerta de ruptura", "Produto em falta avisa o gestor na hora."],
+      ["Fotos organizadas", "Por loja, data e campanha, sem pasta bagunçada."],
+      ["Relatório da indústria", "Gerado e enviado sem montagem manual."]
+    ],
+    "headline": "Seu trade pode render mais.",
+    "hook": "Promotor bom é promotor no PDV — não preenchendo planilha no fim do dia. 🛒",
+    "tags": ["trademarketing", "varejo", "automacao", "merchandising"]
+  },
+  {
+    "id": "pedido-estoque",
+    "layout": "flow",
+    "kicker": "Loja integrada",
+    "title": "Do pedido ao<br>estoque atualizado",
+    "sub": "Venda online sem vender o que não tem.",
+    "items": [
+      ["Pedido confirmado", "Pagamento aprovado dispara o processo."],
+      ["Estoque baixa sozinho", "Todos os canais enxergam o mesmo saldo."],
+      ["Separação avisada", "A expedição recebe a lista pronta."],
+      ["Cliente acompanha", "Status enviado em cada etapa da entrega."]
+    ],
+    "headline": "Venda sem dor de cabeça.",
+    "hook": "Vender um produto que acabou é perder a venda e a confiança do cliente de uma vez. 📦",
+    "tags": ["ecommerce", "estoque", "integracao", "automacao"]
+  },
+  {
+    "id": "so-rede-social-vs-site",
+    "layout": "compare",
+    "kicker": "Presença digital",
+    "title": "Só rede social ou<br>rede + site?",
+    "sub": "Rede social atrai. Site converte e fica com você.",
+    "left": { "label": "Só rede social", "rows": ["Alcance depende do algoritmo", "Informação some no feed", "Difícil aparecer na busca", "Perfil pode ser bloqueado"] },
+    "right": { "label": "Rede + site", "rows": ["Endereço próprio e permanente", "Tudo organizado em um lugar", "Encontrado por quem pesquisa", "Base que ninguém tira de você"] },
+    "headline": "Seu endereço na internet.",
+    "hook": "Rede social é aluguel. Site é casa própria. Os dois juntos fazem a diferença. 🏠",
+    "tags": ["presencadigital", "site", "redessociais", "marketingdigital"]
+  },
+  {
+    "id": "hora-sistema-proprio",
+    "layout": "checklist",
+    "kicker": "Sinais",
+    "title": "É hora de ter um<br>sistema próprio",
+    "sub": "Se você marcou três ou mais, vale a conversa.",
+    "items": [
+      ["Processo só na cabeça de alguém", "Se a pessoa sai, o processo vai junto."],
+      ["Mesmo dado digitado várias vezes", "Retrabalho e erro em cada etapa."],
+      ["Ferramenta que não se adapta", "A empresa muda o jeito de trabalhar por causa dela."],
+      ["Relatório que demora dias", "A decisão chega depois do problema."],
+      ["Crescimento travado", "Mais clientes significa mais caos."]
+    ],
+    "headline": "Vamos desenhar o seu?",
+    "hook": "Toda empresa chega num ponto em que o improviso custa mais que a solução. Reconhece algum destes?",
+    "tags": ["sistemas", "gestao", "sobmedida", "crescimento"]
+  }
+]

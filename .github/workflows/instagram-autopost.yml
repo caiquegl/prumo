@@ -1,0 +1,64 @@
+name: Instagram autopost
+
+on:
+  # O cron 3× ao dia vive na Vercel (posts). Este workflow gera reel+post com Playwright;
+  # rode manualmente, ou descomente o schedule e pause os crons da Vercel para não duplicar.
+  # schedule:
+  #   - cron: "40 10,14,20 * * *"
+  workflow_dispatch:
+    inputs:
+      format:
+        description: "Formato"
+        type: choice
+        options: [auto, post, reel]
+        default: auto
+      dry_run:
+        description: "Só gerar (não publica; mídia fica nos artifacts)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: instagram-autopost
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependências do worker
+        working-directory: worker
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Gerar e publicar
+        env:
+          META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
+          IG_USER_ID: ${{ vars.IG_USER_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORMAT: ${{ inputs.format || 'auto' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }}
+        run: node worker/run.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: midia-${{ github.run_id }}
+          path: |
+            worker/out/*.jpg
+            worker/out/*.mp4
+          if-no-files-found: ignore
+          retention-days: 14
