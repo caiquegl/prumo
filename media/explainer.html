@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f1ebe3; --ink: #1b1a18; --soft: rgba(27,26,24,.6); --accent: #e0664f;
+    --card: #fbf8f3; --line: rgba(27,26,24,.12); --muted: rgba(27,26,24,.08);
+    --ok: #2f9e6a; --bad: #d94b3d;
+  }
+  :root.dark {
+    --bg: #151412; --ink: #f3eee6; --soft: rgba(243,238,230,.6); --accent: #ef7a5f;
+    --card: #1f1d1a; --line: rgba(243,238,230,.12); --muted: rgba(243,238,230,.07);
+  }
+  html, body { width: var(--w); height: var(--h); overflow: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: Manrope, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .stage { position: relative; width: var(--w); height: var(--h); padding: var(--pad) 80px;
+    display: flex; flex-direction: column; justify-content: space-between; }
+  .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .top { display: flex; justify-content: space-between; align-items: center; font-size: 26px; color: var(--soft); }
+  .brand { display: flex; align-items: center; gap: 14px; color: var(--ink); font-weight: 600; }
+  .brand i { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid;
+    place-items: center; font-style: normal; color: #fff; font-size: 18px; font-family: Fraunces, serif; }
+  .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .head h1 { font-family: Fraunces, serif; font-weight: 500; font-size: var(--h1); line-height: 1; letter-spacing: -.03em; margin-top: 18px; }
+  .head p { margin-top: 20px; font-size: 30px; line-height: 1.35; color: var(--soft); max-width: 860px; }
+  .box { position: relative; width: 920px; height: var(--bh); }
+  .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+  .foot h2 { font-family: Fraunces, serif; font-weight: 400; font-size: var(--fh); line-height: 1.04; letter-spacing: -.02em; max-width: 560px; }
+  .foot p { font-size: 24px; line-height: 1.45; color: var(--soft); text-align: right; }
+  .foot p strong { color: var(--ink); font-weight: 700; }
+
+  .card { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 24px;
+    box-shadow: 0 30px 70px -40px rgba(0,0,0,.35); padding: 28px; overflow: hidden; }
+  .lbl { font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); font-weight: 700; }
+  .ttl { font-family: Fraunces, serif; font-size: 40px; font-weight: 500; letter-spacing: -.01em; }
+  .txt { font-size: 22px; line-height: 1.4; color: var(--soft); }
+  .num { font-family: Fraunces, serif; font-weight: 500; letter-spacing: -.03em; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 99px;
+    background: var(--muted); font-size: 20px; font-weight: 600; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  .bar { height: 14px; border-radius: 99px; background: var(--muted); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: inherit; background: var(--accent); width: 0; }
+  .check { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #fff; display: grid;
+    place-items: center; font-size: 26px; font-weight: 800; flex: none; }
+  .toast { position: absolute; display: flex; align-items: center; gap: 16px; background: var(--ink); color: var(--bg);
+    border-radius: 18px; padding: 20px 26px; font-size: 22px; font-weight: 600; box-shadow: 0 24px 50px -20px rgba(0,0,0,.5); }
+  .toast small { display: block; font-weight: 500; opacity: .65; font-size: 18px; margin-top: 2px; }
+  svg { position: absolute; inset: 0; overflow: visible; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+<script>
+const cfg = JSON.parse(decodeURIComponent(location.hash.slice(1) || "{}"));
+const W = 1080, H = cfg.h || 1920, REEL = H > 1500;
+const rs = document.documentElement.style;
+rs.zoom = String(1 / (window.devicePixelRatio || 1));
+rs.setProperty("--w", W + "px"); rs.setProperty("--h", H + "px");
+rs.setProperty("--pad", (REEL ? 110 : 64) + "px");
+rs.setProperty("--h1", (REEL ? 104 : 74) + "px");
+rs.setProperty("--fh", (REEL ? 56 : 44) + "px");
+rs.setProperty("--bh", (REEL ? 940 : 620) + "px");
+if (cfg.dark) document.documentElement.classList.add("dark");
+
+const clamp = v => Math.min(1, Math.max(0, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const ease = p => 1 - Math.pow(1 - p, 3);
+const io = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const lerp = (a, b, p) => a + (b - a) * p;
+const show = (el, p, dy = 26) => { if (!el) return; el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`; };
+const pop = (el, p) => { el.style.opacity = p; el.style.transform = `scale(${.85 + .15 * ease(p)})`; };
+const br = n => n.toFixed(1).replace(".", ",");
+
+const SCENES = {};
+
+/* 01 — prazo */
+SCENES.prazo = {
+  head: ["Prazo fechado", "Seu site no ar em 7 a 15 dias.", "Escopo definido no início, prévia aprovada por você e entrega sem enrolação."],
+  build: () => {
+    const ms = [["Dia 1", "Briefing", "Objetivo, público e referências em uma conversa."],
+                ["Dia 2–3", "Prévia aprovada", "Você vê o layout antes de uma linha de código."],
+                ["Dia 4–12", "Desenvolvimento", "Código sob medida, responsivo e otimizado."],
+                ["Dia 13–15", "No ar", "Domínio, HTTPS, testes e publicação."]];
+    return `
+      <div style="position:absolute;left:21px;top:40px;width:4px;height:720px;background:var(--line);border-radius:4px"></div>
+      <div id="fill" style="position:absolute;left:21px;top:40px;width:4px;height:0;background:var(--accent);border-radius:4px"></div>
+      ${ms.map(([d, t, x], i) => `
+        <div class="ms" style="position:absolute;left:0;top:${i * 240 + 18}px;width:560px;display:flex;gap:34px">
+          <div class="node" style="width:46px;height:46px;border-radius:50%;border:4px solid var(--line);background:var(--bg);flex:none"></div>
+          <div><div class="kicker" style="font-size:20px">${d}</div>
+          <div class="ttl" style="font-size:46px;margin-top:6px">${t}</div>
+          <div class="txt" style="margin-top:8px">${x}</div></div>
+        </div>`).join("")}
+      <div class="card" id="counter" style="right:0;top:0;width:300px;height:300px;display:flex;flex-direction:column;justify-content:space-between">
+        <div class="lbl">Contagem</div>
+        <div><div class="txt">Dia</div><div class="num" id="day" style="font-size:150px;line-height:.9">1</div></div>
+      </div>
+      <div class="card" id="live" style="right:0;top:640px;width:300px;height:200px">
+        <div class="lbl">Status</div>
+        <div style="margin-top:22px;font-size:26px;font-weight:700;display:flex;align-items:center;gap:12px">
+          <span class="dot" style="background:var(--ok)"></span>Online</div>
+        <div class="txt" style="margin-top:10px;font-size:19px">https://seunegocio.com.br</div>
+      </div>`;
+  },
+  render: t => {
+    const p = io(seg(t, 1.4, 10));
+    document.getElementById("fill").style.height = p * 720 + "px";
+    const days = [1, 3, 12, 15], k = Math.min(2, Math.floor(p * 3)), f = p * 3 - k;
+    document.getElementById("day").textContent = Math.round(p >= 1 ? 15 : lerp(days[k], days[k + 1], f));
+    document.querySelectorAll(".ms").forEach((el, i) => {
+      show(el, ease(seg(t, .8 + i * .25, 1.5 + i * .25)));
+      el.style.opacity = .35 + .65 * (p >= i / 3 - .001 ? 1 : 0) * ease(seg(t, .8, 1.5));
+      const n = el.querySelector(".node"), on = p >= i / 3 - .001;
+      n.style.background = on ? "var(--accent)" : "var(--bg)";
+      n.style.borderColor = on ? "var(--accent)" : "var(--line)";
+    });
+    show(document.getElementById("counter"), ease(seg(t, .6, 1.3)));
+    pop(document.getElementById("live"), ease(seg(t, 10, 10.7)));
+  },
+};
+
+/* 02 — performance (post) */
+SCENES.performance = {
+  head: ["Performance", "Site lento perde cliente.", "Mais da metade dos visitantes desiste de uma página que demora mais de 3 segundos."],
+  build: () => `
+    <div class="card" style="left:0;top:0;width:920px;height:270px">
+      <div class="lbl">Tempo até a página aparecer</div>
+      <div style="margin-top:30px;display:grid;grid-template-columns:170px 1fr 110px;gap:22px;align-items:center;font-size:24px;font-weight:600">
+        <span style="color:var(--soft)">Site comum</span><div class="bar" style="height:30px"><i style="width:100%;background:rgba(27,26,24,.28)"></i></div><span class="num" style="font-size:38px">4,8s</span>
+        <span>Site Prumo</span><div class="bar" style="height:30px"><i style="width:19%"></i></div><span class="num" style="font-size:38px;color:var(--accent)">0,9s</span>
+      </div>
+    </div>
+    <div class="card" style="left:0;top:300px;width:290px;height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+      <div style="position:relative;width:170px;height:170px">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="var(--muted)" stroke-width="8"/>
+        <circle cx="50" cy="50" r="44" fill="none" stroke="var(--ok)" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="0" transform="rotate(-90 50 50)"/></svg>
+        <div class="num" style="position:absolute;inset:0;display:grid;place-items:center;font-size:62px">100</div>
+      </div>
+      <div class="lbl">Nota de desempenho</div>
+    </div>
+    <div class="card" style="left:320px;top:300px;width:600px;height:320px;display:flex;flex-direction:column;justify-content:center;gap:26px">
+      ${[["Imagens no formato e tamanho certos", "Nada de foto de 5 MB no topo da página."],
+         ["Código enxuto, sem plugins pesados", "Só carrega o que a página realmente usa."],
+         ["Hospedagem em rede global", "Servida do ponto mais perto do visitante."]].map(([a, b]) => `
+        <div style="display:flex;gap:18px;align-items:flex-start"><div class="check" style="width:38px;height:38px;font-size:20px">✓</div>
+        <div><div style="font-size:24px;font-weight:700">${a}</div><div class="txt" style="font-size:19px;margin-top:2px">${b}</div></div></div>`).join("")}
+    </div>`,
+  render: () => {},
+};
+
+/* 03 — trade marketing (reel) */
+SCENES.trade = {
+  head: ["Automação · Trade marketing", "Trade marketing no automático.", "Check-in na loja, foto da gôndola e relatório pronto — sem planilha."],
+  build: () => {
+    const colors = ["#e0664f", "#f0b44c", "#5b8def", "#2f9e6a", "#9b6bd6", "#e8e2d6"];
+    let shelf = "";
+    const gaps = { "0-5": 1, "2-2": 1 };
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 9; c++) {
+      const key = `${r}-${c}`, x = 24 + c * 96, y = 70 + r * 92;
+      shelf += gaps[key]
+        ? `<div class="gap" style="position:absolute;left:${x}px;top:${y}px;width:84px;height:76px;border:3px dashed var(--bad);border-radius:8px;opacity:0"></div>`
+        : `<div style="position:absolute;left:${x}px;top:${y + 8}px;width:84px;height:68px;border-radius:8px 8px 4px 4px;background:${colors[(r * 4 + c * 3) % 5]};opacity:.9"></div>`;
+      if (c === 8) shelf += `<div style="position:absolute;left:14px;top:${y + 78}px;width:880px;height:6px;background:var(--line);border-radius:3px"></div>`;
+    }
+    return `
+      <div class="card" id="cA" style="left:0;top:0;width:920px;height:270px;display:flex;gap:30px;padding:20px">
+        <div style="position:relative;width:230px;height:230px;border-radius:16px;overflow:hidden;background:var(--muted);flex:none">
+          <div style="position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:38px 38px"></div>
+          <div style="position:absolute;left:30px;top:150px;width:200px;height:14px;background:var(--line);transform:rotate(-20deg)"></div>
+          <div id="fence" style="position:absolute;left:50%;top:50%;width:170px;height:170px;margin:-85px;border-radius:50%;border:3px solid var(--accent);background:rgba(224,102,79,.12)"></div>
+          <div style="position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-26px -13px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent)"></div>
+        </div>
+        <div style="padding-top:10px">
+          <div class="lbl">Check-in · 08:31</div>
+          <div class="ttl" style="margin-top:10px">Loja 214 · Mercado Central</div>
+          <div class="txt" style="margin-top:6px">Promotor: Rafael S. · Rota Zona Sul</div>
+          <div id="stA" class="pill" style="margin-top:22px">Localizando…</div>
+        </div>
+      </div>
+      <div class="card" id="cB" style="left:0;top:300px;width:920px;height:380px;padding:0">
+        <div style="position:absolute;left:24px;top:20px" class="lbl">Foto da gôndola</div>
+        <div id="stB" class="pill" style="position:absolute;right:20px;top:12px;opacity:0;background:rgba(217,75,61,.15);color:var(--bad)">2 rupturas · preço conforme</div>
+        ${shelf}
+        <div id="price" style="position:absolute;left:404px;top:154px;width:100px;height:96px;border:3px solid var(--ok);border-radius:10px;opacity:0"></div>
+        <div id="priceTag" class="pill" style="position:absolute;left:380px;top:258px;opacity:0;background:var(--ok);color:#fff;font-size:17px;padding:6px 12px">R$ 8,99 ✓</div>
+        <div id="scan" style="position:absolute;top:56px;height:300px;width:4px;background:var(--accent);box-shadow:0 0 30px 6px rgba(224,102,79,.6);opacity:0"></div>
+      </div>
+      <div class="card" id="cC" style="left:0;top:710px;width:920px;height:230px">
+        <div class="lbl">Relatório do gestor</div>
+        <div style="margin-top:22px;display:grid;grid-template-columns:260px 1fr 90px;gap:16px 22px;align-items:center;font-size:22px;font-weight:600">
+          <span>Share de gôndola</span><div class="bar"><i class="rb" data-w="34"></i></div><span class="rv" data-v="34">0%</span>
+          <span>Preço conforme</span><div class="bar"><i class="rb" data-w="96"></i></div><span class="rv" data-v="96">0%</span>
+          <span>Itens em ruptura</span><div class="bar"><i class="rb" data-w="8" style="background:var(--bad)"></i></div><span class="rv" data-v="2" data-unit=" SKUs">0</span>
+        </div>
+      </div>
+      <div class="toast" id="toast" style="right:0;top:964px"><span class="dot" style="background:var(--ok)"></span>
+        <div>Relatório enviado ao gestor<small>08:42 · sem digitar nada</small></div></div>`;
+  },
+  render: t => {
+    const $ = id => document.getElementById(id);
+    show($("cA"), ease(seg(t, .6, 1.3)));
+    const f = seg(t, 1.4, 3.2);
+    $("fence").style.transform = `scale(${.4 + .6 * ease(f)})`;
+    $("fence").style.opacity = .3 + .7 * f;
+    const okA = t > 3.2;
+    $("stA").textContent = okA ? "✓ Dentro do raio · 38 m" : "Localizando…";
+    $("stA").style.background = okA ? "var(--ok)" : "var(--muted)";
+    $("stA").style.color = okA ? "#fff" : "var(--ink)";
+    show($("cB"), ease(seg(t, 3.4, 4.1)));
+    const s = seg(t, 4.2, 6.4);
+    $("scan").style.left = 20 + s * 870 + "px";
+    $("scan").style.opacity = s > 0 && s < 1 ? 1 : 0;
+    document.querySelectorAll(".gap").forEach((g, i) => pop(g, ease(seg(t, 5 + i * .9, 5.5 + i * .9))));
+    pop($("price"), ease(seg(t, 5.6, 6.1))); pop($("priceTag"), ease(seg(t, 5.8, 6.3)));
+    pop($("stB"), ease(seg(t, 6.5, 7)));
+    show($("cC"), ease(seg(t, 7.4, 8)));
+    const b = io(seg(t, 8.1, 9.8));
+    document.querySelectorAll(".rb").forEach(el => el.style.width = el.dataset.w * b + "%");
+    document.querySelectorAll(".rv").forEach(el => el.textContent = Math.round(el.dataset.v * b) + (el.dataset.unit || "%"));
+    pop($("toast"), ease(seg(t, 10, 10.6)));
+  },
+};
+
+/* 04 — painel trade (post) */
+SCENES.painel = {
+  head: ["Sistema autoral", "Painel de trade marketing.", "Ruptura, share de gôndola e preço por loja — em tempo real, para decidir rápido."],
+  build: () => {
+    const kpi = [["Share de gôndola", "34%", "+3,1 pp"], ["Ruptura", "6,2%", "−1,4 pp"], ["Lojas visitadas", "128/140", "91%"], ["Preço médio", "R$ 8,79", "meta R$ 8,99"]];
+    const reg = [["Norte", 9.8], ["Sul", 4.1], ["Leste", 6.7], ["Oeste", 5.2], ["Centro", 3.4]];
+    const prom = [["Rafael S.", 98], ["Juliana M.", 94], ["Diego A.", 91], ["Carla T.", 87], ["Bruno L.", 82]];
+    return `
+      ${kpi.map(([a, b, c], i) => `<div class="card" style="left:${i * 235}px;top:0;width:215px;height:160px;padding:22px">
+        <div class="lbl" style="font-size:14px">${a}</div><div class="num" style="font-size:44px;margin-top:14px">${b}</div>
+        <div style="font-size:17px;font-weight:700;color:${i === 1 ? "var(--ok)" : "var(--accent)"};margin-top:6px">${c}</div></div>`).join("")}
+      <div class="card" style="left:0;top:185px;width:540px;height:435px">
+        <div class="lbl">Ruptura por região</div>
+        <div style="position:absolute;left:30px;right:30px;bottom:70px;top:90px;display:flex;align-items:flex-end;gap:28px">
+          ${reg.map(([n, v]) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px">
+            <span style="font-size:18px;font-weight:700">${br(v)}%</span>
+            <div style="width:100%;height:${v * 24}px;border-radius:10px 10px 4px 4px;background:${v > 6 ? "var(--accent)" : "var(--muted)"};${v > 6 ? "" : "outline:1px solid var(--line)"}"></div></div>`).join("")}
+        </div>
+        <div style="position:absolute;left:30px;right:30px;bottom:28px;display:flex;gap:28px">
+          ${reg.map(([n]) => `<span style="flex:1;text-align:center;font-size:17px;color:var(--soft)">${n}</span>`).join("")}</div>
+      </div>
+      <div class="card" style="left:565px;top:185px;width:355px;height:435px">
+        <div class="lbl">Top promotores</div>
+        <div style="margin-top:24px;display:flex;flex-direction:column;gap:22px">
+          ${prom.map(([n, v], i) => `<div><div style="display:flex;justify-content:space-between;font-size:19px;font-weight:600">
+            <span>${i + 1}. ${n}</span><span>${v}</span></div>
+            <div class="bar" style="height:8px;margin-top:8px"><i style="width:${v}%"></i></div></div>`).join("")}
+        </div>
+      </div>`;
+  },
+  render: () => {},
+};
+
+/* 05 — lead flow (reel) */
+SCENES.lead = {
+  head: ["Automação de vendas", "Do formulário ao fechamento em segundos.", "O contato chega no WhatsApp, entra no CRM e recebe resposta — sozinho."],
+  build: () => {
+    const field = (id, label, h = 64) => `<div style="margin-top:20px"><div class="lbl" style="font-size:15px">${label}</div>
+      <div style="margin-top:8px;height:${h}px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:16px 18px;font-size:22px;font-weight:600" id="${id}"></div></div>`;
+    const dest = [["WhatsApp da empresa", "Novo lead: Marina", "“Quero um site para minha clínica.”"],
+                  ["CRM", "Marina → Novo contato", "Origem: site · Prioridade: alta"],
+                  ["Planilha de leads", "+1 linha adicionada", "Marina · (11) 9•••• · Clínica"]];
+    return `
+      <div class="card" id="form" style="left:0;top:0;width:430px;height:600px">
+        <div class="ttl" style="font-size:34px">Peça seu orçamento</div>
+        ${field("fName", "Nome")}${field("fTel", "WhatsApp")}${field("fMsg", "Mensagem", 110)}
+        <div id="send" style="margin-top:26px;height:64px;border-radius:14px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:23px;font-weight:700">Enviar</div>
+      </div>
+      <svg width="920" height="940">${[100, 300, 500].map((y, i) => `<path id="p${i}" d="M430 545 C 470 545, 450 ${y}, 500 ${y}" fill="none" stroke="var(--line)" stroke-width="3" stroke-dasharray="6 8"/>`).join("")}</svg>
+      ${[0, 1, 2].map(i => `<div class="pk" style="position:absolute;width:18px;height:18px;margin:-9px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent);opacity:0"></div>`).join("")}
+      ${dest.map(([a, b, c], i) => `<div class="card dst" style="left:500px;top:${i * 200 + 10}px;width:420px;height:180px;padding:22px 26px">
+        <div class="lbl" style="font-size:15px">${a}</div><div style="font-size:26px;font-weight:700;margin-top:12px">${b}</div>
+        <div class="txt" style="font-size:19px;margin-top:6px">${c}</div></div>`).join("")}
+      <div class="card" id="reply" style="left:0;top:640px;width:920px;height:190px;display:flex;gap:22px;align-items:center">
+        <div class="check">✓</div>
+        <div><div class="lbl" style="font-size:15px">Resposta automática ao cliente</div>
+        <div style="margin-top:10px;font-size:25px;font-weight:600">“Oi, Marina! Recebemos seu pedido e retornamos ainda hoje.”</div></div>
+      </div>
+      <div id="timer" class="toast" style="left:0;top:860px;font-size:24px"><span class="dot"></span><div id="tm">0,0 s</div></div>`;
+  },
+  render: t => {
+    const $ = id => document.getElementById(id);
+    show($("form"), ease(seg(t, .5, 1.1)));
+    const type = (id, s, a, b) => { $(id).textContent = s.slice(0, Math.round(s.length * seg(t, a, b))); };
+    type("fName", "Marina Alves", 1.3, 2.1);
+    type("fTel", "(11) 98765-4321", 2.2, 3);
+    type("fMsg", "Quero um site para minha clínica.", 3.1, 4.3);
+    const pressed = t > 4.5 && t < 4.8;
+    $("send").style.transform = `scale(${pressed ? .95 : 1})`;
+    $("send").textContent = t > 4.8 ? "Enviado ✓" : "Enviar";
+    const pks = document.querySelectorAll(".pk"), dsts = document.querySelectorAll(".dst");
+    [0, 1, 2].forEach(i => {
+      const path = $("p" + i), len = path.getTotalLength(), a = 4.9 + i * .45, p = io(seg(t, a, a + .9));
+      path.style.opacity = ease(seg(t, 4.6, 5));
+      const pt = path.getPointAtLength(len * p);
+      pks[i].style.left = pt.x + "px"; pks[i].style.top = pt.y + "px";
+      pks[i].style.opacity = p > 0 && p < 1 ? 1 : 0;
+      pop(dsts[i], ease(seg(t, a + .8, a + 1.2)));
+    });
+    show($("reply"), ease(seg(t, 7.6, 8.2)));
+    const el = clamp((t - 4.8) / 3.2) * 3;
+    $("tm").textContent = t < 4.8 ? "Aguardando envio" : `${br(el)} s do envio à resposta`;
+    show($("timer"), ease(seg(t, 4.6, 5)));
+  },
+};
+
+/* 06 — segurança (post) */
+SCENES.seguranca = {
+  head: ["Segurança", "Segurança desde o primeiro dia.", "Não é um plugin no final — é como o projeto nasce."],
+  build: () => {
+    const items = [["HTTPS em tudo", "Certificado ativo e renovação automática."],
+                   ["LGPD e consentimento", "Política, cookies e dados tratados do jeito certo."],
+                   ["Backups automáticos", "Versões salvas e restauração rápida."],
+                   ["Controle de acesso", "Cada pessoa vê só o que precisa ver."],
+                   ["Formulários protegidos", "Bloqueio de spam e de envios abusivos."],
+                   ["Atualizações e monitoramento", "Dependências em dia e alertas de falha."]];
+    return items.map(([a, b], i) => `<div class="card" style="left:${(i % 2) * 470}px;top:${Math.floor(i / 2) * 210}px;width:450px;height:190px;display:flex;gap:20px;align-items:flex-start;padding:30px">
+      <div class="check">✓</div><div><div style="font-size:27px;font-weight:700">${a}</div><div class="txt" style="margin-top:8px;font-size:21px">${b}</div></div></div>`).join("");
+  },
+  render: () => {},
+};
+
+/* 07 — antes e depois (reel) */
+SCENES.antes = {
+  head: ["Redesign", "Antes e depois.", "O mesmo negócio. Outra primeira impressão — e outro resultado."],
+  build: () => {
+    const m = [["Carregamento", 6.1, .9, "s", 1], ["Contatos por mês", 12, 47, "", 0], ["Conversão", .8, 3.4, "%", 1]];
+    return `
+      <div class="card" style="left:0;top:0;width:920px;height:690px;padding:0">
+        <img src="src/before-padaria.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+        <div id="after" style="position:absolute;inset:0">
+          <img src="src/after-padaria.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;left:37.2%;top:91.3%;width:17%;height:2.6%;background:#fffdf9;font-size:12.5px;color:#4a3a2c;line-height:1.4">Macio, úmido e aromático.</div>
+        </div>
+        <div id="wipe" style="position:absolute;top:0;bottom:0;width:4px;background:var(--accent);box-shadow:0 0 30px 6px rgba(224,102,79,.55)"></div>
+        <div id="tagA" class="pill" style="position:absolute;left:22px;bottom:22px;background:#1b1a18;color:#fff">Antes</div>
+        <div id="tagD" class="pill" style="position:absolute;right:22px;bottom:22px;background:var(--accent);color:#fff">Depois</div>
+      </div>
+      ${m.map(([n, a, b, u, d], i) => `<div class="card met" data-a="${a}" data-b="${b}" data-u="${u}" data-d="${d}" style="left:${i * 313}px;top:720px;width:294px;height:200px">
+        <div class="lbl" style="font-size:15px">${n}</div>
+        <div class="num mv" style="font-size:64px;margin-top:20px">${d ? br(a) : a}${u}</div>
+        <div class="txt mf" style="font-size:18px;margin-top:4px">antes: ${d ? br(a) : a}${u}</div></div>`).join("")}`;
+  },
+  render: t => {
+    const $ = id => document.getElementById(id);
+    const w = io(seg(t, 3, 5.6));
+    $("after").style.clipPath = `inset(0 0 0 ${(1 - w) * 100}%)`;
+    $("wipe").style.left = `calc(${(1 - w) * 100}% - 2px)`;
+    $("wipe").style.opacity = w > 0 && w < 1 ? 1 : 0;
+    $("tagA").style.opacity = 1 - seg(t, 4.6, 5.2);
+    pop($("tagD"), ease(seg(t, 5.4, 6)));
+    const n = io(seg(t, 6, 9.5));
+    document.querySelectorAll(".met").forEach((el, i) => {
+      show(el, ease(seg(t, 1 + i * .2, 1.6 + i * .2)));
+      const v = lerp(+el.dataset.a, +el.dataset.b, n);
+      el.querySelector(".mv").textContent = (el.dataset.d === "1" ? br(v) : Math.round(v)) + el.dataset.u;
+      el.querySelector(".mv").style.color = n > 0 ? "var(--accent)" : "var(--ink)";
+    });
+  },
+};
+
+/* 08 — integrações (post) */
+SCENES.integracoes = {
+  head: ["Integrações", "A gente integra o que você já usa.", "Seu site conversa com os sistemas da empresa — menos retrabalho, zero digitação dupla."],
+  build: () => {
+    const nodes = ["ERP", "CRM", "Pagamentos", "E-mail", "Nota fiscal", "WhatsApp", "Planilhas", "APIs próprias"];
+    const cx = 460, cy = 310, rx = 360, ry = 245;
+    const pos = nodes.map((n, i) => { const a = -Math.PI / 2 + i * Math.PI * 2 / nodes.length; return [n, cx + rx * Math.cos(a), cy + ry * Math.sin(a)]; });
+    return `<svg width="920" height="620">${pos.map(([, x, y]) => `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--accent)" stroke-opacity=".45" stroke-width="3" stroke-dasharray="7 9"/>`).join("")}</svg>
+      <div style="position:absolute;left:${cx - 120}px;top:${cy - 120}px;width:240px;height:240px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;text-align:center;box-shadow:0 0 0 18px rgba(224,102,79,.14)">
+        <div><div class="num" style="font-size:46px">Seu site</div><div style="font-size:17px;opacity:.65;margin-top:6px;letter-spacing:.14em;text-transform:uppercase">ou sistema</div></div></div>
+      ${pos.map(([n, x, y]) => `<div class="pill" style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-50%);background:var(--card);border:1px solid var(--line);font-size:23px;padding:14px 24px;box-shadow:0 16px 30px -18px rgba(0,0,0,.3)"><span class="dot"></span>${n}</div>`).join("")}`;
+  },
+  render: () => {},
+};
+
+/* 09 — agenda (reel) */
+SCENES.agenda = {
+  head: ["Sistemas sob medida", "Agenda online que se organiza sozinha.", "Para clínicas, oficinas e salões: reserva, lembrete e ocupação do dia."],
+  build: () => {
+    const days = ["Seg", "Ter", "Qua", "Qui", "Sex"], hours = ["08h", "09h", "10h", "11h", "14h", "15h", "16h", "17h"];
+    const types = [["Consulta", "#e0664f"], ["Retorno", "#f0b44c"], ["Avaliação", "#5b8def"], ["Revisão", "#2f9e6a"]];
+    const empty = new Set(["0-7", "1-4", "2-0", "3-6", "4-3", "4-7"]);
+    let cells = "", k = 0;
+    const order = [];
+    hours.forEach((_, r) => days.forEach((_, c) => { if (!empty.has(`${c}-${r}`)) order.push([c, r]); }));
+    order.sort((a, b) => ((a[0] * 7 + a[1] * 3) % 11) - ((b[0] * 7 + b[1] * 3) % 11));
+    order.forEach(([c, r]) => {
+      const [n, col] = types[(c + r * 2) % 4];
+      cells += `<div class="bk" style="position:absolute;left:${90 + c * 166 + 5}px;top:${110 + r * 76 + 5}px;width:156px;height:66px;border-radius:12px;background:${col};color:#fff;padding:10px 14px;font-size:17px;font-weight:700;opacity:0">${n}<div style="font-weight:500;opacity:.85;font-size:14px">${hours[r]}</div></div>`;
+      k++;
+    });
+    return `
+      <div class="card" style="left:0;top:0;width:920px;height:740px;padding:0">
+        <div style="position:absolute;left:28px;top:26px" class="ttl">Agenda · Semana 44</div>
+        ${days.map((d, c) => `<div class="lbl" style="position:absolute;left:${90 + c * 166 + 14}px;top:84px;font-size:15px">${d}</div>`).join("")}
+        ${hours.map((h, r) => `<div style="position:absolute;left:24px;top:${110 + r * 76 + 26}px;font-size:16px;color:var(--soft);font-weight:600">${h}</div>
+          <div style="position:absolute;left:90px;right:10px;top:${110 + r * 76}px;height:1px;background:var(--line)"></div>`).join("")}
+        ${cells}
+        <div style="position:absolute;right:26px;top:14px;display:flex;align-items:center;gap:14px">
+          <div class="lbl" style="font-size:14px;text-align:right">Ocupação<br>da semana</div>
+          <div style="position:relative;width:64px;height:64px">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--muted)" stroke-width="12"/>
+            <circle id="ring" cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" transform="rotate(-90 50 50)"/></svg>
+          </div>
+          <div class="num" id="occ" style="font-size:40px;width:100px">0%</div>
+        </div>
+      </div>
+      <div class="toast" id="t1" style="left:0;top:770px"><span class="dot"></span><div>Nova reserva online · Revisão<small>Quinta, 10h · confirmada automaticamente</small></div></div>
+      <div class="toast" id="t2" style="right:0;top:860px"><span class="dot" style="background:var(--ok)"></span><div>Lembrete enviado ao cliente<small>24 h antes · sem ninguém lembrar</small></div></div>`;
+  },
+  render: t => {
+    const bks = document.querySelectorAll(".bk"), N = bks.length;
+    let shown = 0;
+    bks.forEach((b, i) => { const a = 1.2 + i * (7 / N), p = ease(seg(t, a, a + .35)); pop(b, p); if (p > .5) shown++; });
+    const occ = shown / 40;
+    document.getElementById("occ").textContent = Math.round(occ * 100) + "%";
+    document.getElementById("ring").style.strokeDashoffset = 263.9 * (1 - occ);
+    pop(document.getElementById("t1"), ease(seg(t, 4, 4.6)));
+    pop(document.getElementById("t2"), ease(seg(t, 7.4, 8)));
+  },
+};
+
+/* 10 — orçamento (post) */
+SCENES.orcamento = {
+  head: ["Orçamento", "Como funciona o orçamento.", "Sem surpresa no meio do caminho: escopo e preço fechados antes de começar."],
+  build: () => {
+    const steps = [["01", "Você conta a ideia", "Uma conversa rápida no WhatsApp sobre o negócio e o objetivo."],
+                   ["02", "Proposta fechada", "Escopo, prazo e preço definidos por escrito em até 24 h."],
+                   ["03", "Prévia antes de publicar", "Você aprova o layout e acompanha cada etapa."]];
+    return `${steps.map(([n, a, b], i) => `<div class="card" style="left:${i * 313}px;top:0;width:294px;height:400px;display:flex;flex-direction:column;justify-content:space-between">
+        <div class="num" style="font-size:84px;color:var(--accent);line-height:1">${n}</div>
+        <div style="height:190px"><div style="font-size:29px;font-weight:700;line-height:1.15">${a}</div><div class="txt" style="margin-top:12px;font-size:20px">${b}</div></div></div>`).join("")}
+      <div style="position:absolute;left:0;top:430px;width:920px;height:190px;border-radius:24px;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:0 44px">
+        <div><div style="font-size:20px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;font-weight:700">Chame no WhatsApp</div>
+        <div class="num" style="font-size:60px;margin-top:8px">(11) 96633-1995</div></div>
+        <div style="width:92px;height:92px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-size:44px;color:#fff">→</div>
+      </div>`;
+  },
+  render: () => {},
+};
+
+const sc = SCENES[cfg.scene];
+const [kicker, h1, sub] = sc.head;
+document.getElementById("stage").innerHTML = `
+  <div class="top"><div class="brand"><i>P</i>Prumo Web</div><span>${cfg.counter || "@prumo264"}</span></div>
+  <div class="head" id="head"><div class="kicker">${kicker}</div><h1>${h1}</h1>${sub ? `<p>${sub}</p>` : ""}</div>
+  <div class="box" id="box">${sc.build()}</div>
+  <div class="foot" id="foot"><h2>${cfg.headline || "Seu próximo projeto pode começar aqui."}</h2>
+    <p>Orçamento no WhatsApp<br><strong>(11) 96633-1995</strong><br>@prumo264</p></div>`;
+
+window.render = t => {
+  const hp = ease(seg(t, .1, .9));
+  show(document.getElementById("head"), hp, 40);
+  const fp = ease(seg(t, 10.6, 11.3));
+  show(document.getElementById("foot"), fp, 30);
+  sc.render(t);
+};
+window.render(cfg.t ?? 99);
+</script>
+</body>
+</html>

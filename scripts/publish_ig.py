@@ -26,6 +26,26 @@ POSTS = {
     "story": {"type": "STORIES", "file": "prumo-story-01-projetos.jpg", "section": None},
 }
 
+BATCH2 = os.path.join(os.path.dirname(__file__), "..", "content", "legendas-17-26.md")
+for key, kind, name, section in [
+    ("prazo", "REELS", "prumo-reel-03-prazo", "01"),
+    ("performance", "IMAGE", "prumo-feed-17-performance", "02"),
+    ("trade", "REELS", "prumo-reel-04-trade", "03"),
+    ("painel", "IMAGE", "prumo-feed-18-painel-trade", "04"),
+    ("lead", "REELS", "prumo-reel-05-lead", "05"),
+    ("seguranca", "IMAGE", "prumo-feed-19-seguranca", "06"),
+    ("antes", "REELS", "prumo-reel-06-antes-depois", "07"),
+    ("integracoes", "IMAGE", "prumo-feed-20-integracoes", "08"),
+    ("agenda", "REELS", "prumo-reel-07-agenda", "09"),
+    ("orcamento", "IMAGE", "prumo-feed-21-orcamento", "10"),
+]:
+    spec = {"type": kind, "section": section, "captions": BATCH2}
+    if kind == "REELS":
+        spec.update(file=f"{name}.mp4", cover=f"{name}-cover.jpg")
+    else:
+        spec.update(file=f"{name}.jpg")
+    POSTS[key] = spec
+
 
 def token():
     path = os.environ.get("PRUMO_PAGE_TOKEN_FILE", "/tmp/prumo-page-token.txt")
@@ -48,10 +68,10 @@ def call(method, path, **params):
         raise SystemExit(f"{method} {path} -> {e.code}: {e.read().decode()}")
 
 
-def caption(section):
+def caption(section, path=CAPTIONS):
     if not section:
         return None
-    text = open(CAPTIONS, encoding="utf-8").read()
+    text = open(path, encoding="utf-8").read()
     m = re.search(rf"^## {re.escape(section)}\b.*?\n(.*?)(?=^## |\Z)", text, re.S | re.M)
     return m.group(1).strip() if m else None
 
@@ -66,7 +86,9 @@ def publish(key):
         params.update(media_type="STORIES", image_url=url)
     else:
         params.update(image_url=url)
-    cap = caption(spec["section"])
+    cap = caption(spec["section"], spec.get("captions", CAPTIONS))
+    if spec["section"] and not cap:
+        raise SystemExit(f"{key}: caption section {spec['section']} not found")
     if cap:
         params["caption"] = cap
 

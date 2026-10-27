@@ -1,14 +1,15 @@
 // Generates an original ambient track (pad + soft plucks + reveal swell) as 16-bit stereo WAV.
 const fs = require("fs");
 
-const [, , out = "music.wav", seconds = "9.5"] = process.argv;
+const [, , out = "music.wav", seconds = "9.5", transposeArg = "0"] = process.argv;
+const TRANSPOSE = Number(transposeArg);
 const SR = 44100;
 const DUR = Number(seconds);
 const N = Math.floor(SR * DUR);
 const L = new Float32Array(N);
 const R = new Float32Array(N);
 
-const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+const midi = n => 440 * Math.pow(2, (n + TRANSPOSE - 69) / 12);
 const chords = [
   [45, 52, 57, 60, 64, 71],
   [41, 48, 53, 57, 60, 67],
