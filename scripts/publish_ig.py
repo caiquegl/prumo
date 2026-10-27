@@ -46,6 +46,12 @@ for key, kind, name, section in [
         spec.update(file=f"{name}.jpg")
     POSTS[key] = spec
 
+SINGLE = os.path.join(os.path.dirname(__file__), "..", "content", "legendas-27-29-single-page.md")
+for key, name, section in [("sp-anatomia", "prumo-feed-22-sp-anatomia", "01"),
+                           ("sp-comparativo", "prumo-feed-23-sp-comparativo", "02"),
+                           ("sp-checklist", "prumo-feed-24-sp-checklist", "03")]:
+    POSTS[key] = {"type": "IMAGE", "file": f"{name}.jpg", "section": section, "captions": SINGLE}
+
 for hl, count in [("estrutura", 3), ("orcamento", 2), ("seguranca", 3), ("tecnologias", 3), ("parcerias", 3)]:
     for i in range(1, count + 1):
         POSTS[f"hl-{hl}-{i}"] = {"type": "STORIES", "file": f"destaques/hl-{hl}-{i}.jpg", "section": None}
