@@ -164,6 +164,15 @@ function pickVisual(brief: AiBrief): (typeof VISUALS)[number] {
   return VISUALS[h % VISUALS.length];
 }
 
+function cleanHeadline(h?: string) {
+  const raw = (h || "Seu próximo projeto pode começar aqui.").trim();
+  return raw
+    .replace(/\(11\)\s*96633[-\s]?1995/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/[–—-]\s*$/g, "")
+    .trim() || "Seu próximo projeto pode começar aqui.";
+}
+
 export function briefToFeedItem(brief: AiBrief, photoUrl?: string, photoCredit?: string, photoId?: string): FeedItem {
   return {
     id: `agency-${brief.angle || "ai"}-${Date.now().toString(36)}`,
@@ -180,7 +189,7 @@ export function briefToFeedItem(brief: AiBrief, photoUrl?: string, photoCredit?:
     checks: brief.checks,
     hubCenter: brief.hubCenter,
     hubNodes: brief.hubNodes,
-    headline: brief.headline,
+    headline: cleanHeadline(brief.headline),
     hook: brief.hook,
     tags: brief.tags,
     photoUrl,
