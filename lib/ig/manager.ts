@@ -172,9 +172,9 @@ export async function produceManagedPost(input: {
       break;
     }
     const tempId = `agency-${brief.angle}-${Date.now().toString(36)}`;
-    const imageUrl = await uploadArtistBytes(art, tempId);
+    const imageUrl = (await uploadArtistBytes(art, tempId)) || art.publicUrl;
     if (!imageUrl) {
-      attempts.push({ provider: art.provider, approved: false, reason: "falha ao subir blob" });
+      attempts.push({ provider: art.provider, approved: false, reason: "falha ao subir blob e sem URL pública" });
       continue;
     }
 

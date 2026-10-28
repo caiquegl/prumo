@@ -9,6 +9,8 @@ export type ArtistResult = {
   contentType: string;
   prompt: string;
   model: string;
+  /** URL pública estável (ex.: Pollinations) — usada se o Blob falhar */
+  publicUrl?: string;
 };
 
 function portraitSize() {
@@ -76,6 +78,7 @@ async function pollinations(model: string, prompt: string, key?: string): Promis
         contentType: got.contentType || "image/jpeg",
         prompt,
         model,
+        publicUrl: url,
       };
     } catch (err) {
       console.error("[artist:pollinations]", model, err);
