@@ -1,9 +1,9 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 
-type Sql = ReturnType<typeof neon>;
+type Sql = NeonQueryFunction<false, false>;
 let sql: Sql | null = null;
 
-export function db() {
+export function db(): Sql {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL ausente. Crie o banco Neon e coloque a connection string na Vercel.");
   if (!sql) sql = neon(url);

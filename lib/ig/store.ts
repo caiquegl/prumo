@@ -105,8 +105,8 @@ export async function logEvent(
 
 export async function getAuth(): Promise<AuthRow | null> {
   await ensureSchema();
-  const rows = await db()`SELECT * FROM ig_auth WHERE id = 1 LIMIT 1`;
-  return (rows[0] as AuthRow | undefined) ?? null;
+  const rows = (await db()`SELECT * FROM ig_auth WHERE id = 1 LIMIT 1`) as AuthRow[];
+  return rows[0] ?? null;
 }
 
 export async function saveAuth(input: {
