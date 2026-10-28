@@ -7,8 +7,10 @@ function bearerOk(req: NextRequest): boolean {
   if (!token) return false;
   const queueSecret = process.env.QUEUE_API_SECRET?.trim();
   const adminPass = process.env.ADMIN_PASSWORD?.trim();
+  const cronSecret = process.env.CRON_SECRET?.trim();
   if (queueSecret && token === queueSecret) return true;
   if (adminPass && token === adminPass) return true;
+  if (cronSecret && token === cronSecret) return true;
   return false;
 }
 

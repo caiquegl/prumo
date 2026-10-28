@@ -15,6 +15,9 @@ export async function requireAdmin(req?: NextRequest): Promise<boolean> {
   const queueSecret = process.env.QUEUE_API_SECRET?.trim();
   if (queueSecret && token === queueSecret) return true;
 
+  const cronSecret = process.env.CRON_SECRET?.trim();
+  if (cronSecret && token === cronSecret) return true;
+
   // permite Bearer = ADMIN_PASSWORD para o agente subir posts
   if (verifyPassword(token)) return true;
 
