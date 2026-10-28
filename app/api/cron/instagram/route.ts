@@ -65,7 +65,9 @@ async function run(req: Request) {
     imageUrl: managed.imageUrl,
     caption: managed.caption,
     dark: false,
-    photoId: managed.item.photoId ?? null,
+    photoId: managed.item.concept
+      ? `concept:${managed.item.concept}`
+      : managed.item.photoId ?? null,
   });
   await logEvent("info", "publish", "post publicado", {
     slot,

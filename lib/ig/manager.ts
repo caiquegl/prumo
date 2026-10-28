@@ -3,8 +3,7 @@ import type { AiBrief } from "./gemini";
 import { generateAgencyBrief, briefToFeedItem } from "./gemini";
 import { generateArt, type ArtistResult } from "./artists";
 import { renderFeedImage } from "./render";
-import { findPortraitPhoto, trackUnsplashDownload } from "./unsplash";
-import type { FeedItem, IgState } from "./types";
+import type { FeedItem, IgState, Layout } from "./types";
 import { plain, titleOf } from "./content";
 
 export type ManagedPost = {
@@ -22,7 +21,7 @@ const MODELS = [
   "gemini-3.8-flash",
 ].filter(Boolean) as string[];
 
-async function geminiText(prompt: string): Promise<string> {
+async function geminiText(prompt: string, maxTokens = 900): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY ausente");
   let last = "Gemini indisponível";
@@ -33,7 +32,7 @@ async function geminiText(prompt: string): Promise<string> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+        generationConfig: { temperature: 0.95, maxOutputTokens: maxTokens },
       }),
     });
     const json = (await res.json()) as {
@@ -59,48 +58,86 @@ function extractJsonObject(text: string): Record<string, unknown> {
   return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
 }
 
-export async function buildImagePrompt(brief: AiBrief): Promise<string> {
-  const text = await geminiText(`Você é diretor de arte da Prumo Web (freela de TI: single pages e sites sob medida).
-Crie UM prompt em inglês para o FUNDO fotográfico de um post Instagram 1080x1350.
-A tipografia/marca/CTA entram depois — a foto é só cenário de DESENVOLVIMENTO WEB / produto digital.
-Cenas OK: laptop showing a clean landing page UI, developer desk with monitor and soft code, smartphone next to a single-page mockup, browser window with modern website, small business owner reviewing a site on laptop.
-Cenas PROIBIDAS: empty luxury boardroom, conference table with chairs only, abstract leaves, generic skyscraper, stock "handshake CEO".
-Visual: warm/editorial, premium but tech — not corporate boardroom.
-Deixe a TERCEIRA INFERIOR mais limpa/escura para título e WhatsApp.
-NÃO peça tipografia/letras/logos/watermark/botões na imagem.
-Ângulo: ${brief.angle} | pilar: ${brief.pillar} | kicker: ${brief.kicker}
-Título: ${plain(brief.title)}
-Hook: ${brief.hook}
-photoQuery base: ${brief.photoQuery}
-Responda SOMENTE JSON: {"prompt":"...","negative":"..."}`);
-  const json = extractJsonObject(text);
-  const prompt = String(json.prompt || "");
-  const negative = String(
-    json.negative ||
-      "text, watermark, logo, boardroom, conference table, empty meeting room, leaves abstract, low quality, blurry, busy bottom third",
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48) || "conceito";
+}
+
+function recentConcepts(state: IgState): string[] {
+  return state.published
+    .slice(-12)
+    .map((p) => p.item?.concept || (p.id.startsWith("agency-") ? p.id.split("-").slice(1, -1).join("-") : ""))
+    .filter(Boolean);
+}
+
+/** Inventa composição ÚNICA do post inteiro (não moldura fixa + foto). */
+async function inventFullPostDesign(
+  brief: AiBrief,
+  avoidConcepts: string[],
+): Promise<{ concept: string; prompt: string }> {
+  const text = await geminiText(
+    `You are the art director of Prumo Web (@prumo.web), a Brazilian freelance IT studio that builds custom single pages / landings and sites (own code, WhatsApp conversion).
+
+Design ONE complete Instagram feed post 1080x1350 as a FINISHED graphic (not a photo background).
+The image model will render EVERYTHING: brand, typography, diagrams, charts, mockups, CTA — unique composition.
+
+CRITICAL:
+- Invent a NEW composition concept never used before. Forbidden recent concepts: ${avoidConcepts.join(", ") || "none"}.
+- DO NOT use the repetitive template "big photo rectangle + title underneath + logo bar".
+- Composition must feel like a professional agency infographic / editorial piece (vary wildly each time: anatomy of a page, performance bars, integration hub, process steps, checklist cards, before/after, quote + marks, wireframe callouts, metric callout, FAQ stack, funnel stages — or invent a NEW structure).
+- Include readable Portuguese text IN the image exactly as given below.
+- Brand: small orange square with white P + "Prumo Web" top-left, "@prumo.web" top-right.
+- Colors: cream #f3eee6 bg, charcoal #1a1916 text, terracotta #d4573e accents. Serif headlines + clean sans body.
+- Footer CTA + WhatsApp (11) 96633-1995.
+- Topic MUST stay on single page / custom web / TI freela / WhatsApp leads — not generic corporate boardroom.
+
+Copy to render:
+- kicker: ${brief.kicker}
+- title: ${plain(brief.title)}
+- supporting: ${brief.hook}
+- CTA line: ${brief.headline || "Seu próximo projeto pode começar aqui."}
+
+Respond ONLY JSON:
+{"concept":"unique-english-slug","prompt":"very detailed English prompt for an image model describing the FULL unique layout, exact Portuguese strings to paint, colors, hierarchy, and what makes this composition different"}`,
+    1200,
   );
-  if (!prompt) throw new Error("prompt de imagem vazio");
-  return `${prompt}. Avoid: ${negative}. Vertical 4:5 Instagram feed background, web/tech product photography, space at bottom for typography.`;
+  const json = extractJsonObject(text);
+  const concept = slugify(String(json.concept || `c-${Date.now().toString(36)}`));
+  const prompt = String(json.prompt || "");
+  if (!prompt) throw new Error("prompt de post completo vazio");
+  return {
+    concept,
+    prompt: `${prompt}. Vertical 4:5 Instagram marketing graphic, finished designed post (not raw photo), sharp readable Portuguese typography, Prumo Web brand, cream and terracotta, no watermark, no stock photo frame template. Seed ${Date.now()}.`,
+  };
 }
 
 export async function managerApprove(input: {
   brief: AiBrief;
   provider: string;
   imageUrl: string;
+  concept: string;
 }): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
   try {
-    const text = await geminiText(`Você é gerente de marketing da Prumo Web (TI freela: single page, landing, site sob medida).
-Avalie se o POST DE VENDA está pronto e coerente com a oferta.
-Critérios obrigatórios:
-- layout de marketing (marca + título + CTA WhatsApp)
-- copy falando de site / single page / desenvolvimento / lead no Zap (não "operação corporativa" genérica)
-- fundo com cara de web/TI (laptop, UI, código suave, mockup) — REPROVE sala de reunião vazia / boardroom
-- NÃO foto solta sem texto, NÃO prazo numérico
-Brief: ${JSON.stringify({ title: briefTitle(input.brief), hook: input.brief.hook, angle: input.brief.angle, kicker: input.brief.kicker, pillar: input.brief.pillar })}
-Provider fundo: ${input.provider}
-Peça composta: ${input.imageUrl}
+    const text = await geminiText(
+      `Você é gerente de marketing da Prumo Web (TI freela: single page, landing, site sob medida).
+Avalie o POST COMPLETO gerado (peça final, não fundo).
+Aprovar só se:
+1) Parece post de agência desenhado (infográfico/editorial), NÃO "foto numa moldura com título embaixo"
+2) Tem marca Prumo / texto legível / CTA WhatsApp
+3) Fala de site/single page/TI/conversão (não corporativo vazio)
+4) Composição parece única para o conceito "${input.concept}"
+Brief: ${JSON.stringify({ title: plain(input.brief.title), hook: input.brief.hook, kicker: input.brief.kicker })}
+Provider: ${input.provider}
+URL: ${input.imageUrl}
 Responda SOMENTE JSON:
-{"approved":true|false,"reason":"frase curta","revisePrompt":"novo prompt de FUNDO em inglês focado em web/dev se reprovar a foto, senão vazio"}`);
+{"approved":true|false,"reason":"frase","revisePrompt":"novo prompt inglês de POST COMPLETO com OUTRA composição se reprovar, senão vazio"}`,
+      500,
+    );
     const json = extractJsonObject(text);
     return {
       approved: Boolean(json.approved),
@@ -108,118 +145,53 @@ Responda SOMENTE JSON:
       revisePrompt: json.revisePrompt ? String(json.revisePrompt) : undefined,
     };
   } catch (err) {
-    // Se o gerente falhar, aprova com ressalva para não travar o cron
-    return { approved: true, reason: `gerente indisponível, segue com peça (${err instanceof Error ? err.message : "erro"})` };
+    return { approved: true, reason: `gerente indisponível, segue (${err instanceof Error ? err.message : "erro"})` };
   }
-}
-
-function briefTitle(b: AiBrief) {
-  return plain(b.title);
-}
-
-async function uploadArtistBytes(art: ArtistResult, id: string): Promise<string | null> {
-  try {
-    const ext = art.contentType.includes("png") ? "png" : "jpg";
-    const blob = await put(`ig-auto/artist-${id}-${Date.now()}.${ext}`, art.bytes, {
-      access: "public",
-      contentType: art.contentType,
-      addRandomSuffix: true,
-    });
-    return blob.url;
-  } catch (err) {
-    console.error("[manager] blob artist failed", err);
-    return null;
-  }
-}
-
-/** Layouts com foto de fundo + tipografia/CTA de venda — nunca repete o layout do post anterior */
-function marketingLayout(layout: FeedItem["layout"], avoid: string[]): FeedItem["layout"] {
-  const want = layout === "hero" || layout === "split" ? layout : "hero";
-  if (!avoid.slice(-1).includes(want)) return want;
-  return want === "hero" ? "split" : "hero";
-}
-
-function artDataUrl(art: ArtistResult): string {
-  return `data:${art.contentType};base64,${art.bytes.toString("base64")}`;
 }
 
 function artPhotoId(art: ArtistResult): string {
-  // fingerprint curto para bloquear reuso da mesma arte
   const head = art.bytes.subarray(0, 24).toString("hex");
   return `art-${art.provider}-${art.bytes.byteLength}-${head}`;
 }
 
-function recentPhotoIds(state: IgState): Set<string> {
-  const ids = new Set<string>();
-  for (const p of state.published) {
-    const fromItem = (p as { item?: FeedItem }).item?.photoId;
-    if (fromItem) ids.add(fromItem);
-    if (p.id.startsWith("art-")) ids.add(p.id);
-  }
-  return ids;
-}
-
-async function composeMarketingCard(
-  brief: AiBrief,
-  photoUrl: string,
-  opts: { id: string; photoCredit?: string; photoId?: string; reqOrigin: string; layout: FeedItem["layout"] },
+async function publishArtBytes(
+  art: ArtistResult,
+  id: string,
+  reqOrigin: string,
+  item: FeedItem,
 ): Promise<{ item: FeedItem; imageUrl: string }> {
-  let item = briefToFeedItem({ ...brief, layout: opts.layout }, photoUrl, opts.photoCredit, opts.photoId);
-  item.id = opts.id;
-  item.photoUrl = photoUrl;
-  item.photoId = opts.photoId;
-  item.visual = item.visual || "mark";
-
-  // renderFeedImage resolve a foto em data URL; se falhar, cai no visual (sem retângulo branco)
-  const png = await renderFeedImage(item, false);
-  if (png.byteLength < 20_000) {
-    throw new Error("PNG composto suspeito (muito pequeno)");
-  }
   try {
-    const blob = await put(`ig-auto/mkt-${item.id}-${Date.now()}.png`, png, {
+    const ext = art.contentType.includes("png") ? "png" : "jpg";
+    const blob = await put(`ig-auto/full-${id}-${Date.now()}.${ext}`, art.bytes, {
       access: "public",
-      contentType: "image/png",
+      contentType: art.contentType,
       addRandomSuffix: true,
     });
-    return { item: { ...item, photoUrl }, imageUrl: blob.url };
+    return { item, imageUrl: blob.url };
   } catch (err) {
-    console.error("[manager] blob mkt failed, serving rendered PNG from draft", err);
-    // Fallback estável: PNG já renderizado no Neon (não re-renderiza no OG — evita meio branco)
+    console.error("[manager] blob full post failed, using /api/og/rendered", err);
+    const withPng = {
+      ...item,
+      __renderedPng: art.bytes.toString("base64"),
+      __renderedMime: art.contentType,
+    } as FeedItem & { __renderedPng: string; __renderedMime: string };
     return {
-      item: { ...item, photoUrl, __renderedPng: png.toString("base64") } as FeedItem & { __renderedPng: string },
-      imageUrl: `${opts.reqOrigin}/api/og/rendered?id=${encodeURIComponent(item.id)}&t=${Date.now()}`,
+      item: withPng,
+      imageUrl: `${reqOrigin}/api/og/rendered?id=${encodeURIComponent(id)}&t=${Date.now()}`,
     };
   }
 }
 
-async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string, layout: FeedItem["layout"]): Promise<{ item: FeedItem; imageUrl: string }> {
-  const id = `agency-${brief.angle}-${Date.now().toString(36)}`;
-  const exclude = [...recentPhotoIds(state)];
-  const photo = await findPortraitPhoto(
-    brief.photoQuery || "laptop modern website landing page desk warm light",
-    exclude,
-  ).catch(() => null);
-  if (photo) {
-    await trackUnsplashDownload(photo.downloadLocation);
-    return composeMarketingCard(brief, photo.url, {
-      id,
-      photoCredit: `Foto: ${photo.photographer} / Unsplash`,
-      photoId: photo.id,
-      reqOrigin,
-      layout,
-    });
-  }
-
-  // Sem foto: layouts tipográficos (quote/cards/compare) — NUNCA hero/split com leaves
-  const textLayouts: FeedItem["layout"][] = ["quote", "cards", "compare"];
+/** Fallback raro: FeedCard tipográfico (sem foto-moldura), layouts que não sejam hero. */
+async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string): Promise<{ item: FeedItem; imageUrl: string }> {
+  const id = `agency-${slugify(brief.angle)}-${Date.now().toString(36)}`;
+  const textLayouts: Layout[] = ["quote", "cards", "compare"];
   const last = state.published.at(-1)?.layout;
   const textLayout = textLayouts.find((l) => l !== last) || "quote";
-  const visuals = ["mark", "wire", "chart", "cloud"] as const;
-  const visual = visuals[state.published.length % visuals.length];
   const item = briefToFeedItem({ ...brief, layout: textLayout });
   item.id = id;
-  item.visual = visual;
   item.photoUrl = undefined;
+  item.concept = `feedcard-${textLayout}`;
   const png = await renderFeedImage(item, false);
   try {
     const blob = await put(`ig-auto/${item.id}-${Date.now()}.png`, png, {
@@ -244,76 +216,77 @@ export async function produceManagedPost(input: {
 }): Promise<ManagedPost> {
   const avoidLayouts = input.state.published.slice(-3).map((p) => p.layout);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
-  const seenPhotos = recentPhotoIds(input.state);
+  const avoidConcepts = recentConcepts(input.state);
   const brief = await generateAgencyBrief({
     avoidTitles,
     avoidLayouts,
     recentCaptions: input.captions,
   });
-  const layout = marketingLayout(brief.layout, avoidLayouts);
-  brief.layout = layout;
 
-  let imagePrompt = await buildImagePrompt(brief).catch(
-    () =>
-      `Cinematic vertical photo of a laptop on a desk showing a modern single-page website UI, soft warm light, Brazilian freelance web developer workspace, shallow depth of field, dark clean lower third for typography, no text no watermark. Theme: ${brief.photoQuery}. Seed ${Date.now()}.`,
-  );
+  let design = await inventFullPostDesign(brief, avoidConcepts).catch(async () => ({
+    concept: slugify(`solo-${brief.angle}-${Date.now().toString(36)}`),
+    prompt: `Professional Instagram 1080x1350 designed marketing graphic for Prumo Web freelance web studio. Cream background #f3eee6, terracotta accents #d4573e. Unique editorial layout (NOT photo-in-a-box template). Include logo Prumo Web, @prumo.web, Portuguese headline "${plain(brief.title)}", kicker "${brief.kicker}", supporting "${brief.hook}", WhatsApp (11) 96633-1995. Theme: custom single page / TI freela. Sharp typography. Seed ${Date.now()}.`,
+  }));
 
   const attempts: ManagedPost["attempts"] = [];
-  const maxRounds = 2;
+  const maxRounds = 3;
 
   for (let round = 0; round < maxRounds; round++) {
-    const art = await generateArt(imagePrompt);
+    if (avoidConcepts.includes(design.concept)) {
+      design = {
+        ...design,
+        concept: `${design.concept}-r${round}-${Date.now().toString(36)}`.slice(0, 48),
+      };
+    }
+
+    const art = await generateArt(design.prompt);
     if (!art) {
-      attempts.push({ approved: false, reason: "todos os artistas falharam neste round" });
+      attempts.push({ approved: false, reason: "artistas falharam neste round" });
       break;
     }
-    const photoId = artPhotoId(art);
-    if (seenPhotos.has(photoId)) {
-      attempts.push({ provider: art.provider, approved: false, reason: "arte repetida (fingerprint)" });
-      continue;
-    }
-    const tempId = `agency-${brief.angle}-${Date.now().toString(36)}`;
-    // Blob público da arte (preferível) ou data URL — render embute bytes antes do Satori
-    const photoUrl = (await uploadArtistBytes(art, tempId)) || artDataUrl(art);
 
-    let composed: { item: FeedItem; imageUrl: string };
-    try {
-      composed = await composeMarketingCard(brief, photoUrl, {
-        id: tempId,
-        photoId,
-        reqOrigin: input.reqOrigin,
-        layout,
-      });
-    } catch (err) {
-      attempts.push({
-        provider: art.provider,
-        approved: false,
-        reason: `compose falhou: ${err instanceof Error ? err.message : "erro"}`,
-      });
-      continue;
-    }
-    // draft precisa do __renderedPng quando o imageUrl aponta para /api/og/rendered
-    await input.saveDraft(composed.item.id, composed.item, false);
+    const tempId = `agency-${design.concept}-${Date.now().toString(36)}`;
+    const item = briefToFeedItem(brief);
+    item.id = tempId;
+    item.layout = "quote"; // metadado; a peça visual é o PNG completo da IA
+    item.photoId = artPhotoId(art);
+    item.concept = design.concept;
+    item.photoUrl = undefined;
 
-    const verdict = await managerApprove({ brief, provider: art.provider, imageUrl: composed.imageUrl });
+    const published = await publishArtBytes(art, tempId, input.reqOrigin, item);
+    await input.saveDraft(published.item.id, published.item, false);
+
+    const verdict = await managerApprove({
+      brief,
+      provider: art.provider,
+      imageUrl: published.imageUrl,
+      concept: design.concept,
+    });
     attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
 
     if (verdict.approved) {
-      const { __renderedPng: _, ...cleanItem } = composed.item as FeedItem & { __renderedPng?: string };
+      const { __renderedPng: _, ...cleanItem } = published.item as FeedItem & { __renderedPng?: string };
       void _;
       return {
-        item: cleanItem,
+        item: { ...cleanItem, concept: design.concept, photoId: item.photoId },
         caption: buildCaption(cleanItem),
-        imageUrl: composed.imageUrl,
+        imageUrl: published.imageUrl,
         artist: art.provider,
         attempts,
       };
     }
 
-    if (verdict.revisePrompt) imagePrompt = `${verdict.revisePrompt}. Completely different scene from previous attempt.`;
+    if (verdict.revisePrompt) {
+      design = {
+        concept: slugify(`rev-${design.concept}-${round}`),
+        prompt: `${verdict.revisePrompt}. Completely different composition from previous. Vertical Instagram designed graphic for Prumo Web. Seed ${Date.now()}.`,
+      };
+    } else {
+      design = await inventFullPostDesign(brief, [...avoidConcepts, design.concept]).catch(() => design);
+    }
   }
 
-  const fb = await feedcardFallback(brief, input.state, input.reqOrigin, layout);
+  const fb = await feedcardFallback(brief, input.state, input.reqOrigin);
   await input.saveDraft(fb.item.id, fb.item, false);
   attempts.push({ provider: "feedcard-unsplash", approved: true, reason: "fallback tipográfico após artistas" });
   return {

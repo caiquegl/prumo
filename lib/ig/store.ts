@@ -241,7 +241,18 @@ export async function publishedState(): Promise<IgState> {
         media_id: row.media_id || undefined,
         permalink: row.permalink || undefined,
         published_at: row.published_at,
-        item: row.photo_id ? ({ photoId: row.photo_id } as PublishRecord["item"]) : undefined,
+        item: (() => {
+          const conceptFromId = row.item_id.startsWith("agency-")
+            ? row.item_id.split("-").slice(1, -1).join("-") || undefined
+            : undefined;
+          if (row.photo_id?.startsWith("concept:")) {
+            return { concept: row.photo_id.slice("concept:".length) } as PublishRecord["item"];
+          }
+          return {
+            photoId: row.photo_id || undefined,
+            concept: conceptFromId,
+          } as PublishRecord["item"];
+        })(),
       }),
     ),
   };

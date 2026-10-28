@@ -22,6 +22,8 @@ export type FeedItem = {
   photoId?: string;
   pillar?: string;
   angle?: string;
+  /** Conceito visual único gerado pela IA (anti-repetição de composição) */
+  concept?: string;
 };
 
 export type PublishRecord = {

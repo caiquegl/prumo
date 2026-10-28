@@ -52,21 +52,23 @@ export function slotKey(now = new Date()) {
 }
 
 export function assertNoRepeat(state: IgState, item: FeedItem) {
-  const last = state.published.at(-1);
-  if (last && last.layout === item.layout) {
-    throw new Error(`layout "${item.layout}" repetiria o post anterior`);
-  }
   const title = titleOf(item).toLowerCase();
   const sameTitle = state.published.some((p) => p.title.toLowerCase() === title);
   if (sameTitle) {
     throw new Error(`título "${titleOf(item)}" já foi publicado`);
   }
-  const recent = state.published.slice(-3);
+  const recent = state.published.slice(-5);
+  if (item.concept) {
+    const sameConcept = recent.some(
+      (p) => p.item?.concept === item.concept || p.id.includes(item.concept!),
+    );
+    if (sameConcept) throw new Error(`conceito visual "${item.concept}" já saiu recentemente`);
+  }
   if (item.angle && recent.some((p) => p.id.includes(item.angle!))) {
     throw new Error(`ângulo "${item.angle}" já saiu nos últimos posts`);
   }
   if (item.photoId) {
     const used = state.published.some((p) => p.item?.photoId === item.photoId);
-    if (used) throw new Error(`foto/arte "${item.photoId}" já foi publicada`);
+    if (used) throw new Error(`arte "${item.photoId}" já foi publicada`);
   }
 }
