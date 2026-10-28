@@ -61,20 +61,22 @@ function extractJsonObject(text: string): Record<string, unknown> {
 
 export async function buildImagePrompt(brief: AiBrief): Promise<string> {
   const text = await geminiText(`Você é diretor de arte da Prumo Web.
-Crie UM prompt em inglês para gerar a arte de um post de Instagram 1080x1350 (retrato).
-Marca: sites/sistemas sob medida, visual premium, cinematográfico, pouco texto.
-NÃO peça tipografia/letras/logos/watermark na imagem.
+Crie UM prompt em inglês para o FUNDO fotográfico de um post de marketing Instagram 1080x1350.
+A tipografia, marca e CTA serão aplicados DEPOIS no layout — a foto é só cenário.
+Marca: agência freela de sites/sistemas sob medida, visual premium, cinematográfico.
+Deixe a TERCEIRA INFERIOR mais limpa/escura para título e WhatsApp.
+NÃO peça tipografia/letras/logos/watermark/botões na imagem.
 NÃO cite prazo numérico.
 Ângulo: ${brief.angle} | pilar: ${brief.pillar} | kicker: ${brief.kicker}
-Título da peça: ${plain(brief.title)}
+Título da peça (contexto): ${plain(brief.title)}
 Hook: ${brief.hook}
 photoQuery base: ${brief.photoQuery}
 Responda SOMENTE JSON: {"prompt":"...","negative":"..."}`);
   const json = extractJsonObject(text);
   const prompt = String(json.prompt || "");
-  const negative = String(json.negative || "text, watermark, logo, low quality, blurry");
+  const negative = String(json.negative || "text, watermark, logo, low quality, blurry, busy bottom third");
   if (!prompt) throw new Error("prompt de imagem vazio");
-  return `${prompt}. Avoid: ${negative}. Vertical 4:5 Instagram feed, high-end commercial photography.`;
+  return `${prompt}. Avoid: ${negative}. Vertical 4:5 Instagram feed background, high-end commercial photography, space at bottom for typography.`;
 }
 
 export async function managerApprove(input: {
@@ -83,13 +85,13 @@ export async function managerApprove(input: {
   imageUrl: string;
 }): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
   try {
-    const text = await geminiText(`Você é gerente de marketing da Prumo Web. Avalie se a arte está pronta para publicar.
-Critérios: engajamento visual, premium, sem texto ilegível/genérico, alinhada ao diferencial (sob medida / presença / WhatsApp), NÃO parecer anúncio de prazo.
-Brief: ${JSON.stringify({ title: briefTitle(input.brief), hook: input.brief.hook, angle: input.brief.angle })}
-Provider: ${input.provider}
-Image URL (inspecione mentalmente pelo contexto; se URL pública, assuma que precisa parecer editorial): ${input.imageUrl}
+    const text = await geminiText(`Você é gerente de marketing da Prumo Web. Avalie se o POST DE VENDA está pronto.
+Critérios obrigatórios: layout de marketing (marca + título + CTA WhatsApp), visual premium, engajamento, diferencial sob medida / freela, NÃO foto solta sem texto, NÃO anúncio de prazo.
+Brief: ${JSON.stringify({ title: briefTitle(input.brief), hook: input.brief.hook, angle: input.brief.angle, kicker: input.brief.kicker })}
+Provider fundo: ${input.provider}
+Peça composta: ${input.imageUrl}
 Responda SOMENTE JSON:
-{"approved":true|false,"reason":"frase curta","revisePrompt":"novo prompt em inglês se reprovar, senão vazio"}`);
+{"approved":true|false,"reason":"frase curta","revisePrompt":"novo prompt de FUNDO em inglês se reprovar a foto de fundo, senão vazio"}`);
     const json = extractJsonObject(text);
     return {
       approved: Boolean(json.approved),
@@ -98,7 +100,7 @@ Responda SOMENTE JSON:
     };
   } catch (err) {
     // Se o gerente falhar, aprova com ressalva para não travar o cron
-    return { approved: true, reason: `gerente indisponível, segue com arte (${err instanceof Error ? err.message : "erro"})` };
+    return { approved: true, reason: `gerente indisponível, segue com peça (${err instanceof Error ? err.message : "erro"})` };
   }
 }
 
@@ -121,26 +123,64 @@ async function uploadArtistBytes(art: ArtistResult, id: string): Promise<string 
   }
 }
 
-async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string): Promise<{ item: FeedItem; imageUrl: string }> {
-  let item = briefToFeedItem(brief);
-  if (item.layout === "hero" || item.layout === "split") {
-    const photo = await findPortraitPhoto(brief.photoQuery || "premium business workspace");
-    if (photo) {
-      await trackUnsplashDownload(photo.downloadLocation);
-      item = { ...item, photoUrl: photo.url, photoCredit: `Foto: ${photo.photographer} / Unsplash`, photoId: photo.id };
-    }
-  }
+/** Layouts com foto de fundo + tipografia/CTA de venda */
+function marketingLayout(layout: FeedItem["layout"]): FeedItem["layout"] {
+  if (layout === "hero" || layout === "split") return layout;
+  return "hero";
+}
+
+async function composeMarketingCard(
+  brief: AiBrief,
+  photoUrl: string,
+  opts: { id: string; photoCredit?: string; photoId?: string; reqOrigin: string },
+): Promise<{ item: FeedItem; imageUrl: string }> {
+  const layout = marketingLayout(brief.layout);
+  let item = briefToFeedItem({ ...brief, layout }, photoUrl, opts.photoCredit, opts.photoId);
+  item.id = opts.id;
+  item.photoUrl = photoUrl;
+
   const png = await renderFeedImage(item, false);
   try {
-    const blob = await put(`ig-auto/${item.id}-${Date.now()}.png`, png, {
+    const blob = await put(`ig-auto/mkt-${item.id}-${Date.now()}.png`, png, {
       access: "public",
       contentType: "image/png",
       addRandomSuffix: true,
     });
     return { item, imageUrl: blob.url };
   } catch {
-    return { item, imageUrl: `${reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
+    return { item, imageUrl: `${opts.reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
   }
+}
+
+async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string): Promise<{ item: FeedItem; imageUrl: string }> {
+  const id = `agency-${brief.angle}-${Date.now().toString(36)}`;
+  let photoUrl: string | undefined;
+  let credit: string | undefined;
+  let photoId: string | undefined;
+  const photo = await findPortraitPhoto(brief.photoQuery || "premium business workspace");
+  if (photo) {
+    await trackUnsplashDownload(photo.downloadLocation);
+    photoUrl = photo.url;
+    credit = `Foto: ${photo.photographer} / Unsplash`;
+    photoId = photo.id;
+  }
+  if (!photoUrl) {
+    // FeedCard tipográfico puro (quote/cards) se Unsplash falhar
+    const item = briefToFeedItem({ ...brief, layout: brief.layout === "stat" ? "quote" : brief.layout });
+    item.id = id;
+    const png = await renderFeedImage(item, false);
+    try {
+      const blob = await put(`ig-auto/${item.id}-${Date.now()}.png`, png, {
+        access: "public",
+        contentType: "image/png",
+        addRandomSuffix: true,
+      });
+      return { item, imageUrl: blob.url };
+    } catch {
+      return { item, imageUrl: `${reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
+    }
+  }
+  return composeMarketingCard(brief, photoUrl, { id, photoCredit: credit, photoId, reqOrigin });
 }
 
 export async function produceManagedPost(input: {
@@ -156,10 +196,12 @@ export async function produceManagedPost(input: {
     avoidLayouts,
     recentCaptions: input.captions,
   });
+  // Peça de venda: fundo IA + FeedCard (marca, título, WhatsApp)
+  brief.layout = marketingLayout(brief.layout);
 
   let imagePrompt = await buildImagePrompt(brief).catch(
     () =>
-      `Premium Instagram vertical photo for Brazilian tech agency Prumo Web. Theme: ${brief.photoQuery}. Cinematic, editorial, no text, no watermark.`,
+      `Premium Instagram vertical photo BACKGROUND for Brazilian tech freela agency Prumo Web. Theme: ${brief.photoQuery}. Cinematic, editorial, no text, no watermark, dark clean lower third for typography.`,
   );
 
   const attempts: ManagedPost["attempts"] = [];
@@ -172,24 +214,23 @@ export async function produceManagedPost(input: {
       break;
     }
     const tempId = `agency-${brief.angle}-${Date.now().toString(36)}`;
-    const imageUrl = (await uploadArtistBytes(art, tempId)) || art.publicUrl;
-    if (!imageUrl) {
-      attempts.push({ provider: art.provider, approved: false, reason: "falha ao subir blob e sem URL pública" });
+    const bgUrl = (await uploadArtistBytes(art, tempId)) || art.publicUrl;
+    if (!bgUrl) {
+      attempts.push({ provider: art.provider, approved: false, reason: "falha ao obter URL do fundo" });
       continue;
     }
 
-    const verdict = await managerApprove({ brief, provider: art.provider, imageUrl });
+    const composed = await composeMarketingCard(brief, bgUrl, { id: tempId, reqOrigin: input.reqOrigin });
+    await input.saveDraft(composed.item.id, composed.item, false);
+
+    const verdict = await managerApprove({ brief, provider: art.provider, imageUrl: composed.imageUrl });
     attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
 
     if (verdict.approved) {
-      const item = briefToFeedItem(brief, imageUrl, undefined, undefined);
-      item.id = tempId;
-      item.photoUrl = imageUrl;
-      await input.saveDraft(item.id, item, false);
       return {
-        item,
-        caption: buildCaption(item),
-        imageUrl,
+        item: composed.item,
+        caption: buildCaption(composed.item),
+        imageUrl: composed.imageUrl,
         artist: art.provider,
         attempts,
       };
@@ -198,7 +239,7 @@ export async function produceManagedPost(input: {
     if (verdict.revisePrompt) imagePrompt = verdict.revisePrompt;
   }
 
-  // Fallback final: FeedCard + Unsplash, ainda com brief do gerente
+  // Fallback: FeedCard + Unsplash (ainda com tipografia de venda)
   const fb = await feedcardFallback(brief, input.state, input.reqOrigin);
   await input.saveDraft(fb.item.id, fb.item, false);
   attempts.push({ provider: "feedcard-unsplash", approved: true, reason: "fallback tipográfico após artistas" });
@@ -212,10 +253,14 @@ export async function produceManagedPost(input: {
 }
 
 function buildCaption(item: FeedItem) {
-  const lines = [item.hook || titleOf(item), "WhatsApp (11) 96633-1995"];
+  const lines = [
+    item.hook || titleOf(item),
+    "Site ou sistema sob medida pro seu negócio. Freela com entrega clara.",
+    "Chama no WhatsApp: (11) 96633-1995",
+  ];
   if (item.photoCredit) lines.push(item.photoCredit);
-  const tags = [...new Set([...(item.tags || []), "prumoweb", "empresas"])]
-    .slice(0, 5)
+  const tags = [...new Set([...(item.tags || []), "prumoweb", "freelance", "desenvolvimento", "empresas"])]
+    .slice(0, 6)
     .map((t) => `#${t.replace(/[^\p{L}\p{N}_]/gu, "")}`);
   lines.push(tags.join(" "));
   return lines.join("\n\n");
