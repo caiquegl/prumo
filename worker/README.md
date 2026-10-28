@@ -2,7 +2,7 @@
 
 Três vezes ao dia (8:00, 12:00 e 18:00 de Brasília) o Next.js gera um post 1080×1350 no visual da Prumo e publica no [@prumo.web](https://instagram.com/prumo.web).
 
-Os horários no `vercel.json` estão em UTC: 11:00, 15:00 e 21:00.
+Os horários no `vercel.json` estão em UTC: 10:00 (renova token), 11:00, 15:00 e 21:00 (posts) = 7:00, 8:00, 12:00 e 18:00 em Brasília.
 
 ## O que roda onde
 
@@ -21,16 +21,17 @@ Project → Settings → Environment Variables, ambiente **Production**:
 
 | Chave | Obrigatório | O que é |
 |---|---|---|
-| `META_PAGE_TOKEN` | sim | token da **Página** (não o de usuário) |
+| `DATABASE_URL` | sim | connection string do Neon (projeto `prumo`) |
 | `IG_USER_ID` | já tem padrão | `17841427877735853` |
 | `CRON_SECRET` | sim | string aleatória; a Vercel manda no header dos crons |
-| `META_APP_ID` | para renovar token | App ID em Configurações → Básico |
-| `META_APP_SECRET` | para renovar token | App Secret no mesmo lugar |
-| Blob store | sim | Settings → Blob → Connect (o `@vercel/blob` já está no projeto) |
+| `META_APP_ID` | sim | App ID em Configurações → Básico |
+| `META_APP_SECRET` | sim | App Secret no mesmo lugar |
+| `META_PAGE_TOKEN` | não | só bootstrap; depois o token mora no Neon |
+| Blob store | sim | Settings → Blob → Connect (imagens dos posts) |
 
 Depois de salvar, faça um Redeploy.
 
-## Token da Meta (o que a Vercel precisa)
+## Token da Meta (uma vez; o cron renova)
 
 Não existe “chave eterna” de usuário. O que não expira é o **token da Página**, desde que venha de um token de usuário de 60 dias, gerado **no app de vocês** (não no Graph API Explorer genérico).
 
@@ -41,7 +42,7 @@ Não existe “chave eterna” de usuário. O que não expira é o **token da P�
    - User or Page = **User Token**
    - Permissões: `pages_show_list`, `pages_read_engagement`, `instagram_basic`, `instagram_content_publish`, `business_management`
    - Generate Access Token
-4. Troque esse token curto pelo da Página:
+4. Grave no Neon (não precisa colar o token da Página na Vercel):
 
 ```bash
 curl -sS -X POST "https://prumo-tawny.vercel.app/api/ig/token" \
@@ -50,9 +51,7 @@ curl -sS -X POST "https://prumo-tawny.vercel.app/api/ig/token" \
   -d '{"user_token":"EAAB..."}'
 ```
 
-5. Cole o `META_PAGE_TOKEN` (e o `IG_USER_ID` se vier) na Vercel. **Não commite.**
-
-Atalho no debugger: [Access Token Debugger](https://developers.facebook.com/tools/debug/accesstoken/) → **Extend Access Token** (pede a senha do Facebook) gera os 60 dias; em seguida o POST acima ainda é necessário para obter o token da Página.
+Atalho no debugger: [Access Token Debugger](https://developers.facebook.com/tools/debug/accesstoken/) → **Extend Access Token** (pede a senha do Facebook) gera os 60 dias; em seguida o POST acima ainda é necessário.
 
 ## Testar sem esperar o cron
 

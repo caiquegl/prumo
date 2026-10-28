@@ -1,10 +1,11 @@
+import { inspectToken, resolvePageToken } from "./auth";
+
 const API = "https://graph.facebook.com/v26.0";
 
 type GraphError = { error?: { message?: string; code?: number; type?: string } };
 
 async function call(method: "GET" | "POST", path: string, params: Record<string, string>) {
-  const token = process.env.META_PAGE_TOKEN;
-  if (!token) throw new Error("META_PAGE_TOKEN não configurado");
+  const token = await resolvePageToken();
   const body = new URLSearchParams({ ...params, access_token: token });
   const res =
     method === "GET"
@@ -52,27 +53,6 @@ export async function publishImage(imageUrl: string, caption: string) {
 }
 
 export async function debugToken() {
-  const token = process.env.META_PAGE_TOKEN;
-  if (!token) throw new Error("META_PAGE_TOKEN não configurado");
-  const appId = process.env.META_APP_ID;
-  const appSecret = process.env.META_APP_SECRET;
-  if (!appId || !appSecret) {
-    const json = await call("GET", igUserId(), { fields: "username,media_count" });
-    return { ok: true, username: json.username, note: "sem META_APP_ID/SECRET para inspecionar validade" };
-  }
-  const res = await fetch(
-    `${API}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(`${appId}|${appSecret}`)}`,
-  );
-  const json = (await res.json()) as {
-    data?: { is_valid?: boolean; expires_at?: number; type?: string; scopes?: string[] };
-    error?: unknown;
-  };
-  if (json.error) throw new Error(JSON.stringify(json.error));
-  const expiresAt = json.data?.expires_at ?? 0;
-  return {
-    ok: json.data?.is_valid === true,
-    type: json.data?.type,
-    expires_at: expiresAt ? new Date(expiresAt * 1000).toISOString() : "never",
-    scopes: json.data?.scopes,
-  };
+  const token = await resolvePageToken();
+  return inspectToken(token);
 }
