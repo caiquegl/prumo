@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
+import { SiteChrome } from "./components/SiteChrome";
 import "./globals.css";
 
 const display = Fraunces({
@@ -26,12 +27,6 @@ export const metadata: Metadata = {
   },
 };
 
-const WA =
-  "https://wa.me/5511966331995?text=" +
-  encodeURIComponent(
-    "Olá! Quero um orçamento de site/landing page com a Prumo Web.",
-  );
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,28 +36,7 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full`}>
       <body className="min-h-full antialiased">
         <div className="grain" aria-hidden />
-        <header className="sticky top-0 z-40 border-b border-[color:var(--line)] bg-[color:var(--glass)] backdrop-blur-md">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
-            <a href="#topo" className="display text-[1.35rem] tracking-tight text-[color:var(--ink)]">
-              Prumo <span className="text-[color:var(--coral)]">Web</span>
-            </a>
-            <nav className="hidden items-center gap-8 text-sm text-[color:var(--ink-soft)] md:flex">
-              <a href="#como" className="hover:text-[color:var(--ink)]">
-                Como fazemos
-              </a>
-              <a href="#servicos" className="hover:text-[color:var(--ink)]">
-                Serviços
-              </a>
-              <a href="#metodo" className="hover:text-[color:var(--ink)]">
-                Método
-              </a>
-            </nav>
-            <a className="wa-btn !py-2.5 !px-4 text-sm" href={WA} target="_blank" rel="noopener noreferrer">
-              WhatsApp
-            </a>
-          </div>
-        </header>
-        {children}
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );
