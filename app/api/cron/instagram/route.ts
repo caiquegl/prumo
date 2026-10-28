@@ -1,10 +1,11 @@
 import { put } from "@vercel/blob";
-import { assertNoRepeat, bank, buildCaption, pickItem, slotKey, titleOf } from "@/lib/ig/content";
+import { agencyCaption, createAgencyPost } from "@/lib/ig/agency";
+import { assertNoRepeat, titleOf } from "@/lib/ig/content";
 import { authorized } from "@/lib/ig/http";
 import { refreshStoredTokens } from "@/lib/ig/auth";
-import { account, publishImage } from "@/lib/ig/publish";
+import { account, publishImage, recentCaptions } from "@/lib/ig/publish";
 import { renderFeedImage } from "@/lib/ig/render";
-import { insertPublication, logEvent, publishedState } from "@/lib/ig/store";
+import { insertPublication, logEvent, publishedState, saveDraft } from "@/lib/ig/store";
 
 export const maxDuration = 60;
 
@@ -34,12 +35,23 @@ async function run(req: Request) {
     return Response.json({ ok: true, skipped: true, slot, reason: "já publicado neste horário" });
   }
 
-  const item = pickItem(state);
+  const captions = await recentCaptions(30).catch(() => [] as string[]);
+  const item = await createAgencyPost(state, captions);
   assertNoRepeat(state, item);
+
+  await logEvent("info", "agency", "brief escolhido", {
+    id: item.id,
+    layout: item.layout,
+    angle: item.angle,
+    pillar: item.pillar,
+    hasPhoto: Boolean(item.photoUrl),
+  });
+
   const inverted = state.published.length % 3 === 2 && item.layout !== "quote";
+  await saveDraft(item.id, item, inverted);
   const png = await renderFeedImage(item, inverted);
-  const imageUrl = await uploadOrPublicUrl(req, png, item.id, inverted);
-  const caption = buildCaption(item);
+  const imageUrl = await uploadOrPublicUrl(req, png, item.id);
+  const caption = agencyCaption(item);
 
   const ig = await account();
   const published = await publishImage(imageUrl, caption);
@@ -60,6 +72,7 @@ async function run(req: Request) {
     slot,
     item: item.id,
     layout: item.layout,
+    angle: item.angle,
     permalink: published.permalink,
   });
 
@@ -68,15 +81,25 @@ async function run(req: Request) {
     slot,
     item: item.id,
     layout: item.layout,
+    angle: item.angle,
+    pillar: item.pillar,
     dark: inverted,
+    photo: Boolean(item.photoUrl),
     image: imageUrl,
     permalink: published.permalink,
     account: ig.username,
-    remaining: bank.filter((it) => !state.published.some((p) => p.id === it.id)).length - 1,
   });
 }
 
-async function uploadOrPublicUrl(req: Request, png: Buffer, id: string, inverted: boolean) {
+function slotKey(now = new Date()) {
+  const hour = now.getUTCHours();
+  const slots = [11, 15, 21];
+  const nearest = slots.reduce((a, b) => (Math.abs(b - hour) < Math.abs(a - hour) ? b : a));
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), nearest));
+  return d.toISOString().slice(0, 13);
+}
+
+async function uploadOrPublicUrl(req: Request, png: Buffer, id: string) {
   try {
     const blob = await put(`ig-auto/${id}-${Date.now()}.png`, png, {
       access: "public",
@@ -85,9 +108,9 @@ async function uploadOrPublicUrl(req: Request, png: Buffer, id: string, inverted
     });
     return blob.url;
   } catch (err) {
-    console.error("[ig-cron] Blob indisponível, usando /api/og/feed:", err);
+    console.error("[ig-cron] Blob indisponível, usando /api/og/agency:", err);
     const origin = new URL(req.url).origin;
-    return `${origin}/api/og/feed?id=${encodeURIComponent(id)}&dark=${inverted ? "1" : "0"}&t=${Date.now()}`;
+    return `${origin}/api/og/agency?id=${encodeURIComponent(id)}&t=${Date.now()}`;
   }
 }
 

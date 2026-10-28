@@ -87,6 +87,20 @@ function Phone({ color, dim }: { color: string; dim: string }) {
 
 function Scene({ item, theme, w, h }: { item: FeedItem; theme: Theme; w: number; h: number }) {
   const kind = (item.visual || "leaves") as Visual;
+  if (item.photoUrl) {
+    return (
+      <div style={{ display: "flex", width: w, height: h, overflow: "hidden", borderRadius: 36, background: theme.card }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse/Satori */}
+        <img
+          src={item.photoUrl}
+          width={w}
+          height={h}
+          alt=""
+          style={{ display: "flex", width: w, height: h, objectFit: "cover" }}
+        />
+      </div>
+    );
+  }
   return (
     <div style={{ display: "flex", width: w, height: h, overflow: "hidden", borderRadius: 36, background: theme.card }}>
       <Art kind={kind} accent={theme.accent} ink={theme.ink} muted={theme.muted} w={w} h={h} />

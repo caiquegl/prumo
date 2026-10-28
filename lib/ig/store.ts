@@ -84,7 +84,34 @@ export async function ensureSchema() {
     )`;
   await sql`CREATE INDEX IF NOT EXISTS ig_logs_created_at_idx ON ig_logs (created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS ig_publications_published_at_idx ON ig_publications (published_at DESC)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS ig_drafts (
+      id TEXT PRIMARY KEY,
+      payload JSONB NOT NULL,
+      dark BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
   migrated = true;
+}
+
+export async function saveDraft(id: string, payload: unknown, dark = false) {
+  await ensureSchema();
+  await db()`
+    INSERT INTO ig_drafts (id, payload, dark)
+    VALUES (${id}, ${JSON.parse(JSON.stringify(payload))}, ${dark})
+    ON CONFLICT (id) DO UPDATE SET
+      payload = EXCLUDED.payload,
+      dark = EXCLUDED.dark,
+      created_at = now()`;
+}
+
+export async function getDraft(id: string): Promise<{ payload: unknown; dark: boolean } | null> {
+  await ensureSchema();
+  const rows = (await db()`SELECT payload, dark FROM ig_drafts WHERE id = ${id} LIMIT 1`) as Array<{
+    payload: unknown;
+    dark: boolean;
+  }>;
+  return rows[0] ?? null;
 }
 
 export async function logEvent(

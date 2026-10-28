@@ -16,6 +16,12 @@ export type FeedItem = {
   headline: string;
   hook: string;
   tags?: string[];
+  /** Foto real (Unsplash) para layouts hero/split — estilo agência. */
+  photoUrl?: string;
+  photoCredit?: string;
+  photoId?: string;
+  pillar?: string;
+  angle?: string;
 };
 
 export type PublishRecord = {

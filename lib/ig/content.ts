@@ -15,17 +15,11 @@ export function titleOf(it: FeedItem) {
 }
 
 export function buildCaption(it: FeedItem) {
-  const bits: string[] = [it.hook, titleOf(it)];
-  if (it.layout === "compare" && it.left && it.right) {
-    bits.push(`${it.left.label}: ${it.left.rows.join(" · ")}\n${it.right.label}: ${it.right.rows.join(" · ")}`);
-  } else if (it.items?.length) {
-    bits.push(it.items.map(([t]) => `· ${t}`).join("\n"));
-  } else if (it.stat) {
-    bits.push(`${it.stat.value} ${it.stat.label}`);
-  }
-  bits.push(`${plain(it.headline)} WhatsApp (11) 96633-1995 · link na bio.`);
+  // Caption curta estilo agência: 1 gancho + CTA + hashtags. Sem parágrafo.
+  const bits: string[] = [it.hook || titleOf(it), "WhatsApp (11) 96633-1995 · link na bio."];
+  if (it.photoCredit) bits.push(it.photoCredit);
   const tags = [...new Set([...(it.tags || []), ...BASE_TAGS])]
-    .slice(0, 6)
+    .slice(0, 5)
     .map((t) => `#${t.replace(/[^\p{L}\p{N}_]/gu, "")}`);
   bits.push(tags.join(" "));
   return bits.join("\n\n");
@@ -61,5 +55,14 @@ export function assertNoRepeat(state: IgState, item: FeedItem) {
   const last = state.published.at(-1);
   if (last && last.layout === item.layout) {
     throw new Error(`layout "${item.layout}" repetiria o post anterior`);
+  }
+  const title = titleOf(item).toLowerCase();
+  const sameTitle = state.published.some((p) => p.title.toLowerCase() === title);
+  if (sameTitle) {
+    throw new Error(`título "${titleOf(item)}" já foi publicado`);
+  }
+  const recent = state.published.slice(-3);
+  if (item.angle && recent.some((p) => p.id.includes(item.angle!))) {
+    throw new Error(`ângulo "${item.angle}" já saiu nos últimos posts`);
   }
 }
