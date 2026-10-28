@@ -25,8 +25,23 @@ export type SceneCopy = {
   metaRight?: string;
 };
 
+/** Variante interna — mesmo format, hierarquia visual diferente (anti-clone). */
+export type SceneVariant =
+  | "centerStack"
+  | "leftRail"
+  | "splitHero"
+  | "typeLeft"
+  | "typeCenter"
+  | "typeOnly"
+  | "glassTop"
+  | "glassBottom"
+  | "listLeft"
+  | "listBottom";
+
 export type SceneBrief = {
   format: SceneFormat;
+  /** Opcional — variação de layout dentro do mesmo format */
+  variant?: SceneVariant;
   palette: ScenePalette;
   copy: SceneCopy;
   /**
@@ -38,6 +53,20 @@ export type SceneBrief = {
    */
   artRole: "fullBleed" | "bottomDevice" | "sidePhoto" | "none";
 };
+
+export const VARIANTS_BY_FORMAT: Record<SceneFormat, SceneVariant[]> = {
+  productDark: ["centerStack", "leftRail", "splitHero"],
+  editorialLight: ["typeLeft", "typeCenter", "typeOnly"],
+  bastidor: ["glassTop", "glassBottom"],
+  anatomy: ["listLeft", "listBottom"],
+};
+
+export function pickVariant(format: SceneFormat, avoid?: string): SceneVariant {
+  const pool = VARIANTS_BY_FORMAT[format];
+  const free = pool.filter((v) => v !== avoid);
+  const use = free.length ? free : pool;
+  return use[Math.floor(Math.random() * use.length)]!;
+}
 
 export const FORMATS: SceneFormat[] = ["productDark", "editorialLight", "bastidor", "anatomy"];
 
