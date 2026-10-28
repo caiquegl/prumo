@@ -90,10 +90,11 @@ Invent ONE unique ILLUSTRATION for the CENTER of an Instagram sales post (typogr
 
 HARD RULES:
 - ZERO text, letters, numbers, logos, watermarks, @handles, brand names, phone numbers, UI labels with readable words.
-- Pure visual storytelling that makes the SERVICE obvious at a glance (single page mockup, conversion funnel to chat bubble shapes without letters, speed gauge, code vs template contrast as shapes, WhatsApp-style chat bubbles as abstract shapes, laptop with blank glowing UI blocks — not readable copy).
-- NEW composition every time. Forbidden concepts: ${avoidConcepts.join(", ") || "none"}.
-- Cream/terracotta/charcoal palette (#f3eee6, #d4573e, #1a1916). Clean margins top/bottom for overlay text.
-- NOT a generic stock photo of a boardroom. NOT abstract leaves only.
+- Pure visual storytelling that makes the SERVICE obvious (custom single page / web freela / WhatsApp lead) without writing words.
+- Invent a BRAND-NEW composition structure every time — change camera angle, object set, metaphor, and spatial layout. Forbidden concepts: ${avoidConcepts.join(", ") || "none"}.
+- Never reuse: same laptop desk shot, same empty frame, same leaves, same boardroom.
+- Cream/terracotta/charcoal (#f3eee6, #d4573e, #1a1916). Clean margins top/bottom for overlay text.
+- Prefer illustrated/editorial/design look over stock photo.
 
 Service angle to express visually:
 - kicker: ${brief.kicker}

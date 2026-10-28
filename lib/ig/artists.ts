@@ -5,6 +5,7 @@
 
 export type ArtistResult = {
   provider:
+    | "recraft"
     | "ideogram"
     | "pollinations-nanobanana"
     | "pollinations-flux"
@@ -271,7 +272,75 @@ async function pollLeonardo(generationId: string, prompt: string, key: string): 
   return null;
 }
 
-/** Ideogram 4.5 — melhor para design; usamos para VISUAL sem texto (tipografia fica no FeedCard). */
+/** Recraft — ilustração única com paleta Prumo (sem texto). */
+async function recraft(prompt: string): Promise<ArtistResult | null> {
+  const key = process.env.RECRAFT_API_TOKEN || process.env.RECRAFT_API_KEY;
+  if (!key) return null;
+  const clean = `${prompt}. Absolutely no text, letters, words, logos, watermarks or UI labels.`;
+  const model = process.env.RECRAFT_MODEL || "recraftv4_1";
+  try {
+    const res = await fetch("https://external.api.recraft.ai/v1/images/generations", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: clean.slice(0, 8000),
+        model,
+        n: 1,
+        size: "4:5",
+        image_format: "png",
+        response_format: "b64_json",
+        random_seed: Math.floor(Math.random() * 1_000_000_000),
+        controls: {
+          // cream + terracotta + charcoal (marca Prumo)
+          background_color: { rgb: [243, 238, 230] },
+          colors: [
+            { rgb: [212, 87, 62], weight: 0.45 },
+            { rgb: [26, 25, 22], weight: 0.35 },
+            { rgb: [251, 248, 243], weight: 0.2 },
+          ],
+        },
+      }),
+    });
+    if (!res.ok) {
+      console.error("[artist:recraft]", res.status, (await res.text().catch(() => "")).slice(0, 280));
+      return null;
+    }
+    const json = (await res.json()) as {
+      data?: Array<{ b64_json?: string; url?: string }>;
+    };
+    const row = json.data?.[0];
+    if (row?.b64_json) {
+      return {
+        provider: "recraft",
+        bytes: Buffer.from(row.b64_json, "base64"),
+        contentType: "image/png",
+        prompt: clean,
+        model,
+      };
+    }
+    if (row?.url) {
+      const got = await fetchBinary(row.url);
+      if (!got.ok || !got.bytes) return null;
+      return {
+        provider: "recraft",
+        bytes: got.bytes,
+        contentType: got.contentType || "image/png",
+        prompt: clean,
+        model,
+        publicUrl: row.url,
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error("[artist:recraft]", err);
+    return null;
+  }
+}
+
+/** Ideogram 4.5 — design; VISUAL sem texto (tipografia no FeedCard). */
 async function ideogram(prompt: string): Promise<ArtistResult | null> {
   const key = process.env.IDEOGRAM_API_KEY;
   if (!key) return null;
@@ -361,8 +430,9 @@ async function ideogram(prompt: string): Promise<ArtistResult | null> {
 
 export async function generateArt(prompt: string): Promise<ArtistResult | null> {
   const pollen = process.env.POLLINATIONS_API_KEY;
-  // Ideogram (se houver key) → nanobanana → flux → HF → Gemini → Leonardo
+  // Recraft → Ideogram → Pollinations → HF → Gemini → Leonardo (sempre arte nova, sem template)
   const attempts: Array<() => Promise<ArtistResult | null>> = [
+    () => recraft(prompt),
     () => ideogram(prompt),
     () => pollinations("nanobanana", prompt, pollen),
     () => pollinations("nanobanana-2", prompt, pollen),
