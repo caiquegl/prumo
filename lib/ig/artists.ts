@@ -47,7 +47,7 @@ async function fetchBinary(url: string, init?: RequestInit): Promise<{ ok: boole
 async function pollinations(model: string, prompt: string, key?: string): Promise<ArtistResult | null> {
   const { width, height } = portraitSize();
   const seed = Math.floor(Math.random() * 1_000_000);
-  const path = encodeURIComponent(prompt.slice(0, 800));
+  const path = encodeURIComponent(prompt.slice(0, 1800));
   const qs = new URLSearchParams({
     model,
     width: String(width),
@@ -430,12 +430,14 @@ async function ideogram(prompt: string): Promise<ArtistResult | null> {
 
 export async function generateArt(prompt: string): Promise<ArtistResult | null> {
   const pollen = process.env.POLLINATIONS_API_KEY;
-  // Grátis primeiro: Pollinations → HF → Gemini. Recraft/Ideogram/Leonardo só se houver key (pagos).
+  // Cron: post 100% IA. Nanobanana primeiro (design), depois flux público/grátis, HF, Gemini.
+  // Recraft/Ideogram/Leonardo só se houver key (pagos / opcional).
   const attempts: Array<() => Promise<ArtistResult | null>> = [
+    () => pollinations("nanobanana", prompt, pollen),
+    () => pollinations("nanobanana-2", prompt, pollen),
     () => pollinations("flux", prompt, pollen),
     () => pollinations("flux", prompt, undefined),
     () => pollinations("zimage", prompt, pollen),
-    () => pollinations("nanobanana", prompt, pollen),
     () => huggingface(prompt),
     () => geminiImagen(prompt),
     () => recraft(prompt),

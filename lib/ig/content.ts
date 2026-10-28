@@ -57,24 +57,18 @@ export function assertNoRepeat(state: IgState, item: FeedItem) {
   if (sameTitle) {
     throw new Error(`título "${titleOf(item)}" já foi publicado`);
   }
-  const recent = state.published.slice(-5);
+  const recent = state.published.slice(-8);
   if (item.concept) {
-    const sameConcept = recent.some(
-      (p) => p.item?.concept === item.concept || p.id.includes(item.concept!),
-    );
+    const sameConcept = recent.some((p) => {
+      if (p.item?.concept === item.concept) return true;
+      const mid = p.id.replace(/^agency-/i, "").replace(/-[a-z0-9]+$/i, "");
+      return mid === item.concept;
+    });
     if (sameConcept) throw new Error(`conceito visual "${item.concept}" já saiu recentemente`);
   }
   if (item.angle) {
     const ang = item.angle.toLowerCase();
-    const sameAngle = recent.some((p) => {
-      const prev = (p.item?.angle || "").toLowerCase();
-      if (prev && prev === ang) return true;
-      // id no formato agency-{angle}-{rand}
-      const parts = p.id.toLowerCase().split("-");
-      if (parts[0] !== "agency" || parts.length < 3) return false;
-      const mid = parts.slice(1, -1).join("-");
-      return mid === ang;
-    });
+    const sameAngle = recent.some((p) => (p.item?.angle || "").toLowerCase() === ang);
     if (sameAngle) throw new Error(`ângulo "${item.angle}" já saiu nos últimos posts`);
   }
   if (item.photoId) {
