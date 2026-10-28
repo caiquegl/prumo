@@ -35,21 +35,51 @@ export async function recentCaptions(limit = 40) {
   return data.map((m) => m.caption || "");
 }
 
+async function waitContainer(container: string, attempts = 48, delayMs = 3000) {
+  for (let i = 0; i < attempts; i++) {
+    const { status_code, status } = await call("GET", container, { fields: "status_code,status" });
+    if (status_code === "FINISHED") return;
+    if (status_code === "ERROR" || status_code === "EXPIRED") {
+      throw new Error(`container ${container}: ${status || status_code}`);
+    }
+    if (i === attempts - 1) throw new Error(`container ${container} não ficou pronto a tempo`);
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+}
+
 export async function publishImage(imageUrl: string, caption: string) {
   const igId = igUserId();
   const { id: container } = await call("POST", `${igId}/media`, { image_url: imageUrl, caption });
-  for (let i = 0; i < 36; i++) {
-    const { status_code, status } = await call("GET", container, { fields: "status_code,status" });
-    if (status_code === "FINISHED") break;
-    if (status_code === "ERROR" || status_code === "EXPIRED") {
-      throw new Error(`container ${container}: ${status}`);
-    }
-    if (i === 35) throw new Error(`container ${container} não ficou pronto a tempo`);
-    await new Promise((r) => setTimeout(r, 2500));
-  }
+  await waitContainer(container);
   const { id } = await call("POST", `${igId}/media_publish`, { creation_id: container });
   const { permalink } = await call("GET", id, { fields: "permalink" });
   return { id, permalink };
+}
+
+/** Reel vertical (9:16) a partir de video_url público. */
+export async function publishVideo(videoUrl: string, caption: string) {
+  const igId = igUserId();
+  const { id: container } = await call("POST", `${igId}/media`, {
+    media_type: "REELS",
+    video_url: videoUrl,
+    caption,
+    share_to_feed: "true",
+  });
+  await waitContainer(container, 60, 4000);
+  const { id } = await call("POST", `${igId}/media_publish`, { creation_id: container });
+  const { permalink } = await call("GET", id, { fields: "permalink" });
+  return { id, permalink };
+}
+
+export async function publishQueueMedia(input: {
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  caption: string;
+}) {
+  if (input.mediaType === "video") {
+    return publishVideo(input.mediaUrl, input.caption);
+  }
+  return publishImage(input.mediaUrl, input.caption);
 }
 
 export async function debugToken() {

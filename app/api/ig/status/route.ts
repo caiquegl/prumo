@@ -35,7 +35,8 @@ export async function GET(req: Request) {
     last: published.at(-1) ?? null,
     publications: published.slice(-10).reverse(),
     logs,
-    crons: ["07:00 token", "08:00 post", "12:00 post", "18:00 post"],
+    crons: ["07:00 token", "08:00 / 12:00 / 18:00 fila ig_queue → Instagram"],
+    queueMode: "pending → publishing → published|failed",
     timezone: "America/Sao_Paulo",
   });
 }

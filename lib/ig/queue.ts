@@ -143,12 +143,27 @@ export async function deleteQueuePost(id: number): Promise<QueuePost | null> {
   return rows[0] ?? null;
 }
 
-/** Próximo pendente na sequência (para o cron — fase seguinte). */
-export async function claimNextPending(): Promise<QueuePost | null> {
+/** Reabre itens travados em publishing (crash/timeout do worker). */
+export async function reclaimStalePublishing(minutes = 20): Promise<number> {
   await ensureQueueSchema();
+  const mins = Math.max(5, Math.min(180, Math.floor(minutes)));
   const rows = (await db()`
     UPDATE ig_queue
-    SET status = 'publishing', updated_at = now()
+    SET status = 'pending', error = COALESCE(error, 'reclaim: publishing stale'), updated_at = now()
+    WHERE status = 'publishing'
+      AND updated_at < now() - make_interval(mins => ${mins})
+    RETURNING id
+  `) as Array<{ id: number }>;
+  return rows.length;
+}
+
+/** Próximo pendente na sequência (cron). */
+export async function claimNextPending(): Promise<QueuePost | null> {
+  await ensureQueueSchema();
+  await reclaimStalePublishing(20);
+  const rows = (await db()`
+    UPDATE ig_queue
+    SET status = 'publishing', error = null, updated_at = now()
     WHERE id = (
       SELECT id FROM ig_queue
       WHERE status = 'pending'
@@ -159,4 +174,63 @@ export async function claimNextPending(): Promise<QueuePost | null> {
     RETURNING *
   `) as QueuePost[];
   return rows[0] ?? null;
+}
+
+export async function markQueuePublished(
+  id: number,
+  input: { mediaId: string; permalink: string },
+): Promise<QueuePost | null> {
+  await ensureQueueSchema();
+  const rows = (await db()`
+    UPDATE ig_queue
+    SET
+      status = 'published',
+      media_id = ${input.mediaId},
+      permalink = ${input.permalink},
+      published_at = now(),
+      error = null,
+      updated_at = now()
+    WHERE id = ${id}
+    RETURNING *
+  `) as QueuePost[];
+  return rows[0] ?? null;
+}
+
+export async function markQueueFailed(id: number, error: string): Promise<QueuePost | null> {
+  await ensureQueueSchema();
+  const rows = (await db()`
+    UPDATE ig_queue
+    SET status = 'failed', error = ${error.slice(0, 2000)}, updated_at = now()
+    WHERE id = ${id}
+    RETURNING *
+  `) as QueuePost[];
+  return rows[0] ?? null;
+}
+
+function normalizeTags(tags: unknown): string[] {
+  if (!tags) return [];
+  if (Array.isArray(tags)) return tags.map(String);
+  if (typeof tags === "string") {
+    try {
+      const parsed = JSON.parse(tags) as unknown;
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      return tags.split(",").map((t) => t.trim()).filter(Boolean);
+    }
+  }
+  return [];
+}
+
+/** Monta legenda final com hashtags das tags (sem duplicar). */
+export function captionWithTags(caption: string | null | undefined, tags: unknown): string {
+  const base = (caption || "").trim();
+  const list = normalizeTags(tags)
+    .map((t) => t.replace(/^#/, "").trim())
+    .filter(Boolean);
+  if (!list.length) return base;
+  const lower = base.toLowerCase();
+  const missing = list.filter((t) => !lower.includes(`#${t.toLowerCase()}`));
+  if (!missing.length) return base;
+  const hashLine = missing.map((t) => `#${t}`).join(" ");
+  return base ? `${base}\n\n${hashLine}` : hashLine;
 }

@@ -1,9 +1,13 @@
-import { produceManagedPost } from "@/lib/ig/manager";
-import { assertNoRepeat, titleOf } from "@/lib/ig/content";
 import { authorized } from "@/lib/ig/http";
 import { refreshStoredTokens } from "@/lib/ig/auth";
-import { account, publishImage, recentCaptions } from "@/lib/ig/publish";
-import { insertPublication, logEvent, publishedState, saveDraft } from "@/lib/ig/store";
+import { account, publishQueueMedia } from "@/lib/ig/publish";
+import {
+  captionWithTags,
+  claimNextPending,
+  markQueueFailed,
+  markQueuePublished,
+} from "@/lib/ig/queue";
+import { insertPublication, logEvent, publishedState } from "@/lib/ig/store";
 
 export const maxDuration = 300;
 
@@ -16,7 +20,7 @@ async function run(req: Request) {
   const now = new Date();
   const slot = force ? `manual-${now.toISOString().slice(0, 16)}` : slotKey(now);
 
-  await logEvent("info", "cron", "cron iniciado", { slot, force });
+  await logEvent("info", "cron", "cron iniciado (fila)", { slot, force });
 
   try {
     const refresh = await refreshStoredTokens();
@@ -33,64 +37,65 @@ async function run(req: Request) {
     return Response.json({ ok: true, skipped: true, slot, reason: "já publicado neste horário" });
   }
 
-  const captions = await recentCaptions(30).catch(() => [] as string[]);
-  const origin = new URL(req.url).origin;
-  const managed = await produceManagedPost({
-    state,
-    captions,
-    reqOrigin: origin,
-    saveDraft,
+  const claimed = await claimNextPending();
+  if (!claimed) {
+    await logEvent("info", "cron", "fila vazia — nada a publicar", { slot });
+    return Response.json({ ok: true, skipped: true, slot, reason: "fila vazia" });
+  }
+
+  const caption = captionWithTags(claimed.caption, claimed.tags);
+  await logEvent("info", "queue", "claim pending", {
+    id: claimed.id,
+    mediaType: claimed.media_type,
+    sort: claimed.sort_order,
   });
 
-  assertNoRepeat(state, managed.item);
-  await logEvent("info", "agency", "gerente fechou a peça", {
-    id: managed.item.id,
-    layout: managed.item.layout,
-    angle: managed.item.angle,
-    artist: managed.artist,
-    attempts: managed.attempts,
-  });
+  try {
+    const ig = await account();
+    const published = await publishQueueMedia({
+      mediaType: claimed.media_type === "video" ? "video" : "image",
+      mediaUrl: claimed.image_url,
+      caption,
+    });
 
-  const ig = await account();
-  const published = await publishImage(managed.imageUrl, managed.caption);
+    await markQueuePublished(claimed.id, {
+      mediaId: published.id,
+      permalink: published.permalink,
+    });
 
-  await insertPublication({
-    slot,
-    itemId: managed.item.id,
-    title: titleOf(managed.item),
-    layout: managed.item.layout,
-    format: "post",
-    mediaId: published.id,
-    permalink: published.permalink,
-    imageUrl: managed.imageUrl,
-    caption: managed.caption,
-    dark: false,
-    photoId: managed.item.concept
-      ? `concept:${managed.item.concept}`
-      : managed.item.photoId ?? null,
-  });
-  await logEvent("info", "publish", "post publicado", {
-    slot,
-    item: managed.item.id,
-    layout: managed.item.layout,
-    angle: managed.item.angle,
-    artist: managed.artist,
-    permalink: published.permalink,
-  });
+    await insertPublication({
+      slot,
+      itemId: `queue:${claimed.id}`,
+      title: `Fila #${claimed.id}`,
+      layout: claimed.media_type === "video" ? "reel" : "feed",
+      format: claimed.media_type === "video" ? "reel" : "post",
+      mediaId: published.id,
+      permalink: published.permalink,
+      imageUrl: claimed.image_url,
+      caption,
+    });
 
-  return Response.json({
-    ok: true,
-    slot,
-    item: managed.item.id,
-    layout: managed.item.layout,
-    angle: managed.item.angle,
-    pillar: managed.item.pillar,
-    artist: managed.artist,
-    attempts: managed.attempts,
-    image: managed.imageUrl,
-    permalink: published.permalink,
-    account: ig.username,
-  });
+    await logEvent("info", "publish", "post da fila publicado", {
+      slot,
+      queueId: claimed.id,
+      mediaType: claimed.media_type,
+      permalink: published.permalink,
+    });
+
+    return Response.json({
+      ok: true,
+      slot,
+      queueId: claimed.id,
+      mediaType: claimed.media_type,
+      permalink: published.permalink,
+      account: ig.username,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "falhou ao publicar fila";
+    await markQueueFailed(claimed.id, message);
+    await logEvent("error", "publish", message, { queueId: claimed.id });
+    return Response.json({ error: message, queueId: claimed.id }, { status: 500 });
+  }
 }
 
 function slotKey(now = new Date()) {
