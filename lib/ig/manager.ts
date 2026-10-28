@@ -120,7 +120,7 @@ Build ONE Instagram post brief for a marketing agency pipeline:
 
 PLAYBOOK:
 - Visual = product shot of website/LP UI (laptop/monitor/browser/phone). Cinematic, unique camera each time.
-- visualPrompt: English, NO text, NO logos, NO @handles, NO phone numbers, NO watermarks, leave clean space for typography in the chosen zone.
+- visualPrompt: English, NO readable text anywhere (including on the website mockup screen — use abstract UI bars/blocks only, blurred fake copy), NO logos, NO @handles, NO phone numbers, NO watermarks, leave clean space for typography in the chosen zone.
 - onImage.headline: Portuguese, max 8 words, perfect spelling, sells the service (single page / site sob medida).
 - onImage.sub: optional 1 short supporting line in Portuguese.
 - textZone one of: bottomBand | topStack | leftRail | centerQuote (pick what fits the scene; avoid ${input.avoidZone || "none"}).
@@ -169,7 +169,7 @@ Respond ONLY JSON:
     onImage: { headline: onHeadline, sub: onSub },
     textZone: parseZone(json.textZone, input.avoidZone),
     lightText: json.lightText !== false,
-    visualPrompt: `${visualPrompt}. Vertical Instagram 1080x1350 portfolio photo of a custom landing page / single-page website on a device. Absolutely NO text, letters, logos, watermarks, phone numbers or brand marks. Leave clean area for typography overlay (${String(json.textZone || "bottomBand")}). Cinematic lighting. Seed ${Date.now()}.`,
+    visualPrompt: `${visualPrompt}. Vertical Instagram 1080x1350 portfolio photo of a custom landing page / single-page website on a device. Absolutely NO readable text or letters anywhere — not on the screen UI either (only abstract placeholder bars/shapes). NO logos, watermarks, phone numbers or brand marks. Leave clean area for typography overlay (${String(json.textZone || "bottomBand")}). Cinematic lighting. Seed ${Date.now()}.`,
   };
 }
 
