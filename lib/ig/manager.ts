@@ -4,7 +4,6 @@ import { renderScenePost } from "./compose";
 import {
   FORMATS,
   normalizePalette,
-  parseFormat,
   type SceneBrief,
   type SceneFormat,
   type ScenePalette,
@@ -84,6 +83,44 @@ function recentConcepts(state: IgState): string[] {
     .filter(Boolean);
 }
 
+function conceptStem(raw: string): string {
+  return slugify(raw.split("|")[0] || raw)
+    .replace(/-r\d+.*$/i, "")
+    .replace(/-mvs[a-z0-9]+$/i, "")
+    .replace(/-v\d+$/i, "")
+    .replace(/-(prumo|rev|retry).*$/i, "")
+    .slice(0, 36);
+}
+
+function recentStems(state: IgState): string[] {
+  return [...new Set(recentConcepts(state).map(conceptStem).filter(Boolean))];
+}
+
+function recentFormats(state: IgState): SceneFormat[] {
+  return state.published
+    .slice(-8)
+    .map((p) => (p.item?.concept || "").split("|")[1])
+    .filter((f): f is SceneFormat => FORMATS.includes(f as SceneFormat));
+}
+
+/** Força rodízio: evita os 3 formatos mais recentes; se todos bloqueados, pega o menos recente. */
+function pickForcedFormat(state: IgState): SceneFormat {
+  const recent = recentFormats(state);
+  const blocked = new Set(recent.slice(-3));
+  const free = FORMATS.filter((f) => !blocked.has(f));
+  if (free.length) {
+    // espalha: prefere o que nunca apareceu nos últimos 8
+    const never = free.filter((f) => !recent.includes(f));
+    const pool = never.length ? never : free;
+    return pool[Math.floor(Math.random() * pool.length)]!;
+  }
+  // todos nos últimos 3 — escolhe o mais antigo entre os 4
+  for (const f of FORMATS) {
+    if (recent[recent.length - 1] !== f) return f;
+  }
+  return FORMATS[0]!;
+}
+
 type AgencyBrief = {
   concept: string;
   angle: string;
@@ -103,32 +140,41 @@ type AgencyBrief = {
  */
 async function inventAgencyBrief(input: {
   avoidConcepts: string[];
+  avoidStems: string[];
   avoidTitles: string[];
   recentCaptions: string[];
-  avoidFormat?: string;
+  forcedFormat: SceneFormat;
 }): Promise<AgencyBrief> {
+  const formatHints: Record<SceneFormat, string> = {
+    productDark: "dark bg + headline + chips + device mockup bottom (Felipe). artRole MUST be bottomDevice.",
+    editorialLight: "cream/paper bg + accent typography + tilted badge + optional side photo (Aviva). artRole sidePhoto or none.",
+    bastidor: "REAL workspace desk photo full-bleed + glass card + bottom type. artRole MUST be fullBleed. Camera: hands, coffee, messy-clean desk — NOT floating laptop on void.",
+    anatomy: "checklist of LP structure + partial device on side. artRole sidePhoto. Different headline every time (not always 'máquina de vendas').",
+  };
   const text = await geminiText(
     `You are the strategist + art director of Prumo Web (Brazilian freelance: custom single-page / landing sites + WhatsApp leads). Mix TWO reference styles:
 A) AVIVA — clean editorial layers: few words, accent word color, shapes/badges, cream or paper, photo as a piece not wallpaper.
-B) FELIPE DELFINO — TI/product marketing: laptop/phone mockups, dark glow, UI chips/pills, conversion copy ("máquina de vendas", landing, autoridade digital).
+B) FELIPE DELFINO — TI/product marketing: laptop/phone mockups, dark glow, UI chips/pills, conversion copy, autoridade digital.
 
 Build ONE Instagram FEED post as a LAYERED SCENE (not photo+text-band overlay).
 
-FORMATS (pick one, avoid ${input.avoidFormat || "none"}):
-- productDark: dark bg + headline + chips + device mockup bottom (Felipe)
-- editorialLight: cream bg + accent typography + tilted badge + optional side photo (Aviva)
-- bastidor: real workspace photo full-bleed + glass card + bottom type (Felipe technique)
-- anatomy: checklist of LP structure + partial device (Felipe content, Aviva clean)
+HARD REQUIREMENT — format is LOCKED to: ${input.forcedFormat}
+${formatHints[input.forcedFormat]}
+You MUST return "format": "${input.forcedFormat}" exactly. Do not pick another format.
+
+DIVERSITY (critical):
+- concept slug MUST be totally new — forbidden stems: ${input.avoidStems.slice(0, 20).join(", ") || "none"}
+- NEVER reuse themes like dark-oled / conversion-machine / cream-tech-stack if they appear in forbidden stems
+- headline MUST differ from recent captions; ban repeating the same metaphor twice in a row
+- vary camera, palette accent, and offer angle (performance vs autoridade vs WhatsApp funnel vs código próprio)
 
 RULES:
-- visualPrompt: English, NO readable letters anywhere (mockup screens = abstract bars only). NO logos, phones, @handles. Match artRole.
-- artRole: fullBleed|bottomDevice|sidePhoto|none — must fit format.
-- copy.headline: Portuguese, max 10 words, sells TI+marketing (site/landing/conversão).
-- copy.accentWord: one word FROM the headline that gets accent color.
-- copy.chips: 2-3 short labels (Landing page, Single page, WhatsApp, Performance...).
-- copy.badge: short punchline for editorialLight (optional other formats).
-- NEVER put Prumo logo, @prumo.web or phone in visualPrompt or on-image copy beyond the scene composer brand mark.
-- Caption will carry WhatsApp separately.
+- visualPrompt: English, NO readable letters anywhere (mockup screens = abstract bars only). NO logos, phones, @handles. Match artRole for ${input.forcedFormat}.
+- copy.headline: Portuguese, max 10 words, sells TI+marketing — UNIQUE wording.
+- copy.accentWord: one word FROM the headline.
+- copy.chips: 2-3 short labels.
+- copy.badge: required for editorialLight; optional otherwise.
+- NEVER put phone/@ in visualPrompt or on-image copy.
 
 Forbidden concepts: ${input.avoidConcepts.join(", ") || "none"}
 Avoid titles: ${input.avoidTitles.slice(0, 10).join(" | ") || "none"}
@@ -136,7 +182,7 @@ Recent captions: ${input.recentCaptions.slice(0, 5).join(" || ").slice(0, 700) |
 
 Respond ONLY JSON:
 {
-  "concept": "unique-english-slug",
+  "concept": "unique-english-slug-not-in-forbidden-stems",
   "angle": "short-slug",
   "pillar": "single-page|landing|codigo-proprio|performance|funil-whatsapp|ti-freela|autoridade-digital",
   "kicker": "label",
@@ -144,44 +190,46 @@ Respond ONLY JSON:
   "hook": "caption hook PT",
   "headline": "caption CTA PT",
   "tags": ["singlepage","landingpage"],
-  "format": "productDark",
-  "artRole": "bottomDevice",
-  "palette": {"bg":"#0b1220","ink":"#f4f7fb","accent":"#7dd3fc","soft":"rgba(244,247,251,0.72)"},
+  "format": "${input.forcedFormat}",
+  "artRole": "${defaultArtRole(input.forcedFormat)}",
+  "palette": {"bg":"#...","ink":"#...","accent":"#...","soft":"..."},
   "copy": {
-    "headline": "Seu site pode ser a máquina de vendas",
-    "accentWord": "máquina",
-    "sub": "Landing sob medida com lead no WhatsApp",
-    "badge": "Não é sorte. É estrutura.",
-    "chips": ["Landing page","Single page","WhatsApp"],
+    "headline": "unique PT headline",
+    "accentWord": "word",
+    "sub": "short support",
+    "badge": "optional punch",
+    "chips": ["A","B","C"],
     "metaLeft": "PRUMO WEB",
     "metaRight": "TI · LANDING"
   },
-  "visualPrompt": "detailed English prompt for clean device mockup / photo, no text..."
+  "visualPrompt": "detailed English prompt matching ${input.forcedFormat}, no text..."
 }`,
     1600,
   );
 
   const json = extractJsonObject(text);
-  const format = parseFormat(json.format, input.avoidFormat);
+  // Formato é imposto pelo rodízio — Gemini não escolhe
+  const format = input.forcedFormat;
   const copyRaw = (json.copy || {}) as Record<string, unknown>;
   const headline = String(copyRaw.headline || json.title || "Site sob medida que converte").trim();
   const accentWord = copyRaw.accentWord ? String(copyRaw.accentWord).trim() : undefined;
   const chips = Array.isArray(copyRaw.chips) ? (copyRaw.chips as string[]).map(String).slice(0, 4) : undefined;
   const paletteRaw = (json.palette || {}) as Partial<ScenePalette>;
-  const artRoleRaw = String(json.artRole || "");
-  const artRole = (["fullBleed", "bottomDevice", "sidePhoto", "none"].includes(artRoleRaw)
-    ? artRoleRaw
-    : defaultArtRole(format)) as SceneBrief["artRole"];
+  // artRole amarrado ao formato (evita productDark sem mockup / bastidor sem fullBleed)
+  const artRole = defaultArtRole(format);
 
   let visualPrompt = String(json.visualPrompt || "").trim();
   if (!visualPrompt && artRole !== "none") {
     visualPrompt = defaultVisual(format, artRole);
   }
   if (artRole !== "none") {
-    visualPrompt = `${visualPrompt}. Vertical Instagram 1080x1350. Absolutely NO readable text or letters anywhere — mockup screens only abstract UI bars/shapes. NO logos, watermarks, phone numbers. Seed ${Date.now()}.`;
+    visualPrompt = `${visualPrompt}. Vertical Instagram 1080x1350. Format ${format}. Absolutely NO readable text or letters anywhere — mockup screens only abstract UI bars/shapes. NO logos, watermarks, phone numbers. Seed ${Date.now()}-${Math.random().toString(36).slice(2, 8)}.`;
   }
 
-  const concept = slugify(String(json.concept || `post-${Date.now().toString(36)}`));
+  let concept = slugify(String(json.concept || `post-${Date.now().toString(36)}`));
+  if (input.avoidStems.includes(conceptStem(concept))) {
+    concept = slugify(`${format}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`);
+  }
   const scene: SceneBrief = {
     format,
     artRole,
@@ -337,22 +385,30 @@ export async function produceManagedPost(input: {
   saveDraft: (id: string, payload: unknown, dark?: boolean) => Promise<void>;
 }): Promise<ManagedPost> {
   const avoidConcepts = recentConcepts(input.state);
+  const avoidStems = recentStems(input.state);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
-  const lastFormat = input.state.published.at(-1)?.item?.concept?.split("|")[1];
+  let forcedFormat = pickForcedFormat(input.state);
 
   let brief = await inventAgencyBrief({
     avoidConcepts,
+    avoidStems,
     avoidTitles,
     recentCaptions: input.captions,
-    avoidFormat: lastFormat,
+    forcedFormat,
   });
 
   const attempts: ManagedPost["attempts"] = [];
   const maxRounds = 3;
 
   for (let round = 0; round < maxRounds; round++) {
-    if (avoidConcepts.some((c) => c === brief.concept || c.startsWith(`${brief.concept}|`))) {
-      brief = { ...brief, concept: `${brief.concept}-r${round}-${Date.now().toString(36)}`.slice(0, 48) };
+    if (
+      avoidConcepts.some((c) => c === brief.concept || c.startsWith(`${brief.concept}|`)) ||
+      avoidStems.includes(conceptStem(brief.concept))
+    ) {
+      brief = {
+        ...brief,
+        concept: slugify(`${brief.scene.format}-${Date.now().toString(36)}-r${round}`).slice(0, 48),
+      };
     }
 
     let artUrl: string | undefined;
@@ -417,27 +473,28 @@ export async function produceManagedPost(input: {
     }
 
     if (verdict.revisePrompt && brief.scene.artRole !== "none") {
+      // Mantém o formato forçado; só regenera a arte
       brief = {
         ...brief,
-        concept: slugify(`rev-${brief.concept}-${round}`),
-        scene: {
-          ...brief.scene,
-          format: parseFormat(undefined, brief.scene.format),
-        },
-        visualPrompt: `${verdict.revisePrompt}. No text no logos. Seed ${Date.now()}.`,
+        concept: slugify(`${brief.scene.format}-${Date.now().toString(36)}-rev`),
+        visualPrompt: `${verdict.revisePrompt}. Format ${brief.scene.format}. No text no logos. Seed ${Date.now()}.`,
       };
     } else {
+      const nextPool = FORMATS.filter((f) => f !== brief.scene.format);
+      forcedFormat = nextPool[Math.floor(Math.random() * nextPool.length)] || "editorialLight";
       brief = await inventAgencyBrief({
         avoidConcepts: [...avoidConcepts, brief.concept],
+        avoidStems: [...avoidStems, conceptStem(brief.concept)],
         avoidTitles,
         recentCaptions: input.captions,
-        avoidFormat: brief.scene.format,
+        forcedFormat,
       }).catch(() => ({
         ...brief,
-        concept: slugify(`retry-${brief.concept}`),
+        concept: slugify(`${forcedFormat}-${Date.now().toString(36)}`),
         scene: {
           ...brief.scene,
-          format: FORMATS.find((f) => f !== brief.scene.format) || "editorialLight",
+          format: forcedFormat,
+          artRole: defaultArtRole(forcedFormat),
         },
       }));
     }
