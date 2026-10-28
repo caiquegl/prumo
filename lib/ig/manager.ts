@@ -123,21 +123,44 @@ async function uploadArtistBytes(art: ArtistResult, id: string): Promise<string 
   }
 }
 
-/** Layouts com foto de fundo + tipografia/CTA de venda */
-function marketingLayout(layout: FeedItem["layout"]): FeedItem["layout"] {
-  if (layout === "hero" || layout === "split") return layout;
-  return "hero";
+/** Layouts com foto de fundo + tipografia/CTA de venda — nunca repete o layout do post anterior */
+function marketingLayout(layout: FeedItem["layout"], avoid: string[]): FeedItem["layout"] {
+  const want = layout === "hero" || layout === "split" ? layout : "hero";
+  if (!avoid.slice(-1).includes(want)) return want;
+  return want === "hero" ? "split" : "hero";
+}
+
+function artDataUrl(art: ArtistResult): string {
+  return `data:${art.contentType};base64,${art.bytes.toString("base64")}`;
+}
+
+function artPhotoId(art: ArtistResult): string {
+  // fingerprint curto para bloquear reuso da mesma arte
+  const head = art.bytes.subarray(0, 24).toString("hex");
+  return `art-${art.provider}-${art.bytes.byteLength}-${head}`;
+}
+
+function recentPhotoIds(state: IgState): Set<string> {
+  const ids = new Set<string>();
+  for (const p of state.published) {
+    const fromItem = (p as { item?: FeedItem }).item?.photoId;
+    if (fromItem) ids.add(fromItem);
+    if (p.id.startsWith("art-")) ids.add(p.id);
+  }
+  return ids;
 }
 
 async function composeMarketingCard(
   brief: AiBrief,
   photoUrl: string,
-  opts: { id: string; photoCredit?: string; photoId?: string; reqOrigin: string },
+  opts: { id: string; photoCredit?: string; photoId?: string; reqOrigin: string; layout: FeedItem["layout"] },
 ): Promise<{ item: FeedItem; imageUrl: string }> {
-  const layout = marketingLayout(brief.layout);
-  let item = briefToFeedItem({ ...brief, layout }, photoUrl, opts.photoCredit, opts.photoId);
+  let item = briefToFeedItem({ ...brief, layout: opts.layout }, photoUrl, opts.photoCredit, opts.photoId);
   item.id = opts.id;
   item.photoUrl = photoUrl;
+  item.photoId = opts.photoId;
+  // visual só importa sem foto — com foto nunca cai no leaves repetido
+  item.visual = undefined;
 
   const png = await renderFeedImage(item, false);
   try {
@@ -146,41 +169,51 @@ async function composeMarketingCard(
       contentType: "image/png",
       addRandomSuffix: true,
     });
-    return { item, imageUrl: blob.url };
+    // draft guarda URL pública curta (data URL é só pra render)
+    const forDraft = { ...item, photoUrl: blob.url };
+    return { item: forDraft, imageUrl: blob.url };
   } catch {
+    // OG re-renderiza a partir do draft — precisa da data URL (ou URL estável) no payload
     return { item, imageUrl: `${opts.reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
   }
 }
 
-async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string): Promise<{ item: FeedItem; imageUrl: string }> {
+async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string, layout: FeedItem["layout"]): Promise<{ item: FeedItem; imageUrl: string }> {
   const id = `agency-${brief.angle}-${Date.now().toString(36)}`;
-  let photoUrl: string | undefined;
-  let credit: string | undefined;
-  let photoId: string | undefined;
-  const photo = await findPortraitPhoto(brief.photoQuery || "premium business workspace");
+  const exclude = [...recentPhotoIds(state)];
+  const photo = await findPortraitPhoto(brief.photoQuery || "premium brazilian business workspace cinematic", exclude).catch(() => null);
   if (photo) {
     await trackUnsplashDownload(photo.downloadLocation);
-    photoUrl = photo.url;
-    credit = `Foto: ${photo.photographer} / Unsplash`;
-    photoId = photo.id;
+    return composeMarketingCard(brief, photo.url, {
+      id,
+      photoCredit: `Foto: ${photo.photographer} / Unsplash`,
+      photoId: photo.id,
+      reqOrigin,
+      layout,
+    });
   }
-  if (!photoUrl) {
-    // FeedCard tipográfico puro (quote/cards) se Unsplash falhar
-    const item = briefToFeedItem({ ...brief, layout: brief.layout === "stat" ? "quote" : brief.layout });
-    item.id = id;
-    const png = await renderFeedImage(item, false);
-    try {
-      const blob = await put(`ig-auto/${item.id}-${Date.now()}.png`, png, {
-        access: "public",
-        contentType: "image/png",
-        addRandomSuffix: true,
-      });
-      return { item, imageUrl: blob.url };
-    } catch {
-      return { item, imageUrl: `${reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
-    }
+
+  // Sem foto: layouts tipográficos (quote/cards/compare) — NUNCA hero/split com leaves
+  const textLayouts: FeedItem["layout"][] = ["quote", "cards", "compare"];
+  const last = state.published.at(-1)?.layout;
+  const textLayout = textLayouts.find((l) => l !== last) || "quote";
+  const visuals = ["mark", "wire", "chart", "cloud"] as const;
+  const visual = visuals[state.published.length % visuals.length];
+  const item = briefToFeedItem({ ...brief, layout: textLayout });
+  item.id = id;
+  item.visual = visual;
+  item.photoUrl = undefined;
+  const png = await renderFeedImage(item, false);
+  try {
+    const blob = await put(`ig-auto/${item.id}-${Date.now()}.png`, png, {
+      access: "public",
+      contentType: "image/png",
+      addRandomSuffix: true,
+    });
+    return { item, imageUrl: blob.url };
+  } catch {
+    return { item, imageUrl: `${reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
   }
-  return composeMarketingCard(brief, photoUrl, { id, photoCredit: credit, photoId, reqOrigin });
 }
 
 export async function produceManagedPost(input: {
@@ -191,17 +224,18 @@ export async function produceManagedPost(input: {
 }): Promise<ManagedPost> {
   const avoidLayouts = input.state.published.slice(-3).map((p) => p.layout);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
+  const seenPhotos = recentPhotoIds(input.state);
   const brief = await generateAgencyBrief({
     avoidTitles,
     avoidLayouts,
     recentCaptions: input.captions,
   });
-  // Peça de venda: fundo IA + FeedCard (marca, título, WhatsApp)
-  brief.layout = marketingLayout(brief.layout);
+  const layout = marketingLayout(brief.layout, avoidLayouts);
+  brief.layout = layout;
 
   let imagePrompt = await buildImagePrompt(brief).catch(
     () =>
-      `Premium Instagram vertical photo BACKGROUND for Brazilian tech freela agency Prumo Web. Theme: ${brief.photoQuery}. Cinematic, editorial, no text, no watermark, dark clean lower third for typography.`,
+      `Premium Instagram vertical photo BACKGROUND for Brazilian tech freela agency Prumo Web. Theme: ${brief.photoQuery}. Unique scene, cinematic, editorial, no text, no watermark, dark clean lower third for typography. Seed variety ${Date.now()}.`,
   );
 
   const attempts: ManagedPost["attempts"] = [];
@@ -213,14 +247,22 @@ export async function produceManagedPost(input: {
       attempts.push({ approved: false, reason: "todos os artistas falharam neste round" });
       break;
     }
-    const tempId = `agency-${brief.angle}-${Date.now().toString(36)}`;
-    const bgUrl = (await uploadArtistBytes(art, tempId)) || art.publicUrl;
-    if (!bgUrl) {
-      attempts.push({ provider: art.provider, approved: false, reason: "falha ao obter URL do fundo" });
+    const photoId = artPhotoId(art);
+    if (seenPhotos.has(photoId)) {
+      attempts.push({ provider: art.provider, approved: false, reason: "arte repetida (fingerprint)" });
       continue;
     }
+    const tempId = `agency-${brief.angle}-${Date.now().toString(36)}`;
+    // data URL garante foto única no FeedCard (Satori não depende do Pollinations)
+    const photoUrl = artDataUrl(art);
+    void (await uploadArtistBytes(art, tempId)); // best-effort blob do fundo
 
-    const composed = await composeMarketingCard(brief, bgUrl, { id: tempId, reqOrigin: input.reqOrigin });
+    const composed = await composeMarketingCard(brief, photoUrl, {
+      id: tempId,
+      photoId,
+      reqOrigin: input.reqOrigin,
+      layout,
+    });
     await input.saveDraft(composed.item.id, composed.item, false);
 
     const verdict = await managerApprove({ brief, provider: art.provider, imageUrl: composed.imageUrl });
@@ -236,11 +278,10 @@ export async function produceManagedPost(input: {
       };
     }
 
-    if (verdict.revisePrompt) imagePrompt = verdict.revisePrompt;
+    if (verdict.revisePrompt) imagePrompt = `${verdict.revisePrompt}. Completely different scene from previous attempt.`;
   }
 
-  // Fallback: FeedCard + Unsplash (ainda com tipografia de venda)
-  const fb = await feedcardFallback(brief, input.state, input.reqOrigin);
+  const fb = await feedcardFallback(brief, input.state, input.reqOrigin, layout);
   await input.saveDraft(fb.item.id, fb.item, false);
   attempts.push({ provider: "feedcard-unsplash", approved: true, reason: "fallback tipográfico após artistas" });
   return {

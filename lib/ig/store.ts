@@ -27,6 +27,7 @@ export type PublicationRow = {
   image_url: string | null;
   caption: string | null;
   dark: boolean | null;
+  photo_id: string | null;
   published_at: string;
 };
 
@@ -84,6 +85,7 @@ export async function ensureSchema() {
     )`;
   await sql`CREATE INDEX IF NOT EXISTS ig_logs_created_at_idx ON ig_logs (created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS ig_publications_published_at_idx ON ig_publications (published_at DESC)`;
+  await sql`ALTER TABLE ig_publications ADD COLUMN IF NOT EXISTS photo_id TEXT`;
   await sql`
     CREATE TABLE IF NOT EXISTS ig_drafts (
       id TEXT PRIMARY KEY,
@@ -190,16 +192,18 @@ export async function insertPublication(input: {
   imageUrl?: string | null;
   caption?: string | null;
   dark?: boolean;
+  photoId?: string | null;
 }) {
   await ensureSchema();
   await db()`
     INSERT INTO ig_publications (
-      slot, item_id, title, layout, format, media_id, permalink, image_url, caption, dark
+      slot, item_id, title, layout, format, media_id, permalink, image_url, caption, dark, photo_id
     )
     VALUES (
       ${input.slot}, ${input.itemId}, ${input.title}, ${input.layout},
       ${input.format ?? "post"}, ${input.mediaId ?? null}, ${input.permalink ?? null},
-      ${input.imageUrl ?? null}, ${input.caption ?? null}, ${input.dark ?? false}
+      ${input.imageUrl ?? null}, ${input.caption ?? null}, ${input.dark ?? false},
+      ${input.photoId ?? null}
     )
     ON CONFLICT (slot) DO UPDATE SET
       item_id = EXCLUDED.item_id,
@@ -211,6 +215,7 @@ export async function insertPublication(input: {
       image_url = EXCLUDED.image_url,
       caption = EXCLUDED.caption,
       dark = EXCLUDED.dark,
+      photo_id = EXCLUDED.photo_id,
       published_at = now()`;
 }
 
@@ -236,6 +241,7 @@ export async function publishedState(): Promise<IgState> {
         media_id: row.media_id || undefined,
         permalink: row.permalink || undefined,
         published_at: row.published_at,
+        item: row.photo_id ? ({ photoId: row.photo_id } as PublishRecord["item"]) : undefined,
       }),
     ),
   };

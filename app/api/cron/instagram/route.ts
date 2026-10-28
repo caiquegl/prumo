@@ -65,6 +65,7 @@ async function run(req: Request) {
     imageUrl: managed.imageUrl,
     caption: managed.caption,
     dark: false,
+    photoId: managed.item.photoId ?? null,
   });
   await logEvent("info", "publish", "post publicado", {
     slot,

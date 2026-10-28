@@ -65,4 +65,8 @@ export function assertNoRepeat(state: IgState, item: FeedItem) {
   if (item.angle && recent.some((p) => p.id.includes(item.angle!))) {
     throw new Error(`ângulo "${item.angle}" já saiu nos últimos posts`);
   }
+  if (item.photoId) {
+    const used = state.published.some((p) => p.item?.photoId === item.photoId);
+    if (used) throw new Error(`foto/arte "${item.photoId}" já foi publicada`);
+  }
 }

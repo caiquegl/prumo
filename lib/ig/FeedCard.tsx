@@ -86,7 +86,7 @@ function Phone({ color, dim }: { color: string; dim: string }) {
 }
 
 function Scene({ item, theme, w, h }: { item: FeedItem; theme: Theme; w: number; h: number }) {
-  const kind = (item.visual || "leaves") as Visual;
+  const kind = (item.visual || "mark") as Visual;
   if (item.photoUrl) {
     return (
       <div style={{ display: "flex", width: w, height: h, overflow: "hidden", borderRadius: 36, background: theme.card }}>

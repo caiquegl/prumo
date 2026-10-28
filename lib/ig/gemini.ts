@@ -103,11 +103,22 @@ Gere 1 post novo, visual e com gancho de engajamento. Prefira layout hero ou quo
   return brief;
 }
 
+const VISUALS_NO_LEAVES = ["mark", "wire", "chart", "cloud"] as const;
+
+function pickVisual(brief: AiBrief): (typeof VISUALS_NO_LEAVES)[number] {
+  if (brief.layout === "quote") return "mark";
+  const seed = `${brief.angle || ""}${brief.title || ""}`;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return VISUALS_NO_LEAVES[h % VISUALS_NO_LEAVES.length];
+}
+
 export function briefToFeedItem(brief: AiBrief, photoUrl?: string, photoCredit?: string, photoId?: string): FeedItem {
   return {
     id: `agency-${brief.angle || "ai"}-${Date.now().toString(36)}`,
     layout: brief.layout,
-    visual: brief.layout === "quote" ? "mark" : "leaves",
+    // nunca "leaves" — arte abstrata repetia em todo post sem foto
+    visual: pickVisual(brief),
     kicker: brief.kicker,
     title: brief.title,
     items: brief.items,

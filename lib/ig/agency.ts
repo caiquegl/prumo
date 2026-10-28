@@ -152,7 +152,7 @@ function pickFallback(state: IgState, captions: string[]): FeedItem {
   return {
     id: `agency-${top.angle}-${Date.now().toString(36)}`,
     layout: top.layout,
-    visual: top.visual || "leaves",
+    visual: top.visual || "mark",
     kicker: top.kicker,
     title: top.title,
     items: top.items,
