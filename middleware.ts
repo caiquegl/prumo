@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE, verifySessionTokenEdge } from "@/lib/admin/auth";
+import { ADMIN_COOKIE, verifySessionTokenEdge } from "@/lib/admin/session-edge";
 
 function bearerOk(req: NextRequest): boolean {
   const header = req.headers.get("authorization") || "";
@@ -21,7 +21,6 @@ export async function middleware(req: NextRequest) {
 
   if (!needsAuth) return NextResponse.next();
 
-  // API: cookie OU Bearer (agente)
   if (pathname.startsWith("/api/posts") && bearerOk(req)) {
     return NextResponse.next();
   }
