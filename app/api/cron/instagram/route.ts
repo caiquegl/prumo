@@ -4,6 +4,7 @@ import { account, publishQueueMedia } from "@/lib/ig/publish";
 import {
   captionWithTags,
   claimNextPending,
+  claimQueuePost,
   markQueueFailed,
   markQueuePublished,
 } from "@/lib/ig/queue";
@@ -16,9 +17,13 @@ async function run(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const force = new URL(req.url).searchParams.get("force") === "1";
+  const url = new URL(req.url);
+  const force = url.searchParams.get("force") === "1";
+  const idParam = Number(url.searchParams.get("id"));
   const now = new Date();
-  const slot = force ? `manual-${now.toISOString().slice(0, 16)}` : slotKey(now);
+  const slot = force || Number.isFinite(idParam)
+    ? `manual-${now.toISOString().slice(0, 16)}`
+    : slotKey(now);
 
   await logEvent("info", "cron", "cron iniciado (fila)", { slot, force });
 
@@ -37,10 +42,15 @@ async function run(req: Request) {
     return Response.json({ ok: true, skipped: true, slot, reason: "já publicado neste horário" });
   }
 
-  const claimed = await claimNextPending();
+  const claimed = Number.isFinite(idParam) && idParam > 0
+    ? await claimQueuePost(idParam)
+    : await claimNextPending();
   if (!claimed) {
-    await logEvent("info", "cron", "fila vazia — nada a publicar", { slot });
-    return Response.json({ ok: true, skipped: true, slot, reason: "fila vazia" });
+    const reason = Number.isFinite(idParam) && idParam > 0
+      ? `post ${idParam} não está pending/failed`
+      : "fila vazia";
+    await logEvent("info", "cron", reason, { slot, idParam });
+    return Response.json({ ok: true, skipped: true, slot, reason });
   }
 
   const caption = captionWithTags(claimed.caption, claimed.tags);

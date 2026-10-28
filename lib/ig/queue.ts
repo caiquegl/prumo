@@ -157,6 +157,18 @@ export async function reclaimStalePublishing(minutes = 20): Promise<number> {
   return rows.length;
 }
 
+/** Claim de um item específico (publicação manual). */
+export async function claimQueuePost(id: number): Promise<QueuePost | null> {
+  await ensureQueueSchema();
+  const rows = (await db()`
+    UPDATE ig_queue
+    SET status = 'publishing', error = null, updated_at = now()
+    WHERE id = ${id} AND status IN ('pending', 'failed')
+    RETURNING *
+  `) as QueuePost[];
+  return rows[0] ?? null;
+}
+
 /** Próximo pendente na sequência (cron). */
 export async function claimNextPending(): Promise<QueuePost | null> {
   await ensureQueueSchema();
