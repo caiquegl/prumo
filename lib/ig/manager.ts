@@ -88,8 +88,12 @@ type PostBrief = {
 };
 
 /**
- * Gemini inventa o TÓPICO + a ESTRUTURA VISUAL do post e devolve o prompt
- * para o gerador de imagem (nanobanana/flux). ZERO template FeedCard.
+ * Playbook extraído de feeds de web design / landing page (ex.: @_alysonfarias, @guilhermevictordesign):
+ * - O HERO da arte é o PRODUTO: mockup de site/landing em laptop, monitor ou browser (portfolio shot).
+ * - Pouquíssimo texto na imagem (0–6 palavras) — tipografia amadora quebra a peça.
+ * - Logo, @ e telefone NÃO vão na arte — ficam na legenda.
+ * - Visual premium: cinematic lighting, UI realista, ângulo de produto; não sticker/badge.
+ * - Cada post muda ângulo/composição (desk, floating device, dark OLED, close no hero da LP).
  */
 async function inventImagePost(input: {
   avoidConcepts: string[];
@@ -97,36 +101,34 @@ async function inventImagePost(input: {
   recentCaptions: string[];
 }): Promise<PostBrief> {
   const text = await geminiText(
-    `You are the creative director of Prumo Web (@prumo.web), a Brazilian freelance IT studio that builds custom single pages / landings and websites (own code, WhatsApp conversion).
+    `You are art director for Prumo Web — Brazilian freelance web/TI that sells custom single pages and sites.
 
-Create ONE Instagram feed post idea for NOW. The IMAGE MODEL (nanobanana/flux) will draw the ENTIRE finished graphic from your prompt — there is NO design template, NO fixed card, NO phone-on-left+list-on-right that repeats.
+Study this PLAYBOOK from professional web-design Instagram feeds (portfolio-first, like landing-page freelancers / Webflow studios):
+1) The IMAGE is a high-end PRODUCT shot of a website/landing page UI (laptop, iMac, browser window, or phone showing a real-looking LP — not abstract art).
+2) Almost NO text on the image. Optional: one short Portuguese punchline in quotes, max 6 words, perfect spelling. Prefer ZERO text if the mockup already sells the idea.
+3) NEVER paint logo, brand name "Prumo", "@prumo.web", WhatsApp, phone numbers, seals, badges, stickers, or watermark — those go only in the Instagram caption.
+4) Look: cinematic, editorial, agency portfolio. Soft shadows, realistic device bezels, crisp UI blocks (fake readable UI ok as blur/lorem shapes), terracotta/cream OR charcoal/dark OLED variants.
+5) Unique camera every time. Forbidden recent concepts: ${input.avoidConcepts.join(", ") || "none"}.
+6) Forbidden looks: clay sculptures, sticker badges, code editor with huge typo headlines, cream template card with logo bar, phone+numbered list infographic, gibberish text.
 
-RULES:
-- Invent a brand-new visual structure every time (composition, hierarchy, metaphors must change). Forbidden recent concepts: ${input.avoidConcepts.join(", ") || "none"}.
-- Forbidden repeated structures: phone mock + numbered list anatomy, bar chart + score gauge, integration hub with pills around a circle, cream card with same header/footer chrome.
-- Topic MUST sell: single page, custom website, TI freela, WhatsApp leads, code vs template, performance, etc.
-- Image must look like a professional marketing graphic 1080x1350, cream #f3eee6 + terracotta #d4573e + charcoal.
-- Include exact Portuguese copy IN the image prompt inside quotation marks (short headlines work best for image models).
-- Brand text to paint exactly: "Prumo Web" and orange P mark; handle exactly "@prumo.web"; WhatsApp exactly "(11) 96633-1995".
-- Prefer showing a real landing page / website UI / browser / laptop screen when it fits the topic — not abstract clay sculptures.
-- Avoid: empty boardroom, stock handshake, abstract leaves only, illegible gibberish text.
+Topic must clearly sell custom landing/single page / freela web (the mockup UI should look like a conversion landing page: hero, CTA area, clean sections).
 
-Also return caption fields (Portuguese) for Instagram caption (can differ slightly from on-image text).
+Also return Portuguese caption fields (brand + WhatsApp live ONLY in caption, not in imagePrompt).
 
-Avoid titles already used: ${input.avoidTitles.slice(0, 10).join(" | ") || "none"}
-Recent captions (do not echo): ${input.recentCaptions.slice(0, 5).join(" || ").slice(0, 700) || "none"}
+Avoid titles: ${input.avoidTitles.slice(0, 10).join(" | ") || "none"}
+Recent captions: ${input.recentCaptions.slice(0, 5).join(" || ").slice(0, 700) || "none"}
 
 Respond ONLY JSON:
 {
-  "concept": "unique-english-slug-for-this-composition",
+  "concept": "unique-english-slug",
   "angle": "short-slug",
   "pillar": "single-page|landing|codigo-proprio|performance|funil-whatsapp|ti-freela",
-  "kicker": "short label",
+  "kicker": "short label for DB",
   "title": "short title for DB",
-  "hook": "1 sentence caption hook",
-  "headline": "CTA line",
+  "hook": "caption hook selling the service",
+  "headline": "CTA for caption (not for image)",
   "tags": ["singlepage","desenvolvimento"],
-  "imagePrompt": "VERY detailed English prompt for the image model describing the FULL unique post design, exact quoted Portuguese strings, colors, layout invention for THIS hour only, vertical 4:5"
+  "imagePrompt": "English prompt for nanobanana/flux: full-bleed professional portfolio photo of a landing page mockup, unique angle, NO logos NO phone NO @handle, optional max 6-word Portuguese quote if any, vertical 4:5 Instagram"
 }`,
     1400,
   );
@@ -145,7 +147,7 @@ Respond ONLY JSON:
     hook: String(json.hook || "Site sob medida com lead no WhatsApp."),
     headline: String(json.headline || "Chama no WhatsApp."),
     tags: Array.isArray(json.tags) ? (json.tags as string[]).map(String) : ["singlepage", "desenvolvimento"],
-    imagePrompt: `${imagePrompt}. Finished Instagram marketing post 1080x1350, unique composition never reused, sharp Portuguese typography where text appears, Prumo Web brand, cream and terracotta, no watermark, no stock photo template frame. Seed ${Date.now()}.`,
+    imagePrompt: `${imagePrompt}. Professional web-design portfolio Instagram photo, 1080x1350 vertical. Show a realistic custom landing page / single-page website on a device. Absolutely NO logo, NO brand name, NO @handle, NO phone number, NO WhatsApp badge, NO watermark, NO sticker seal. Minimal or zero on-image text. Cinematic lighting, high-end agency look. Seed ${Date.now()}.`,
   };
 }
 
@@ -156,18 +158,19 @@ async function managerApprove(input: {
 }): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
   try {
     const text = await geminiText(
-      `Você é gerente de marketing da Prumo Web.
-Avalie o POST gerado 100% por IA (sem template).
-Aprovar se:
-1) Composição parece NOVA (não o card fixo celular+lista, nem moldura repetida)
-2) Fala de site/single page/TI/conversão de forma útil pra vender
-3) Tem cara de peça de marketing (não foto solta sem oferta)
-4) Texto da marca se legível o bastante OU a oferta visual fica clara
+      `Você é gerente de marketing da Prumo Web (feed estilo portfolio de web design).
+Avalie a IMAGEM gerada por IA.
+APROVAR só se:
+1) Parece foto/portfolio profissional de landing page ou site (mockup em device) — não arte abstrata nem sticker
+2) NÃO tem logo Prumo, @, telefone ou selo WhatsApp na arte (isso vai na legenda)
+3) Visual premium, ângulo interessante, UI de site legível como produto
+4) Composição diferente de posts genéricos com tipografia torta
+REPROVAR: badge laranja com número, logo forçado, texto ilegível, clay/abstrato, card template
 Conceito: ${input.brief.concept}
 Título: ${input.brief.title}
 Provider: ${input.provider}
 URL: ${input.imageUrl}
-JSON: {"approved":true|false,"reason":"frase","revisePrompt":"novo prompt inglês de POST COMPLETO com OUTRA estrutura se reprovar"}`,
+JSON: {"approved":true|false,"reason":"frase","revisePrompt":"novo prompt inglês de MOCKUP DE LANDING PAGE sem logo/telefone se reprovar"}`,
       450,
     );
     const json = extractJsonObject(text);
@@ -308,7 +311,8 @@ export async function produceManagedPost(input: {
 function buildCaption(item: FeedItem) {
   const lines = [
     item.hook || titleOf(item),
-    "Desenvolvimento de single page e site sob medida — TI freela, código próprio, lead no WhatsApp.",
+    item.headline || "Single page e site sob medida — código próprio, lead no WhatsApp.",
+    "Prumo Web · @prumo.web",
     "Orçamento no WhatsApp: (11) 96633-1995",
   ];
   const tags = [
