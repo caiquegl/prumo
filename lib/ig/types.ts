@@ -1,6 +1,20 @@
-export const LAYOUTS = ["hero", "quote", "split", "stat", "cards", "compare", "offer"] as const;
+export const LAYOUTS = [
+  "anatomy",
+  "perf",
+  "hub",
+  "quote",
+  "split",
+  "cards",
+  "compare",
+  "hero",
+  "stat",
+  "offer",
+] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export type Visual = "leaves" | "wire" | "chart" | "cloud" | "mark";
+
+/** Layouts de peça desenhada (estilo anatomia / performance / integrações) — preferidos */
+export const DESIGNED_LAYOUTS: Layout[] = ["anatomy", "perf", "hub", "quote", "split", "cards", "compare"];
 
 export type FeedItem = {
   id: string;
@@ -13,16 +27,19 @@ export type FeedItem = {
   left?: { label: string; rows: string[] };
   right?: { label: string; rows: string[] };
   stat?: { value: string; label: string };
+  bars?: { label: string; value: string; pct: number; accent?: boolean }[];
+  score?: { value: string; label: string };
+  checks?: { title: string; detail: string }[];
+  hubCenter?: string;
+  hubNodes?: string[];
   headline: string;
   hook: string;
   tags?: string[];
-  /** Foto real (Unsplash) para layouts hero/split — estilo agência. */
   photoUrl?: string;
   photoCredit?: string;
   photoId?: string;
   pillar?: string;
   angle?: string;
-  /** Conceito visual único gerado pela IA (anti-repetição de composição) */
   concept?: string;
 };
 

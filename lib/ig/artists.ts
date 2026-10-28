@@ -430,17 +430,16 @@ async function ideogram(prompt: string): Promise<ArtistResult | null> {
 
 export async function generateArt(prompt: string): Promise<ArtistResult | null> {
   const pollen = process.env.POLLINATIONS_API_KEY;
-  // Recraft → Ideogram → Pollinations → HF → Gemini → Leonardo (sempre arte nova, sem template)
+  // Grátis primeiro: Pollinations → HF → Gemini. Recraft/Ideogram/Leonardo só se houver key (pagos).
   const attempts: Array<() => Promise<ArtistResult | null>> = [
-    () => recraft(prompt),
-    () => ideogram(prompt),
-    () => pollinations("nanobanana", prompt, pollen),
-    () => pollinations("nanobanana-2", prompt, pollen),
     () => pollinations("flux", prompt, pollen),
     () => pollinations("flux", prompt, undefined),
     () => pollinations("zimage", prompt, pollen),
+    () => pollinations("nanobanana", prompt, pollen),
     () => huggingface(prompt),
     () => geminiImagen(prompt),
+    () => recraft(prompt),
+    () => ideogram(prompt),
     () => leonardo(prompt),
   ];
 

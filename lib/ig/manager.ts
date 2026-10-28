@@ -4,13 +4,14 @@ import { generateAgencyBrief, briefToFeedItem } from "./gemini";
 import { generateArt, type ArtistResult } from "./artists";
 import { renderFeedImage } from "./render";
 import type { FeedItem, IgState, Layout } from "./types";
+import { DESIGNED_LAYOUTS } from "./types";
 import { plain, titleOf } from "./content";
 
 export type ManagedPost = {
   item: FeedItem;
   caption: string;
   imageUrl: string;
-  artist?: ArtistResult["provider"] | "feedcard-unsplash";
+  artist?: ArtistResult["provider"] | "feedcard" | "feedcard+landing";
   attempts: Array<{ provider?: string; approved: boolean; reason: string }>;
 };
 
@@ -21,7 +22,7 @@ const MODELS = [
   "gemini-3.8-flash",
 ].filter(Boolean) as string[];
 
-async function geminiText(prompt: string, maxTokens = 900): Promise<string> {
+async function geminiText(prompt: string, maxTokens = 500): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY ausente");
   let last = "Gemini indisponível";
@@ -32,7 +33,7 @@ async function geminiText(prompt: string, maxTokens = 900): Promise<string> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.9, maxOutputTokens: maxTokens },
+        generationConfig: { temperature: 0.4, maxOutputTokens: maxTokens },
       }),
     });
     const json = (await res.json()) as {
@@ -59,175 +60,81 @@ function extractJsonObject(text: string): Record<string, unknown> {
 }
 
 function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 48) || "conceito";
-}
-
-function recentConcepts(state: IgState): string[] {
-  return state.published
-    .slice(-12)
-    .map((p) => p.item?.concept || (p.id.startsWith("agency-") ? p.id.split("-").slice(1, -1).join("-") : ""))
-    .filter(Boolean);
-}
-
-/**
- * Inventa só o VISUAL do miolo — tipografia/marca/WhatsApp entram depois no FeedCard (sem erro de @).
- * Foco: deixar a oferta de serviço óbvia (single page / TI freela).
- */
-async function inventServiceVisual(
-  brief: AiBrief,
-  avoidConcepts: string[],
-): Promise<{ concept: string; prompt: string }> {
-  const text = await geminiText(
-    `You are art director for Prumo Web — Brazilian freelance IT that sells custom single pages / landings and sites (own code, lead to WhatsApp).
-
-Invent ONE unique ILLUSTRATION for the CENTER of an Instagram sales post (typography will be overlaid later in code).
-
-HARD RULES:
-- ZERO text, letters, numbers, logos, watermarks, @handles, brand names, phone numbers, UI labels with readable words.
-- Pure visual storytelling that makes the SERVICE obvious (custom single page / web freela / WhatsApp lead) without writing words.
-- Invent a BRAND-NEW composition structure every time — change camera angle, object set, metaphor, and spatial layout. Forbidden concepts: ${avoidConcepts.join(", ") || "none"}.
-- Never reuse: same laptop desk shot, same empty frame, same leaves, same boardroom.
-- Cream/terracotta/charcoal (#f3eee6, #d4573e, #1a1916). Clean margins top/bottom for overlay text.
-- Prefer illustrated/editorial/design look over stock photo.
-
-Service angle to express visually:
-- kicker: ${brief.kicker}
-- offer title (for your inspiration only, DO NOT paint these words): ${plain(brief.title)}
-- client pain / hook: ${brief.hook}
-- pillar: ${brief.pillar}
-
-Respond ONLY JSON:
-{"concept":"unique-english-slug","prompt":"detailed English prompt for image model, explicitly forbidding any text/letters/logos"}`,
-    1000,
+  return (
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 48) || "conceito"
   );
-  const json = extractJsonObject(text);
-  const concept = slugify(String(json.concept || `v-${Date.now().toString(36)}`));
-  const prompt = String(json.prompt || "");
-  if (!prompt) throw new Error("prompt visual vazio");
-  return {
-    concept,
-    prompt: `${prompt}. Absolutely no text, no letters, no words, no logos, no watermarks, no @handles, no phone numbers. Vertical 4:5 illustration for Instagram marketing center panel, cream and terracotta, clean top and bottom margins. Seed ${Date.now()}.`,
-  };
 }
 
-export async function managerApprove(input: {
+async function managerApprove(input: {
   brief: AiBrief;
-  provider: string;
   imageUrl: string;
-  concept: string;
-}): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
+  layout: string;
+}): Promise<{ approved: boolean; reason: string }> {
   try {
     const text = await geminiText(
-      `Você é gerente comercial da Prumo Web (vende single page / site sob medida / TI freela).
-Avalie a PEÇA DE VENDA final.
-Aprovar só se:
-1) Oferta clara para o cliente (site/single page/desenvolvimento) — dá vontade de chamar no Zap
-2) Marca e WhatsApp legíveis (tipografia real, não borrada)
-3) Visual do miolo único para o conceito "${input.concept}" (não sala de reunião genérica)
-4) NÃO parece só foto solta sem proposta
-Brief: ${JSON.stringify({ title: plain(input.brief.title), hook: input.brief.hook, kicker: input.brief.kicker, headline: input.brief.headline })}
-Provider arte: ${input.provider}
+      `Você é gerente comercial da Prumo Web (single page / site sob medida / TI freela).
+Avalie a peça DESENHADA (infográfico/editorial com tipografia).
+Aprovar se: oferta clara, layout ${input.layout} coerente, CTA WhatsApp, NÃO arte abstrata sem sentido, NÃO sala de reunião.
+Brief: ${JSON.stringify({ title: plain(input.brief.title), hook: input.brief.hook, kicker: input.brief.kicker })}
 URL: ${input.imageUrl}
-JSON:
-{"approved":true|false,"reason":"frase","revisePrompt":"novo prompt inglês SÓ DO VISUAL (sem texto) se reprovar a arte, senão vazio"}`,
-      500,
+JSON: {"approved":true|false,"reason":"frase"}`,
+      300,
     );
     const json = extractJsonObject(text);
-    return {
-      approved: Boolean(json.approved),
-      reason: String(json.reason || ""),
-      revisePrompt: json.revisePrompt ? String(json.revisePrompt) : undefined,
-    };
+    return { approved: Boolean(json.approved), reason: String(json.reason || "") };
   } catch (err) {
-    return { approved: true, reason: `gerente indisponível, segue (${err instanceof Error ? err.message : "erro"})` };
+    return { approved: true, reason: `gerente indisponível (${err instanceof Error ? err.message : "erro"})` };
   }
 }
 
-function artDataUrl(art: ArtistResult): string {
-  return `data:${art.contentType};base64,${art.bytes.toString("base64")}`;
-}
-
-function artPhotoId(art: ArtistResult): string {
-  const head = art.bytes.subarray(0, 24).toString("hex");
-  return `art-${art.provider}-${art.bytes.byteLength}-${head}`;
-}
-
-async function uploadArtistBytes(art: ArtistResult, id: string): Promise<string | null> {
-  try {
-    const ext = art.contentType.includes("png") ? "png" : "jpg";
-    const blob = await put(`ig-auto/visual-${id}-${Date.now()}.${ext}`, art.bytes, {
-      access: "public",
-      contentType: art.contentType,
-      addRandomSuffix: true,
-    });
-    return blob.url;
-  } catch (err) {
-    console.error("[manager] blob visual failed", err);
-    return null;
-  }
-}
-
-async function composeOfferCard(
-  brief: AiBrief,
-  photoUrl: string,
-  opts: { id: string; photoId?: string; concept: string; reqOrigin: string },
+async function publishPng(
+  png: Buffer,
+  id: string,
+  item: FeedItem,
+  reqOrigin: string,
 ): Promise<{ item: FeedItem; imageUrl: string }> {
-  const item = briefToFeedItem({ ...brief, layout: "offer" }, photoUrl, undefined, opts.photoId);
-  item.id = opts.id;
-  item.layout = "offer";
-  item.photoUrl = photoUrl;
-  item.photoId = opts.photoId;
-  item.concept = opts.concept;
-  item.sub = brief.hook;
-  item.headline = brief.headline || "Seu próximo projeto pode começar aqui.";
-  item.visual = undefined;
-
-  const png = await renderFeedImage(item, false);
-  if (png.byteLength < 20_000) throw new Error("PNG oferta muito pequeno");
-
   try {
-    const blob = await put(`ig-auto/offer-${item.id}-${Date.now()}.png`, png, {
-      access: "public",
-      contentType: "image/png",
-      addRandomSuffix: true,
-    });
-    return { item: { ...item, photoUrl }, imageUrl: blob.url };
-  } catch (err) {
-    console.error("[manager] blob offer failed", err);
-    return {
-      item: { ...item, photoUrl, __renderedPng: png.toString("base64") } as FeedItem & { __renderedPng: string },
-      imageUrl: `${opts.reqOrigin}/api/og/rendered?id=${encodeURIComponent(item.id)}&t=${Date.now()}`,
-    };
-  }
-}
-
-async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string): Promise<{ item: FeedItem; imageUrl: string }> {
-  const id = `agency-${slugify(brief.angle)}-${Date.now().toString(36)}`;
-  const textLayouts: Layout[] = ["quote", "cards", "compare"];
-  const last = state.published.at(-1)?.layout;
-  const textLayout = textLayouts.find((l) => l !== last) || "quote";
-  const item = briefToFeedItem({ ...brief, layout: textLayout });
-  item.id = id;
-  item.photoUrl = undefined;
-  item.concept = `feedcard-${textLayout}`;
-  const png = await renderFeedImage(item, false);
-  try {
-    const blob = await put(`ig-auto/${item.id}-${Date.now()}.png`, png, {
+    const blob = await put(`ig-auto/designed-${id}-${Date.now()}.png`, png, {
       access: "public",
       contentType: "image/png",
       addRandomSuffix: true,
     });
     return { item, imageUrl: blob.url };
-  } catch {
+  } catch (err) {
+    console.error("[manager] blob designed failed", err);
     return {
       item: { ...item, __renderedPng: png.toString("base64") } as FeedItem & { __renderedPng: string },
-      imageUrl: `${reqOrigin}/api/og/rendered?id=${encodeURIComponent(item.id)}&t=${Date.now()}`,
+      imageUrl: `${reqOrigin}/api/og/rendered?id=${encodeURIComponent(id)}&t=${Date.now()}`,
+    };
+  }
+}
+
+/** Só usa gerador grátis se o layout pedir mockup de LANDING PAGE real (não abstrato). */
+async function maybeLandingPhoto(brief: AiBrief): Promise<{ url: string; photoId: string } | null> {
+  if (brief.layout !== "hero" && brief.layout !== "offer") return null;
+  const prompt = `Photorealistic vertical photo of a modern laptop on a desk showing a clean single-page landing website UI in the browser, hero section with big headline area and orange CTA button shape (no readable text), warm cream room, terracotta accents, Brazilian freelance web studio, high detail, no logos, no watermarks, no abstract sculpture, no clay, no funnel toys. Seed ${Date.now()}.`;
+  const art = await generateArt(prompt);
+  if (!art) return null;
+  try {
+    const blob = await put(`ig-auto/landing-${Date.now()}.jpg`, art.bytes, {
+      access: "public",
+      contentType: art.contentType,
+      addRandomSuffix: true,
+    });
+    return {
+      url: blob.url,
+      photoId: `art-${art.provider}-${art.bytes.byteLength}`,
+    };
+  } catch {
+    return {
+      url: `data:${art.contentType};base64,${art.bytes.toString("base64")}`,
+      photoId: `art-${art.provider}-${art.bytes.byteLength}`,
     };
   }
 }
@@ -238,12 +145,11 @@ export async function produceManagedPost(input: {
   reqOrigin: string;
   saveDraft: (id: string, payload: unknown, dark?: boolean) => Promise<void>;
 }): Promise<ManagedPost> {
-  const avoidLayouts = input.state.published.slice(-3).map((p) => p.layout);
+  const avoidLayouts = input.state.published.slice(-4).map((p) => p.layout);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
-  const avoidConcepts = recentConcepts(input.state);
   const avoidAngles = input.state.published
     .slice(-8)
-    .flatMap((p) => [p.item?.angle, p.id.replace(/^agency-/, "").replace(/-[a-z0-9]+$/i, "")])
+    .flatMap((p) => [p.item?.angle, p.item?.concept, p.id.replace(/^agency-/, "").replace(/-[a-z0-9]+$/i, "")])
     .filter(Boolean) as string[];
 
   const brief = await generateAgencyBrief({
@@ -253,81 +159,72 @@ export async function produceManagedPost(input: {
     avoidAngles,
   });
 
-  let design = await inventServiceVisual(brief, avoidConcepts).catch(() => ({
-    concept: slugify(`svc-${brief.angle}-${Date.now().toString(36)}`),
-    prompt: `Editorial illustration of a modern single-page website mockup on a laptop, terracotta and cream palette, abstract WhatsApp chat bubble shapes without any letters, clean conversion funnel shapes, no text no logos no watermarks, vertical Instagram center panel, soft studio light. Seed ${Date.now()}.`,
-  }));
+  // Garante peça desenhada (estilo anatomia/perf/hub), nunca moldura offer+abstrato
+  if (!DESIGNED_LAYOUTS.includes(brief.layout as Layout)) {
+    const pick = DESIGNED_LAYOUTS.find((l) => !avoidLayouts.includes(l)) || "anatomy";
+    brief.layout = pick;
+  }
 
   const attempts: ManagedPost["attempts"] = [];
-  const maxRounds = 3;
+  let photoUrl: string | undefined;
+  let photoId: string | undefined;
+  let artist: ManagedPost["artist"] = "feedcard";
 
-  for (let round = 0; round < maxRounds; round++) {
-    const art = await generateArt(design.prompt);
-    if (!art) {
-      attempts.push({ approved: false, reason: "artistas falharam neste round" });
-      break;
-    }
-
-    const tempId = `agency-${design.concept}-${Date.now().toString(36)}`;
-    const photoUrl = (await uploadArtistBytes(art, tempId)) || artDataUrl(art);
-
-    let composed: { item: FeedItem; imageUrl: string };
-    try {
-      composed = await composeOfferCard(brief, photoUrl, {
-        id: tempId,
-        photoId: artPhotoId(art),
-        concept: design.concept,
-        reqOrigin: input.reqOrigin,
-      });
-    } catch (err) {
-      attempts.push({
-        provider: art.provider,
-        approved: false,
-        reason: `compose offer: ${err instanceof Error ? err.message : "erro"}`,
-      });
-      continue;
-    }
-
-    await input.saveDraft(composed.item.id, composed.item, false);
-
-    const verdict = await managerApprove({
-      brief,
-      provider: art.provider,
-      imageUrl: composed.imageUrl,
-      concept: design.concept,
-    });
-    attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
-
-    if (verdict.approved) {
-      const { __renderedPng: _, ...cleanItem } = composed.item as FeedItem & { __renderedPng?: string };
-      void _;
-      return {
-        item: cleanItem,
-        caption: buildCaption(cleanItem),
-        imageUrl: composed.imageUrl,
-        artist: art.provider,
-        attempts,
-      };
-    }
-
-    if (verdict.revisePrompt) {
-      design = {
-        concept: slugify(`rev-${design.concept}-${round}`),
-        prompt: `${verdict.revisePrompt}. No text, no letters, no logos, no watermarks. Seed ${Date.now()}.`,
-      };
+  // Split pode opcionalmente ganhar mock visual via PhoneMock no FeedCard (sem IA).
+  // Hero raro: só landing page real via gerador grátis.
+  if (brief.layout === "hero") {
+    const landing = await maybeLandingPhoto(brief);
+    if (landing) {
+      photoUrl = landing.url;
+      photoId = landing.photoId;
+      artist = "feedcard+landing";
     } else {
-      design = await inventServiceVisual(brief, [...avoidConcepts, design.concept]).catch(() => design);
+      brief.layout = DESIGNED_LAYOUTS.find((l) => !avoidLayouts.includes(l)) || "anatomy";
     }
   }
 
-  const fb = await feedcardFallback(brief, input.state, input.reqOrigin);
-  await input.saveDraft(fb.item.id, fb.item, false);
-  attempts.push({ provider: "feedcard-unsplash", approved: true, reason: "fallback tipográfico" });
+  const id = `agency-${slugify(brief.concept || brief.angle)}-${Date.now().toString(36)}`;
+  const item = briefToFeedItem(brief, photoUrl, undefined, photoId);
+  item.id = id;
+  item.concept = brief.concept || slugify(`${brief.layout}-${brief.angle}`);
+
+  const png = await renderFeedImage(item, false);
+  if (png.byteLength < 15_000) throw new Error("PNG desenhado inválido");
+
+  const published = await publishPng(png, id, item, input.reqOrigin);
+  await input.saveDraft(published.item.id, published.item, false);
+
+  const verdict = await managerApprove({ brief, imageUrl: published.imageUrl, layout: item.layout });
+  attempts.push({ provider: artist, approved: verdict.approved, reason: verdict.reason });
+
+  // Se reprovar, tenta outro layout desenhado sem arte abstrata
+  if (!verdict.approved) {
+    const altLayout = DESIGNED_LAYOUTS.find((l) => l !== item.layout && !avoidLayouts.includes(l)) || "quote";
+    const altBrief = { ...brief, layout: altLayout, concept: slugify(`alt-${brief.angle}-${altLayout}`) };
+    const altItem = briefToFeedItem(altBrief);
+    altItem.id = `agency-${altBrief.concept}-${Date.now().toString(36)}`;
+    const altPng = await renderFeedImage(altItem, false);
+    const altPub = await publishPng(altPng, altItem.id, altItem, input.reqOrigin);
+    await input.saveDraft(altPub.item.id, altPub.item, false);
+    attempts.push({ provider: "feedcard", approved: true, reason: `fallback layout ${altLayout}` });
+    const { __renderedPng: _, ...clean } = altPub.item as FeedItem & { __renderedPng?: string };
+    void _;
+    return {
+      item: clean,
+      caption: buildCaption(clean),
+      imageUrl: altPub.imageUrl,
+      artist: "feedcard",
+      attempts,
+    };
+  }
+
+  const { __renderedPng: _, ...cleanItem } = published.item as FeedItem & { __renderedPng?: string };
+  void _;
   return {
-    item: fb.item,
-    caption: buildCaption(fb.item),
-    imageUrl: fb.imageUrl,
-    artist: "feedcard-unsplash",
+    item: cleanItem,
+    caption: buildCaption(cleanItem),
+    imageUrl: published.imageUrl,
+    artist,
     attempts,
   };
 }
@@ -338,7 +235,6 @@ function buildCaption(item: FeedItem) {
     "Desenvolvimento de single page e site sob medida — TI freela, código próprio, lead no WhatsApp.",
     "Orçamento no WhatsApp: (11) 96633-1995",
   ];
-  if (item.photoCredit) lines.push(item.photoCredit);
   const tags = [
     ...new Set([...(item.tags || []), "prumoweb", "singlepage", "desenvolvimento", "landingpage", "freelance"]),
   ]
