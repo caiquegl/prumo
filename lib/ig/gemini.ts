@@ -45,24 +45,27 @@ export async function generateAgencyBrief(input: {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY ausente");
 
-  const system = `Você é diretor criativo da agência Prumo Web (@prumo.web).
-Marca: sites, landings e sistemas sob medida para empresas brasileiras. Tom adulto, direto, premium, sem clichê de marketing digital genérico.
-Objetivo do post: parar o scroll, gerar comentário/salvamento, mostrar diferencial (sob medida, funil até WhatsApp, design próprio, operação clara).
+  const system = `Você é diretor criativo da Prumo Web (@prumo.web).
+OFERTA REAL (obrigatório refletir no post): freela de TI que desenvolve single pages / landings e sites sob medida para empresas — código próprio, conversão até WhatsApp, sem template pronto de plataforma.
+NÃO é agência corporativa de sala de reunião. NÃO fale de "operação empresarial" genérica, boardroom, C-level, consultoria estratégica vazia.
+Pilares válidos (escolha 1): single-page | landing | site-sob-medida | funil-whatsapp | codigo-proprio | ti-freela
+Ângulos bons: dor de template Wix/WordPress genérico, site que não gera lead no Zap, single page lenta/feia, dono de negócio sem presença digital clara, freela TI com entrega objetiva.
+Objetivo: vender o serviço de desenvolvimento (single page / site) — parar scroll e mandar pro WhatsApp.
 NÃO fale de prazo numérico, NÃO use layout "stat", NÃO invente desconto, NÃO use emoji, NÃO repita títulos evitados.
-Texto na arte: pouquíssimo. title com no máximo 2 linhas (use <br>), cada linha com até 5 palavras.
-hook (caption): 1 frase curta, provocativa.
-photoQuery: em inglês, foto lifestyle/business cinematográfica, sem texto na imagem.
+Texto na arte: pouquíssimo. title máx 2 linhas (<br>), cada linha até 5 palavras — falando de site, single page, lead ou código.
+hook (caption): 1 frase curta sobre site/single page/TI.
+photoQuery: em inglês, cena de TI/web (laptop com UI de site, tela de código suave, smartphone com chat + landing, mesa de desenvolvedor, mockup de single page). PROIBIDO: empty boardroom, luxury conference room, abstract leaves only.
 Responda SOMENTE um JSON válido com:
 {
   "layout": "hero"|"quote"|"split"|"cards"|"compare",
-  "kicker": "string curta",
+  "kicker": "string curta (ex: SINGLE PAGE, SITE SOB MEDIDA, TI FREELA)",
   "title": "linha1<br>linha2",
   "headline": "CTA curto",
   "hook": "frase caption",
   "items": [["a"],["b"],["c"]],
-  "left": {"label":"Antes","rows":["..","..",".."]},
-  "right": {"label":"Com a Prumo","rows":["..","..",".."]},
-  "photoQuery": "english photo search",
+  "left": {"label":"Template pronto","rows":["..","..",".."]},
+  "right": {"label":"Single page Prumo","rows":["..","..",".."]},
+  "photoQuery": "english web/dev photo search",
   "tags": ["tag1","tag2"],
   "pillar": "slug",
   "angle": "slug-unico"
@@ -72,7 +75,7 @@ items só se layout for split ou cards. left/right só se compare.`;
   const user = `Evitar layouts recentes: ${input.avoidLayouts.join(", ") || "nenhum"}
 Evitar títulos: ${input.avoidTitles.slice(0, 12).join(" | ") || "nenhum"}
 Captions recentes do perfil (não ecoar): ${input.recentCaptions.slice(0, 8).join(" || ").slice(0, 1200) || "nenhuma"}
-Gere 1 post novo, visual e com gancho de engajamento. Prefira layout hero ou quote se possível.`;
+Gere 1 post novo sobre desenvolvimento de single page / site sob medida (TI freela). Prefira hero ou split.`;
 
   let text = "";
   let lastError = "Gemini indisponível";

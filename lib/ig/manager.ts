@@ -60,23 +60,27 @@ function extractJsonObject(text: string): Record<string, unknown> {
 }
 
 export async function buildImagePrompt(brief: AiBrief): Promise<string> {
-  const text = await geminiText(`Você é diretor de arte da Prumo Web.
-Crie UM prompt em inglês para o FUNDO fotográfico de um post de marketing Instagram 1080x1350.
-A tipografia, marca e CTA serão aplicados DEPOIS no layout — a foto é só cenário.
-Marca: agência freela de sites/sistemas sob medida, visual premium, cinematográfico.
+  const text = await geminiText(`Você é diretor de arte da Prumo Web (freela de TI: single pages e sites sob medida).
+Crie UM prompt em inglês para o FUNDO fotográfico de um post Instagram 1080x1350.
+A tipografia/marca/CTA entram depois — a foto é só cenário de DESENVOLVIMENTO WEB / produto digital.
+Cenas OK: laptop showing a clean landing page UI, developer desk with monitor and soft code, smartphone next to a single-page mockup, browser window with modern website, small business owner reviewing a site on laptop.
+Cenas PROIBIDAS: empty luxury boardroom, conference table with chairs only, abstract leaves, generic skyscraper, stock "handshake CEO".
+Visual: warm/editorial, premium but tech — not corporate boardroom.
 Deixe a TERCEIRA INFERIOR mais limpa/escura para título e WhatsApp.
 NÃO peça tipografia/letras/logos/watermark/botões na imagem.
-NÃO cite prazo numérico.
 Ângulo: ${brief.angle} | pilar: ${brief.pillar} | kicker: ${brief.kicker}
-Título da peça (contexto): ${plain(brief.title)}
+Título: ${plain(brief.title)}
 Hook: ${brief.hook}
 photoQuery base: ${brief.photoQuery}
 Responda SOMENTE JSON: {"prompt":"...","negative":"..."}`);
   const json = extractJsonObject(text);
   const prompt = String(json.prompt || "");
-  const negative = String(json.negative || "text, watermark, logo, low quality, blurry, busy bottom third");
+  const negative = String(
+    json.negative ||
+      "text, watermark, logo, boardroom, conference table, empty meeting room, leaves abstract, low quality, blurry, busy bottom third",
+  );
   if (!prompt) throw new Error("prompt de imagem vazio");
-  return `${prompt}. Avoid: ${negative}. Vertical 4:5 Instagram feed background, high-end commercial photography, space at bottom for typography.`;
+  return `${prompt}. Avoid: ${negative}. Vertical 4:5 Instagram feed background, web/tech product photography, space at bottom for typography.`;
 }
 
 export async function managerApprove(input: {
@@ -85,13 +89,18 @@ export async function managerApprove(input: {
   imageUrl: string;
 }): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
   try {
-    const text = await geminiText(`Você é gerente de marketing da Prumo Web. Avalie se o POST DE VENDA está pronto.
-Critérios obrigatórios: layout de marketing (marca + título + CTA WhatsApp), visual premium, engajamento, diferencial sob medida / freela, NÃO foto solta sem texto, NÃO anúncio de prazo.
-Brief: ${JSON.stringify({ title: briefTitle(input.brief), hook: input.brief.hook, angle: input.brief.angle, kicker: input.brief.kicker })}
+    const text = await geminiText(`Você é gerente de marketing da Prumo Web (TI freela: single page, landing, site sob medida).
+Avalie se o POST DE VENDA está pronto e coerente com a oferta.
+Critérios obrigatórios:
+- layout de marketing (marca + título + CTA WhatsApp)
+- copy falando de site / single page / desenvolvimento / lead no Zap (não "operação corporativa" genérica)
+- fundo com cara de web/TI (laptop, UI, código suave, mockup) — REPROVE sala de reunião vazia / boardroom
+- NÃO foto solta sem texto, NÃO prazo numérico
+Brief: ${JSON.stringify({ title: briefTitle(input.brief), hook: input.brief.hook, angle: input.brief.angle, kicker: input.brief.kicker, pillar: input.brief.pillar })}
 Provider fundo: ${input.provider}
 Peça composta: ${input.imageUrl}
 Responda SOMENTE JSON:
-{"approved":true|false,"reason":"frase curta","revisePrompt":"novo prompt de FUNDO em inglês se reprovar a foto de fundo, senão vazio"}`);
+{"approved":true|false,"reason":"frase curta","revisePrompt":"novo prompt de FUNDO em inglês focado em web/dev se reprovar a foto, senão vazio"}`);
     const json = extractJsonObject(text);
     return {
       approved: Boolean(json.approved),
@@ -186,7 +195,10 @@ async function composeMarketingCard(
 async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: string, layout: FeedItem["layout"]): Promise<{ item: FeedItem; imageUrl: string }> {
   const id = `agency-${brief.angle}-${Date.now().toString(36)}`;
   const exclude = [...recentPhotoIds(state)];
-  const photo = await findPortraitPhoto(brief.photoQuery || "premium brazilian business workspace cinematic", exclude).catch(() => null);
+  const photo = await findPortraitPhoto(
+    brief.photoQuery || "laptop modern website landing page desk warm light",
+    exclude,
+  ).catch(() => null);
   if (photo) {
     await trackUnsplashDownload(photo.downloadLocation);
     return composeMarketingCard(brief, photo.url, {
@@ -243,7 +255,7 @@ export async function produceManagedPost(input: {
 
   let imagePrompt = await buildImagePrompt(brief).catch(
     () =>
-      `Premium Instagram vertical photo BACKGROUND for Brazilian tech freela agency Prumo Web. Theme: ${brief.photoQuery}. Unique scene, cinematic, editorial, no text, no watermark, dark clean lower third for typography. Seed variety ${Date.now()}.`,
+      `Cinematic vertical photo of a laptop on a desk showing a modern single-page website UI, soft warm light, Brazilian freelance web developer workspace, shallow depth of field, dark clean lower third for typography, no text no watermark. Theme: ${brief.photoQuery}. Seed ${Date.now()}.`,
   );
 
   const attempts: ManagedPost["attempts"] = [];
@@ -316,11 +328,13 @@ export async function produceManagedPost(input: {
 function buildCaption(item: FeedItem) {
   const lines = [
     item.hook || titleOf(item),
-    "Site ou sistema sob medida pro seu negócio. Freela com entrega clara.",
+    "Desenvolvimento de single page e site sob medida — TI freela, código próprio, lead no WhatsApp.",
     "Chama no WhatsApp: (11) 96633-1995",
   ];
   if (item.photoCredit) lines.push(item.photoCredit);
-  const tags = [...new Set([...(item.tags || []), "prumoweb", "freelance", "desenvolvimento", "empresas"])]
+  const tags = [
+    ...new Set([...(item.tags || []), "prumoweb", "singlepage", "desenvolvimento", "landingpage", "freelance"]),
+  ]
     .slice(0, 6)
     .map((t) => `#${t.replace(/[^\p{L}\p{N}_]/gu, "")}`);
   lines.push(tags.join(" "));
