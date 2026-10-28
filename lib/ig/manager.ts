@@ -172,12 +172,14 @@ async function composeMarketingCard(
       contentType: "image/png",
       addRandomSuffix: true,
     });
-    // draft: não guarda o PNG composto como photoUrl (virava “foto” vazia no re-render)
-    const forDraft = { ...item, photoUrl };
-    return { item: forDraft, imageUrl: blob.url };
-  } catch {
-    // OG re-renderiza a partir do draft com a mesma photoUrl
-    return { item, imageUrl: `${opts.reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
+    return { item: { ...item, photoUrl }, imageUrl: blob.url };
+  } catch (err) {
+    console.error("[manager] blob mkt failed, serving rendered PNG from draft", err);
+    // Fallback estável: PNG já renderizado no Neon (não re-renderiza no OG — evita meio branco)
+    return {
+      item: { ...item, photoUrl, __renderedPng: png.toString("base64") } as FeedItem & { __renderedPng: string },
+      imageUrl: `${opts.reqOrigin}/api/og/rendered?id=${encodeURIComponent(item.id)}&t=${Date.now()}`,
+    };
   }
 }
 
@@ -215,7 +217,10 @@ async function feedcardFallback(brief: AiBrief, state: IgState, reqOrigin: strin
     });
     return { item, imageUrl: blob.url };
   } catch {
-    return { item, imageUrl: `${reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
+    return {
+      item: { ...item, __renderedPng: png.toString("base64") } as FeedItem & { __renderedPng: string },
+      imageUrl: `${reqOrigin}/api/og/rendered?id=${encodeURIComponent(item.id)}&t=${Date.now()}`,
+    };
   }
 }
 
@@ -275,20 +280,18 @@ export async function produceManagedPost(input: {
       });
       continue;
     }
-    // draft sem data URL gigante: guarda URL blob/http se houver
-    const draftItem =
-      photoUrl.startsWith("data:")
-        ? { ...composed.item, photoUrl: undefined, visual: composed.item.visual || "mark" }
-        : composed.item;
-    await input.saveDraft(composed.item.id, draftItem, false);
+    // draft precisa do __renderedPng quando o imageUrl aponta para /api/og/rendered
+    await input.saveDraft(composed.item.id, composed.item, false);
 
     const verdict = await managerApprove({ brief, provider: art.provider, imageUrl: composed.imageUrl });
     attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
 
     if (verdict.approved) {
+      const { __renderedPng: _, ...cleanItem } = composed.item as FeedItem & { __renderedPng?: string };
+      void _;
       return {
-        item: composed.item,
-        caption: buildCaption(composed.item),
+        item: cleanItem,
+        caption: buildCaption(cleanItem),
         imageUrl: composed.imageUrl,
         artist: art.provider,
         attempts,
