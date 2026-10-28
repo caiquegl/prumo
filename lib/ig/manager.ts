@@ -1,7 +1,15 @@
 import { put } from "@vercel/blob";
 import { generateArt, type ArtistResult } from "./artists";
-import { renderTypedPost } from "./compose";
-import type { TextZone } from "./TypeOverlay";
+import { renderScenePost } from "./compose";
+import {
+  FORMATS,
+  normalizePalette,
+  parseFormat,
+  type SceneBrief,
+  type SceneFormat,
+  type ScenePalette,
+} from "./scene";
+import { orshotTemplateId, renderOrshot } from "./orshot";
 import type { FeedItem, IgState } from "./types";
 import { titleOf } from "./content";
 
@@ -19,8 +27,6 @@ const MODELS = [
   "gemini-3.5-flash-lite",
   "gemini-3.8-flash",
 ].filter(Boolean) as string[];
-
-const ZONES: TextZone[] = ["bottomBand", "topStack", "leftRail", "centerQuote"];
 
 async function geminiText(prompt: string, maxTokens = 1200): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
@@ -78,12 +84,6 @@ function recentConcepts(state: IgState): string[] {
     .filter(Boolean);
 }
 
-function parseZone(raw: unknown, avoid?: string): TextZone {
-  const z = String(raw || "bottomBand") as TextZone;
-  if (ZONES.includes(z) && z !== avoid) return z;
-  return ZONES.find((x) => x !== avoid) || "bottomBand";
-}
-
 type AgencyBrief = {
   concept: string;
   angle: string;
@@ -93,39 +93,42 @@ type AgencyBrief = {
   hook: string;
   headline: string;
   tags: string[];
-  /** Copy na arte — ortografia garantida pelo tipógrafo */
-  onImage: { headline: string; sub?: string };
-  textZone: TextZone;
-  lightText: boolean;
-  /** Prompt visual SEM texto/logo/telefone */
+  scene: SceneBrief;
+  /** Prompt visual SEM texto/logo/telefone — arte pra encaixar na cena */
   visualPrompt: string;
 };
 
 /**
- * Estrategista + diretor de arte: brief de venda + prompt visual limpo + zona tipográfica.
+ * Estrategista + diretor: mix Aviva (camadas/tipografia) + Felipe (TI/produto/mockup).
  */
 async function inventAgencyBrief(input: {
   avoidConcepts: string[];
   avoidTitles: string[];
   recentCaptions: string[];
-  avoidZone?: string;
+  avoidFormat?: string;
 }): Promise<AgencyBrief> {
   const text = await geminiText(
-    `You are the strategist + art director of Prumo Web (Brazilian freelance TI: custom single pages / landings, WhatsApp leads).
+    `You are the strategist + art director of Prumo Web (Brazilian freelance: custom single-page / landing sites + WhatsApp leads). Mix TWO reference styles:
+A) AVIVA — clean editorial layers: few words, accent word color, shapes/badges, cream or paper, photo as a piece not wallpaper.
+B) FELIPE DELFINO — TI/product marketing: laptop/phone mockups, dark glow, UI chips/pills, conversion copy ("máquina de vendas", landing, autoridade digital).
 
-Build ONE Instagram post brief for a marketing agency pipeline:
-1) Artist generates a CLEAN visual (no letters) — portfolio mockup of a landing page on device.
-2) Typesetter overlays PERFECT Portuguese typography in a flexible zone (not a fixed card template).
-3) Caption carries brand + WhatsApp (never painted on the image).
+Build ONE Instagram FEED post as a LAYERED SCENE (not photo+text-band overlay).
 
-PLAYBOOK:
-- Visual = product shot of website/LP UI (laptop/monitor/browser/phone). Cinematic, unique camera each time.
-- visualPrompt: English, NO readable text anywhere (including on the website mockup screen — use abstract UI bars/blocks only, blurred fake copy), NO logos, NO @handles, NO phone numbers, NO watermarks, leave clean space for typography in the chosen zone.
-- onImage.headline: Portuguese, max 8 words, perfect spelling, sells the service (single page / site sob medida).
-- onImage.sub: optional 1 short supporting line in Portuguese.
-- textZone one of: bottomBand | topStack | leftRail | centerQuote (pick what fits the scene; avoid ${input.avoidZone || "none"}).
-- lightText: true if band is dark over photo; false if band is cream.
-- NEVER put Prumo logo, @prumo.web or phone in visualPrompt or onImage (caption only).
+FORMATS (pick one, avoid ${input.avoidFormat || "none"}):
+- productDark: dark bg + headline + chips + device mockup bottom (Felipe)
+- editorialLight: cream bg + accent typography + tilted badge + optional side photo (Aviva)
+- bastidor: real workspace photo full-bleed + glass card + bottom type (Felipe technique)
+- anatomy: checklist of LP structure + partial device (Felipe content, Aviva clean)
+
+RULES:
+- visualPrompt: English, NO readable letters anywhere (mockup screens = abstract bars only). NO logos, phones, @handles. Match artRole.
+- artRole: fullBleed|bottomDevice|sidePhoto|none — must fit format.
+- copy.headline: Portuguese, max 10 words, sells TI+marketing (site/landing/conversão).
+- copy.accentWord: one word FROM the headline that gets accent color.
+- copy.chips: 2-3 short labels (Landing page, Single page, WhatsApp, Performance...).
+- copy.badge: short punchline for editorialLight (optional other formats).
+- NEVER put Prumo logo, @prumo.web or phone in visualPrompt or on-image copy beyond the scene composer brand mark.
+- Caption will carry WhatsApp separately.
 
 Forbidden concepts: ${input.avoidConcepts.join(", ") || "none"}
 Avoid titles: ${input.avoidTitles.slice(0, 10).join(" | ") || "none"}
@@ -135,42 +138,98 @@ Respond ONLY JSON:
 {
   "concept": "unique-english-slug",
   "angle": "short-slug",
-  "pillar": "single-page|landing|codigo-proprio|performance|funil-whatsapp|ti-freela",
+  "pillar": "single-page|landing|codigo-proprio|performance|funil-whatsapp|ti-freela|autoridade-digital",
   "kicker": "label",
   "title": "db title",
-  "hook": "caption hook",
-  "headline": "caption CTA",
-  "tags": ["singlepage","desenvolvimento"],
-  "onImage": {"headline":"Site sob medida converte","sub":"Single page com lead no Zap"},
-  "textZone": "bottomBand",
-  "lightText": true,
-  "visualPrompt": "detailed English prompt for clean landing-page mockup photo, no text..."
+  "hook": "caption hook PT",
+  "headline": "caption CTA PT",
+  "tags": ["singlepage","landingpage"],
+  "format": "productDark",
+  "artRole": "bottomDevice",
+  "palette": {"bg":"#0b1220","ink":"#f4f7fb","accent":"#7dd3fc","soft":"rgba(244,247,251,0.72)"},
+  "copy": {
+    "headline": "Seu site pode ser a máquina de vendas",
+    "accentWord": "máquina",
+    "sub": "Landing sob medida com lead no WhatsApp",
+    "badge": "Não é sorte. É estrutura.",
+    "chips": ["Landing page","Single page","WhatsApp"],
+    "metaLeft": "PRUMO WEB",
+    "metaRight": "TI · LANDING"
+  },
+  "visualPrompt": "detailed English prompt for clean device mockup / photo, no text..."
 }`,
-    1400,
+    1600,
   );
 
   const json = extractJsonObject(text);
-  const onRaw = (json.onImage || {}) as Record<string, unknown>;
-  const onHeadline = String(onRaw.headline || json.title || "Single page sob medida").trim();
-  const onSub = onRaw.sub ? String(onRaw.sub).trim() : undefined;
-  const visualPrompt = String(json.visualPrompt || "");
-  if (!visualPrompt) throw new Error("visualPrompt vazio");
+  const format = parseFormat(json.format, input.avoidFormat);
+  const copyRaw = (json.copy || {}) as Record<string, unknown>;
+  const headline = String(copyRaw.headline || json.title || "Site sob medida que converte").trim();
+  const accentWord = copyRaw.accentWord ? String(copyRaw.accentWord).trim() : undefined;
+  const chips = Array.isArray(copyRaw.chips) ? (copyRaw.chips as string[]).map(String).slice(0, 4) : undefined;
+  const paletteRaw = (json.palette || {}) as Partial<ScenePalette>;
+  const artRoleRaw = String(json.artRole || "");
+  const artRole = (["fullBleed", "bottomDevice", "sidePhoto", "none"].includes(artRoleRaw)
+    ? artRoleRaw
+    : defaultArtRole(format)) as SceneBrief["artRole"];
+
+  let visualPrompt = String(json.visualPrompt || "").trim();
+  if (!visualPrompt && artRole !== "none") {
+    visualPrompt = defaultVisual(format, artRole);
+  }
+  if (artRole !== "none") {
+    visualPrompt = `${visualPrompt}. Vertical Instagram 1080x1350. Absolutely NO readable text or letters anywhere — mockup screens only abstract UI bars/shapes. NO logos, watermarks, phone numbers. Seed ${Date.now()}.`;
+  }
 
   const concept = slugify(String(json.concept || `post-${Date.now().toString(36)}`));
+  const scene: SceneBrief = {
+    format,
+    artRole,
+    palette: normalizePalette(format, paletteRaw),
+    copy: {
+      headline,
+      accentWord,
+      sub: copyRaw.sub ? String(copyRaw.sub).trim() : undefined,
+      badge: copyRaw.badge ? String(copyRaw.badge).trim() : undefined,
+      chips,
+      metaLeft: copyRaw.metaLeft ? String(copyRaw.metaLeft) : undefined,
+      metaRight: copyRaw.metaRight ? String(copyRaw.metaRight) : undefined,
+    },
+  };
+
   return {
     concept,
     angle: slugify(String(json.angle || concept)),
     pillar: String(json.pillar || "single-page"),
     kicker: String(json.kicker || "SINGLE PAGE"),
-    title: String(json.title || onHeadline),
-    hook: String(json.hook || onHeadline),
+    title: String(json.title || headline),
+    hook: String(json.hook || headline),
     headline: String(json.headline || "Chama no WhatsApp."),
-    tags: Array.isArray(json.tags) ? (json.tags as string[]).map(String) : ["singlepage", "desenvolvimento"],
-    onImage: { headline: onHeadline, sub: onSub },
-    textZone: parseZone(json.textZone, input.avoidZone),
-    lightText: json.lightText !== false,
-    visualPrompt: `${visualPrompt}. Vertical Instagram 1080x1350 portfolio photo of a custom landing page / single-page website on a device. Absolutely NO readable text or letters anywhere — not on the screen UI either (only abstract placeholder bars/shapes). NO logos, watermarks, phone numbers or brand marks. Leave clean area for typography overlay (${String(json.textZone || "bottomBand")}). Cinematic lighting. Seed ${Date.now()}.`,
+    tags: Array.isArray(json.tags) ? (json.tags as string[]).map(String) : ["singlepage", "landingpage"],
+    scene,
+    visualPrompt,
   };
+}
+
+function defaultArtRole(format: SceneFormat): SceneBrief["artRole"] {
+  switch (format) {
+    case "editorialLight":
+      return "sidePhoto";
+    case "bastidor":
+      return "fullBleed";
+    case "anatomy":
+      return "sidePhoto";
+    default:
+      return "bottomDevice";
+  }
+}
+
+function defaultVisual(format: SceneFormat, artRole: string) {
+  if (artRole === "none") return "";
+  if (format === "bastidor") {
+    return "Cinematic photo of a clean developer desk with laptop showing abstract website UI blocks, moody lighting, no readable text";
+  }
+  return "Premium product photo of a laptop or phone showing abstract landing-page UI shapes, dark cinematic lighting, no readable text";
 }
 
 async function managerApprove(input: {
@@ -180,20 +239,18 @@ async function managerApprove(input: {
 }): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
   try {
     const text = await geminiText(
-      `Você é gerente de uma agência de marketing (Prumo Web).
-Avalie a PEÇA FINAL (mockup IA + tipografia real sobreposta).
+      `Você é gerente de agência (Prumo Web). Avalie a PEÇA FINAL em camadas (mix Aviva editorial + Felipe TI).
 APROVAR se:
-1) Visual parece portfolio de landing/site (device/UI), não abstrato/sticker
-2) Tipografia na arte está legível e faz sentido comercial (headline de venda)
-3) NÃO há logo Prumo, @ nem telefone pintados pela IA na cena
-4) Composição premium, distinta de card-template genérico
-REPROVAR: texto torto da IA, selo WhatsApp, clay abstrato, tipografia sem oferta
-Brief onImage: ${JSON.stringify(input.brief.onImage)}
-Zona: ${input.brief.textZone}
+1) Parece edição composta (tipografia + formas/chips/mockup), NÃO só foto com faixa
+2) Assunto marketing∩TI (site/landing/conversão) legível
+3) Sem telefone/@/logo inventados pela IA na arte
+4) Formato ${input.brief.scene.format} coerente
+REPROVAR: banda genérica, clay abstrato, tipografia ilegível, sem oferta
+Copy: ${JSON.stringify(input.brief.scene.copy)}
 Conceito: ${input.brief.concept}
 Provider: ${input.provider}
 URL: ${input.imageUrl}
-JSON: {"approved":true|false,"reason":"frase","revisePrompt":"novo visualPrompt inglês SEM texto se reprovar a arte de fundo"}`,
+JSON: {"approved":true|false,"reason":"frase","revisePrompt":"novo visualPrompt inglês SEM texto se reprovar arte"}`,
       450,
     );
     const json = extractJsonObject(text);
@@ -244,15 +301,33 @@ function briefToItem(brief: AgencyBrief, id: string, photoId?: string): FeedItem
     layout: "quote",
     kicker: brief.kicker,
     title: brief.title,
-    sub: brief.onImage.sub,
+    sub: brief.scene.copy.sub,
     headline: brief.headline,
     hook: brief.hook,
     tags: brief.tags,
     pillar: brief.pillar,
     angle: brief.angle,
-    concept: `${brief.concept}|${brief.textZone}`,
+    concept: `${brief.concept}|${brief.scene.format}`,
     photoId,
   };
+}
+
+async function composeScene(brief: AgencyBrief, artUrl?: string): Promise<Buffer> {
+  // Preferência: Satori scene graph. Orshot só se template configurado.
+  const tpl = orshotTemplateId();
+  if (tpl && artUrl?.startsWith("http")) {
+    const orshot = await renderOrshot({
+      templateId: tpl,
+      modifications: {
+        headline: brief.scene.copy.headline,
+        sub: brief.scene.copy.sub || "",
+        photo: artUrl,
+        accent: brief.scene.palette.accent,
+      },
+    });
+    if (orshot && orshot.byteLength > 20_000) return orshot;
+  }
+  return renderScenePost({ brief: brief.scene, artUrl });
 }
 
 export async function produceManagedPost(input: {
@@ -263,13 +338,13 @@ export async function produceManagedPost(input: {
 }): Promise<ManagedPost> {
   const avoidConcepts = recentConcepts(input.state);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
-  const lastZone = input.state.published.at(-1)?.item?.concept?.split("|")[1];
+  const lastFormat = input.state.published.at(-1)?.item?.concept?.split("|")[1];
 
   let brief = await inventAgencyBrief({
     avoidConcepts,
     avoidTitles,
     recentCaptions: input.captions,
-    avoidZone: lastZone,
+    avoidFormat: lastFormat,
   });
 
   const attempts: ManagedPost["attempts"] = [];
@@ -280,52 +355,54 @@ export async function produceManagedPost(input: {
       brief = { ...brief, concept: `${brief.concept}-r${round}-${Date.now().toString(36)}`.slice(0, 48) };
     }
 
-    // 1) Artista — fundo sem texto
-    const art = await generateArt(brief.visualPrompt);
-    if (!art) {
-      attempts.push({ approved: false, reason: "artistas falharam neste round" });
-      break;
+    let artUrl: string | undefined;
+    let art: ArtistResult | null = null;
+    if (brief.scene.artRole !== "none") {
+      art = await generateArt(brief.visualPrompt);
+      if (!art) {
+        attempts.push({ approved: false, reason: "artistas falharam neste round" });
+        // editorial pode sobreviver sem arte
+        if (brief.scene.format !== "editorialLight") break;
+        brief = { ...brief, scene: { ...brief.scene, artRole: "none" } };
+      } else {
+        artUrl = artDataUrl(art);
+      }
     }
 
-    // 2) Tipógrafo — overlay Satori com copy correta
-    const bgUrl = artDataUrl(art);
     let composed: Buffer;
     try {
-      composed = await renderTypedPost({
-        backgroundUrl: bgUrl,
-        headline: brief.onImage.headline,
-        sub: brief.onImage.sub,
-        zone: brief.textZone,
-        lightText: brief.lightText,
-      });
+      composed = await composeScene(brief, artUrl);
     } catch (err) {
       attempts.push({
-        provider: art.provider,
+        provider: art?.provider,
         approved: false,
-        reason: `tipógrafo falhou: ${err instanceof Error ? err.message : "erro"}`,
+        reason: `cena falhou: ${err instanceof Error ? err.message : "erro"}`,
       });
       continue;
     }
     if (composed.byteLength < 20_000) {
-      attempts.push({ provider: art.provider, approved: false, reason: "PNG composto muito pequeno" });
+      attempts.push({ provider: art?.provider, approved: false, reason: "PNG cena muito pequeno" });
       continue;
     }
 
     const id = `agency-${brief.concept}-${Date.now().toString(36)}`;
-    const item = briefToItem(brief, id, artPhotoId(art));
+    const item = briefToItem(brief, id, art ? artPhotoId(art) : undefined);
     const published = await publishPng(composed, id, item, input.reqOrigin);
-    await input.saveDraft(published.item.id, {
-      ...published.item,
-      __meta: { textZone: brief.textZone, onImage: brief.onImage },
-    }, false);
+    await input.saveDraft(
+      published.item.id,
+      {
+        ...published.item,
+        __meta: { format: brief.scene.format, artRole: brief.scene.artRole, copy: brief.scene.copy },
+      },
+      false,
+    );
 
-    // 3) Gerente — aprova peça final
     const verdict = await managerApprove({
       brief,
-      provider: art.provider,
+      provider: art?.provider || "scene-only",
       imageUrl: published.imageUrl,
     });
-    attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
+    attempts.push({ provider: art?.provider || "scene", approved: verdict.approved, reason: verdict.reason });
 
     if (verdict.approved) {
       const { __renderedPng: _, ...clean } = published.item as FeedItem & { __renderedPng?: string };
@@ -334,28 +411,34 @@ export async function produceManagedPost(input: {
         item: clean,
         caption: buildCaption(clean, brief),
         imageUrl: published.imageUrl,
-        artist: art.provider,
+        artist: art?.provider,
         attempts,
       };
     }
 
-    if (verdict.revisePrompt) {
+    if (verdict.revisePrompt && brief.scene.artRole !== "none") {
       brief = {
         ...brief,
         concept: slugify(`rev-${brief.concept}-${round}`),
-        textZone: parseZone(undefined, brief.textZone),
-        visualPrompt: `${verdict.revisePrompt}. No text no logos no phone. Seed ${Date.now()}.`,
+        scene: {
+          ...brief.scene,
+          format: parseFormat(undefined, brief.scene.format),
+        },
+        visualPrompt: `${verdict.revisePrompt}. No text no logos. Seed ${Date.now()}.`,
       };
     } else {
       brief = await inventAgencyBrief({
         avoidConcepts: [...avoidConcepts, brief.concept],
         avoidTitles,
         recentCaptions: input.captions,
-        avoidZone: brief.textZone,
+        avoidFormat: brief.scene.format,
       }).catch(() => ({
         ...brief,
         concept: slugify(`retry-${brief.concept}`),
-        textZone: parseZone(undefined, brief.textZone),
+        scene: {
+          ...brief.scene,
+          format: FORMATS.find((f) => f !== brief.scene.format) || "editorialLight",
+        },
       }));
     }
   }
@@ -366,7 +449,7 @@ export async function produceManagedPost(input: {
 function buildCaption(item: FeedItem, brief?: AgencyBrief) {
   const lines = [
     item.hook || titleOf(item),
-    brief?.onImage.sub || item.headline || "Single page e site sob medida — código próprio, lead no WhatsApp.",
+    brief?.scene.copy.sub || item.headline || "Single page e site sob medida — código próprio, lead no WhatsApp.",
     "Prumo Web · @prumo.web",
     "Orçamento no WhatsApp: (11) 96633-1995",
   ];
