@@ -94,7 +94,7 @@ export async function createQueuePost(input: {
 }): Promise<QueuePost> {
   await ensureQueueSchema();
   const order = await nextSortOrder();
-  const tagsJson = input.tags?.length ? JSON.parse(JSON.stringify(input.tags)) : null;
+  const tagsJson = input.tags?.length ? JSON.stringify(input.tags) : null;
   const mediaType = input.mediaType === "video" ? "video" : "image";
   const rows = (await db()`
     INSERT INTO ig_queue (image_url, blob_pathname, caption, tags, media_type, status, sort_order)
@@ -102,7 +102,7 @@ export async function createQueuePost(input: {
       ${input.imageUrl},
       ${input.blobPathname || null},
       ${input.caption || null},
-      ${tagsJson},
+      ${tagsJson}::jsonb,
       ${mediaType},
       'pending',
       ${order}
@@ -120,15 +120,17 @@ export async function updateQueuePost(
   const current = await getQueuePost(id);
   if (!current) return null;
   const caption = input.caption !== undefined ? input.caption : current.caption;
-  const tags =
+  const tagsJson =
     input.tags !== undefined
       ? input.tags?.length
-        ? JSON.parse(JSON.stringify(input.tags))
+        ? JSON.stringify(input.tags)
         : null
-      : current.tags;
+      : current.tags
+        ? JSON.stringify(current.tags)
+        : null;
   const rows = (await db()`
     UPDATE ig_queue
-    SET caption = ${caption}, tags = ${tags}, updated_at = now()
+    SET caption = ${caption}, tags = ${tagsJson}::jsonb, updated_at = now()
     WHERE id = ${id}
     RETURNING *
   `) as QueuePost[];
