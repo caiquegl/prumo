@@ -72,13 +72,24 @@ async function pollinations(model: string, prompt: string, key?: string): Promis
         console.error("[artist:pollinations]", model, url.includes("image.pollinations") ? "public" : "gen", got.status, got.err);
         continue;
       }
+      // Nunca vazar a API key na URL pública (query/header já autenticam no gen)
+      const safeUrl = url.replace(/([?&]key=)[^&]*/g, "$1").replace(/\?&/, "?").replace(/[?&]$/, "");
       return {
         provider: model.includes("nanobanana") ? "pollinations-nanobanana" : "pollinations-flux",
         bytes: got.bytes,
         contentType: got.contentType || "image/jpeg",
         prompt,
         model,
-        publicUrl: url,
+        publicUrl: safeUrl.includes("gen.pollinations.ai") && key
+          ? // Bearer-only: remove key param; Instagram fetch precisa de URL aberta → preferir image.pollinations
+            `https://image.pollinations.ai/prompt/${path}?${new URLSearchParams({
+              model,
+              width: String(width),
+              height: String(height),
+              seed: String(seed),
+              nologo: "true",
+            })}`
+          : safeUrl,
       };
     } catch (err) {
       console.error("[artist:pollinations]", model, err);
