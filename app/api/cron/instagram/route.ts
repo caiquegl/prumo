@@ -1,10 +1,8 @@
-import { put } from "@vercel/blob";
-import { agencyCaption, createAgencyPost } from "@/lib/ig/agency";
+import { produceManagedPost } from "@/lib/ig/manager";
 import { assertNoRepeat, titleOf } from "@/lib/ig/content";
 import { authorized } from "@/lib/ig/http";
 import { refreshStoredTokens } from "@/lib/ig/auth";
 import { account, publishImage, recentCaptions } from "@/lib/ig/publish";
-import { renderFeedImage } from "@/lib/ig/render";
 import { insertPublication, logEvent, publishedState, saveDraft } from "@/lib/ig/store";
 
 export const maxDuration = 60;
@@ -36,56 +34,57 @@ async function run(req: Request) {
   }
 
   const captions = await recentCaptions(30).catch(() => [] as string[]);
-  const item = await createAgencyPost(state, captions);
-  assertNoRepeat(state, item);
-
-  await logEvent("info", "agency", "brief escolhido", {
-    id: item.id,
-    layout: item.layout,
-    angle: item.angle,
-    pillar: item.pillar,
-    hasPhoto: Boolean(item.photoUrl),
+  const origin = new URL(req.url).origin;
+  const managed = await produceManagedPost({
+    state,
+    captions,
+    reqOrigin: origin,
+    saveDraft,
   });
 
-  const inverted = state.published.length % 3 === 2 && item.layout !== "quote";
-  await saveDraft(item.id, item, inverted);
-  const png = await renderFeedImage(item, inverted);
-  const imageUrl = await uploadOrPublicUrl(req, png, item.id);
-  const caption = agencyCaption(item);
+  assertNoRepeat(state, managed.item);
+  await logEvent("info", "agency", "gerente fechou a peça", {
+    id: managed.item.id,
+    layout: managed.item.layout,
+    angle: managed.item.angle,
+    artist: managed.artist,
+    attempts: managed.attempts,
+  });
 
   const ig = await account();
-  const published = await publishImage(imageUrl, caption);
+  const published = await publishImage(managed.imageUrl, managed.caption);
 
   await insertPublication({
     slot,
-    itemId: item.id,
-    title: titleOf(item),
-    layout: item.layout,
+    itemId: managed.item.id,
+    title: titleOf(managed.item),
+    layout: managed.item.layout,
     format: "post",
     mediaId: published.id,
     permalink: published.permalink,
-    imageUrl,
-    caption,
-    dark: inverted,
+    imageUrl: managed.imageUrl,
+    caption: managed.caption,
+    dark: false,
   });
   await logEvent("info", "publish", "post publicado", {
     slot,
-    item: item.id,
-    layout: item.layout,
-    angle: item.angle,
+    item: managed.item.id,
+    layout: managed.item.layout,
+    angle: managed.item.angle,
+    artist: managed.artist,
     permalink: published.permalink,
   });
 
   return Response.json({
     ok: true,
     slot,
-    item: item.id,
-    layout: item.layout,
-    angle: item.angle,
-    pillar: item.pillar,
-    dark: inverted,
-    photo: Boolean(item.photoUrl),
-    image: imageUrl,
+    item: managed.item.id,
+    layout: managed.item.layout,
+    angle: managed.item.angle,
+    pillar: managed.item.pillar,
+    artist: managed.artist,
+    attempts: managed.attempts,
+    image: managed.imageUrl,
     permalink: published.permalink,
     account: ig.username,
   });
@@ -97,21 +96,6 @@ function slotKey(now = new Date()) {
   const nearest = slots.reduce((a, b) => (Math.abs(b - hour) < Math.abs(a - hour) ? b : a));
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), nearest));
   return d.toISOString().slice(0, 13);
-}
-
-async function uploadOrPublicUrl(req: Request, png: Buffer, id: string) {
-  try {
-    const blob = await put(`ig-auto/${id}-${Date.now()}.png`, png, {
-      access: "public",
-      contentType: "image/png",
-      addRandomSuffix: true,
-    });
-    return blob.url;
-  } catch (err) {
-    console.error("[ig-cron] Blob indisponível, usando /api/og/agency:", err);
-    const origin = new URL(req.url).origin;
-    return `${origin}/api/og/agency?id=${encodeURIComponent(id)}&t=${Date.now()}`;
-  }
 }
 
 export async function GET(req: Request) {
