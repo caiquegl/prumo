@@ -109,17 +109,18 @@ function Scene({ item, theme, w, h }: { item: FeedItem; theme: Theme; w: number;
 }
 
 function Hero({ item, theme }: { item: FeedItem; theme: Theme }) {
+  const photo = Boolean(item.photoUrl);
   return (
     <div style={frame(theme)}>
       <Brand theme={theme} />
-      <div style={{ display: "flex", flex: 1, marginTop: 28, overflow: "hidden", borderRadius: 36 }}>
-        <Scene item={item} theme={theme} w={920} h={960} />
+      <div style={{ display: "flex", flex: 1, marginTop: 24, overflow: "hidden", borderRadius: 36 }}>
+        <Scene item={item} theme={theme} w={920} h={photo ? 880 : 780} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 36 }}>
-        <div style={{ display: "flex", flexDirection: "column", maxWidth: 720 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 28 }}>
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: 760 }}>
           <Kicker text={item.kicker} color={theme.accent} />
-          <div style={{ display: "flex", marginTop: 10 }}>
-            <Title text={item.title} size={72} color={theme.ink} />
+          <div style={{ display: "flex", marginTop: 8 }}>
+            <Title text={item.title} size={photo ? 64 : 72} color={theme.ink} />
           </div>
         </div>
         <Phone color={theme.ink} dim={theme.soft} />
