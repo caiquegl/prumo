@@ -1,5 +1,7 @@
 import { put } from "@vercel/blob";
 import { generateArt, type ArtistResult } from "./artists";
+import { renderTypedPost } from "./compose";
+import type { TextZone } from "./TypeOverlay";
 import type { FeedItem, IgState } from "./types";
 import { titleOf } from "./content";
 
@@ -18,6 +20,8 @@ const MODELS = [
   "gemini-3.8-flash",
 ].filter(Boolean) as string[];
 
+const ZONES: TextZone[] = ["bottomBand", "topStack", "leftRail", "centerQuote"];
+
 async function geminiText(prompt: string, maxTokens = 1200): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY ausente");
@@ -29,7 +33,7 @@ async function geminiText(prompt: string, maxTokens = 1200): Promise<string> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.95, maxOutputTokens: maxTokens },
+        generationConfig: { temperature: 0.9, maxOutputTokens: maxTokens },
       }),
     });
     const json = (await res.json()) as {
@@ -74,7 +78,13 @@ function recentConcepts(state: IgState): string[] {
     .filter(Boolean);
 }
 
-type PostBrief = {
+function parseZone(raw: unknown, avoid?: string): TextZone {
+  const z = String(raw || "bottomBand") as TextZone;
+  if (ZONES.includes(z) && z !== avoid) return z;
+  return ZONES.find((x) => x !== avoid) || "bottomBand";
+}
+
+type AgencyBrief = {
   concept: string;
   angle: string;
   pillar: string;
@@ -83,38 +93,41 @@ type PostBrief = {
   hook: string;
   headline: string;
   tags: string[];
-  /** Prompt completo em inglês para o gerador de imagem (post inteiro) */
-  imagePrompt: string;
+  /** Copy na arte — ortografia garantida pelo tipógrafo */
+  onImage: { headline: string; sub?: string };
+  textZone: TextZone;
+  lightText: boolean;
+  /** Prompt visual SEM texto/logo/telefone */
+  visualPrompt: string;
 };
 
 /**
- * Playbook extraído de feeds de web design / landing page (ex.: @_alysonfarias, @guilhermevictordesign):
- * - O HERO da arte é o PRODUTO: mockup de site/landing em laptop, monitor ou browser (portfolio shot).
- * - Pouquíssimo texto na imagem (0–6 palavras) — tipografia amadora quebra a peça.
- * - Logo, @ e telefone NÃO vão na arte — ficam na legenda.
- * - Visual premium: cinematic lighting, UI realista, ângulo de produto; não sticker/badge.
- * - Cada post muda ângulo/composição (desk, floating device, dark OLED, close no hero da LP).
+ * Estrategista + diretor de arte: brief de venda + prompt visual limpo + zona tipográfica.
  */
-async function inventImagePost(input: {
+async function inventAgencyBrief(input: {
   avoidConcepts: string[];
   avoidTitles: string[];
   recentCaptions: string[];
-}): Promise<PostBrief> {
+  avoidZone?: string;
+}): Promise<AgencyBrief> {
   const text = await geminiText(
-    `You are art director for Prumo Web — Brazilian freelance web/TI that sells custom single pages and sites.
+    `You are the strategist + art director of Prumo Web (Brazilian freelance TI: custom single pages / landings, WhatsApp leads).
 
-Study this PLAYBOOK from professional web-design Instagram feeds (portfolio-first, like landing-page freelancers / Webflow studios):
-1) The IMAGE is a high-end PRODUCT shot of a website/landing page UI (laptop, iMac, browser window, or phone showing a real-looking LP — not abstract art).
-2) Almost NO text on the image. Optional: one short Portuguese punchline in quotes, max 6 words, perfect spelling. Prefer ZERO text if the mockup already sells the idea.
-3) NEVER paint logo, brand name "Prumo", "@prumo.web", WhatsApp, phone numbers, seals, badges, stickers, or watermark — those go only in the Instagram caption.
-4) Look: cinematic, editorial, agency portfolio. Soft shadows, realistic device bezels, crisp UI blocks (fake readable UI ok as blur/lorem shapes), terracotta/cream OR charcoal/dark OLED variants.
-5) Unique camera every time. Forbidden recent concepts: ${input.avoidConcepts.join(", ") || "none"}.
-6) Forbidden looks: clay sculptures, sticker badges, code editor with huge typo headlines, cream template card with logo bar, phone+numbered list infographic, gibberish text.
+Build ONE Instagram post brief for a marketing agency pipeline:
+1) Artist generates a CLEAN visual (no letters) — portfolio mockup of a landing page on device.
+2) Typesetter overlays PERFECT Portuguese typography in a flexible zone (not a fixed card template).
+3) Caption carries brand + WhatsApp (never painted on the image).
 
-Topic must clearly sell custom landing/single page / freela web (the mockup UI should look like a conversion landing page: hero, CTA area, clean sections).
+PLAYBOOK:
+- Visual = product shot of website/LP UI (laptop/monitor/browser/phone). Cinematic, unique camera each time.
+- visualPrompt: English, NO text, NO logos, NO @handles, NO phone numbers, NO watermarks, leave clean space for typography in the chosen zone.
+- onImage.headline: Portuguese, max 8 words, perfect spelling, sells the service (single page / site sob medida).
+- onImage.sub: optional 1 short supporting line in Portuguese.
+- textZone one of: bottomBand | topStack | leftRail | centerQuote (pick what fits the scene; avoid ${input.avoidZone || "none"}).
+- lightText: true if band is dark over photo; false if band is cream.
+- NEVER put Prumo logo, @prumo.web or phone in visualPrompt or onImage (caption only).
 
-Also return Portuguese caption fields (brand + WhatsApp live ONLY in caption, not in imagePrompt).
-
+Forbidden concepts: ${input.avoidConcepts.join(", ") || "none"}
 Avoid titles: ${input.avoidTitles.slice(0, 10).join(" | ") || "none"}
 Recent captions: ${input.recentCaptions.slice(0, 5).join(" || ").slice(0, 700) || "none"}
 
@@ -123,54 +136,64 @@ Respond ONLY JSON:
   "concept": "unique-english-slug",
   "angle": "short-slug",
   "pillar": "single-page|landing|codigo-proprio|performance|funil-whatsapp|ti-freela",
-  "kicker": "short label for DB",
-  "title": "short title for DB",
-  "hook": "caption hook selling the service",
-  "headline": "CTA for caption (not for image)",
+  "kicker": "label",
+  "title": "db title",
+  "hook": "caption hook",
+  "headline": "caption CTA",
   "tags": ["singlepage","desenvolvimento"],
-  "imagePrompt": "English prompt for nanobanana/flux: full-bleed professional portfolio photo of a landing page mockup, unique angle, NO logos NO phone NO @handle, optional max 6-word Portuguese quote if any, vertical 4:5 Instagram"
+  "onImage": {"headline":"Site sob medida converte","sub":"Single page com lead no Zap"},
+  "textZone": "bottomBand",
+  "lightText": true,
+  "visualPrompt": "detailed English prompt for clean landing-page mockup photo, no text..."
 }`,
     1400,
   );
 
   const json = extractJsonObject(text);
-  const concept = slugify(String(json.concept || `post-${Date.now().toString(36)}`));
-  const imagePrompt = String(json.imagePrompt || "");
-  if (!imagePrompt) throw new Error("imagePrompt vazio");
+  const onRaw = (json.onImage || {}) as Record<string, unknown>;
+  const onHeadline = String(onRaw.headline || json.title || "Single page sob medida").trim();
+  const onSub = onRaw.sub ? String(onRaw.sub).trim() : undefined;
+  const visualPrompt = String(json.visualPrompt || "");
+  if (!visualPrompt) throw new Error("visualPrompt vazio");
 
+  const concept = slugify(String(json.concept || `post-${Date.now().toString(36)}`));
   return {
     concept,
     angle: slugify(String(json.angle || concept)),
     pillar: String(json.pillar || "single-page"),
     kicker: String(json.kicker || "SINGLE PAGE"),
-    title: String(json.title || "Single page sob medida"),
-    hook: String(json.hook || "Site sob medida com lead no WhatsApp."),
+    title: String(json.title || onHeadline),
+    hook: String(json.hook || onHeadline),
     headline: String(json.headline || "Chama no WhatsApp."),
     tags: Array.isArray(json.tags) ? (json.tags as string[]).map(String) : ["singlepage", "desenvolvimento"],
-    imagePrompt: `${imagePrompt}. Professional web-design portfolio Instagram photo, 1080x1350 vertical. Show a realistic custom landing page / single-page website on a device. Absolutely NO logo, NO brand name, NO @handle, NO phone number, NO WhatsApp badge, NO watermark, NO sticker seal. Minimal or zero on-image text. Cinematic lighting, high-end agency look. Seed ${Date.now()}.`,
+    onImage: { headline: onHeadline, sub: onSub },
+    textZone: parseZone(json.textZone, input.avoidZone),
+    lightText: json.lightText !== false,
+    visualPrompt: `${visualPrompt}. Vertical Instagram 1080x1350 portfolio photo of a custom landing page / single-page website on a device. Absolutely NO text, letters, logos, watermarks, phone numbers or brand marks. Leave clean area for typography overlay (${String(json.textZone || "bottomBand")}). Cinematic lighting. Seed ${Date.now()}.`,
   };
 }
 
 async function managerApprove(input: {
-  brief: PostBrief;
+  brief: AgencyBrief;
   provider: string;
   imageUrl: string;
 }): Promise<{ approved: boolean; reason: string; revisePrompt?: string }> {
   try {
     const text = await geminiText(
-      `Você é gerente de marketing da Prumo Web (feed estilo portfolio de web design).
-Avalie a IMAGEM gerada por IA.
-APROVAR só se:
-1) Parece foto/portfolio profissional de landing page ou site (mockup em device) — não arte abstrata nem sticker
-2) NÃO tem logo Prumo, @, telefone ou selo WhatsApp na arte (isso vai na legenda)
-3) Visual premium, ângulo interessante, UI de site legível como produto
-4) Composição diferente de posts genéricos com tipografia torta
-REPROVAR: badge laranja com número, logo forçado, texto ilegível, clay/abstrato, card template
+      `Você é gerente de uma agência de marketing (Prumo Web).
+Avalie a PEÇA FINAL (mockup IA + tipografia real sobreposta).
+APROVAR se:
+1) Visual parece portfolio de landing/site (device/UI), não abstrato/sticker
+2) Tipografia na arte está legível e faz sentido comercial (headline de venda)
+3) NÃO há logo Prumo, @ nem telefone pintados pela IA na cena
+4) Composição premium, distinta de card-template genérico
+REPROVAR: texto torto da IA, selo WhatsApp, clay abstrato, tipografia sem oferta
+Brief onImage: ${JSON.stringify(input.brief.onImage)}
+Zona: ${input.brief.textZone}
 Conceito: ${input.brief.concept}
-Título: ${input.brief.title}
 Provider: ${input.provider}
 URL: ${input.imageUrl}
-JSON: {"approved":true|false,"reason":"frase","revisePrompt":"novo prompt inglês de MOCKUP DE LANDING PAGE sem logo/telefone se reprovar"}`,
+JSON: {"approved":true|false,"reason":"frase","revisePrompt":"novo visualPrompt inglês SEM texto se reprovar a arte de fundo"}`,
       450,
     );
     const json = extractJsonObject(text);
@@ -189,46 +212,45 @@ function artPhotoId(art: ArtistResult): string {
   return `art-${art.provider}-${art.bytes.byteLength}-${head}`;
 }
 
-async function publishArt(
-  art: ArtistResult,
+function artDataUrl(art: ArtistResult): string {
+  return `data:${art.contentType};base64,${art.bytes.toString("base64")}`;
+}
+
+async function publishPng(
+  png: Buffer,
   id: string,
   item: FeedItem,
   reqOrigin: string,
 ): Promise<{ item: FeedItem; imageUrl: string }> {
   try {
-    const ext = art.contentType.includes("png") ? "png" : "jpg";
-    const blob = await put(`ig-auto/ai-full-${id}-${Date.now()}.${ext}`, art.bytes, {
+    const blob = await put(`ig-auto/agency-${id}-${Date.now()}.png`, png, {
       access: "public",
-      contentType: art.contentType,
+      contentType: "image/png",
       addRandomSuffix: true,
     });
     return { item, imageUrl: blob.url };
   } catch (err) {
-    console.error("[manager] blob AI post failed", err);
+    console.error("[manager] blob agency failed", err);
     return {
-      item: {
-        ...item,
-        __renderedPng: art.bytes.toString("base64"),
-        __renderedMime: art.contentType,
-      } as FeedItem & { __renderedPng: string; __renderedMime: string },
+      item: { ...item, __renderedPng: png.toString("base64") } as FeedItem & { __renderedPng: string },
       imageUrl: `${reqOrigin}/api/og/rendered?id=${encodeURIComponent(id)}&t=${Date.now()}`,
     };
   }
 }
 
-function briefToItem(brief: PostBrief, id: string, photoId?: string): FeedItem {
+function briefToItem(brief: AgencyBrief, id: string, photoId?: string): FeedItem {
   return {
     id,
-    // layout só metadado no banco — a peça visual é 100% IA
     layout: "quote",
     kicker: brief.kicker,
     title: brief.title,
+    sub: brief.onImage.sub,
     headline: brief.headline,
     hook: brief.hook,
     tags: brief.tags,
     pillar: brief.pillar,
     angle: brief.angle,
-    concept: brief.concept,
+    concept: `${brief.concept}|${brief.textZone}`,
     photoId,
   };
 }
@@ -241,32 +263,63 @@ export async function produceManagedPost(input: {
 }): Promise<ManagedPost> {
   const avoidConcepts = recentConcepts(input.state);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
+  const lastZone = input.state.published.at(-1)?.item?.concept?.split("|")[1];
 
-  let brief = await inventImagePost({
+  let brief = await inventAgencyBrief({
     avoidConcepts,
     avoidTitles,
     recentCaptions: input.captions,
+    avoidZone: lastZone,
   });
 
   const attempts: ManagedPost["attempts"] = [];
   const maxRounds = 3;
 
   for (let round = 0; round < maxRounds; round++) {
-    if (avoidConcepts.includes(brief.concept)) {
+    if (avoidConcepts.some((c) => c === brief.concept || c.startsWith(`${brief.concept}|`))) {
       brief = { ...brief, concept: `${brief.concept}-r${round}-${Date.now().toString(36)}`.slice(0, 48) };
     }
 
-    const art = await generateArt(brief.imagePrompt);
+    // 1) Artista — fundo sem texto
+    const art = await generateArt(brief.visualPrompt);
     if (!art) {
-      attempts.push({ approved: false, reason: "geradores de imagem falharam neste round" });
+      attempts.push({ approved: false, reason: "artistas falharam neste round" });
       break;
+    }
+
+    // 2) Tipógrafo — overlay Satori com copy correta
+    const bgUrl = artDataUrl(art);
+    let composed: Buffer;
+    try {
+      composed = await renderTypedPost({
+        backgroundUrl: bgUrl,
+        headline: brief.onImage.headline,
+        sub: brief.onImage.sub,
+        zone: brief.textZone,
+        lightText: brief.lightText,
+      });
+    } catch (err) {
+      attempts.push({
+        provider: art.provider,
+        approved: false,
+        reason: `tipógrafo falhou: ${err instanceof Error ? err.message : "erro"}`,
+      });
+      continue;
+    }
+    if (composed.byteLength < 20_000) {
+      attempts.push({ provider: art.provider, approved: false, reason: "PNG composto muito pequeno" });
+      continue;
     }
 
     const id = `agency-${brief.concept}-${Date.now().toString(36)}`;
     const item = briefToItem(brief, id, artPhotoId(art));
-    const published = await publishArt(art, id, item, input.reqOrigin);
-    await input.saveDraft(published.item.id, published.item, false);
+    const published = await publishPng(composed, id, item, input.reqOrigin);
+    await input.saveDraft(published.item.id, {
+      ...published.item,
+      __meta: { textZone: brief.textZone, onImage: brief.onImage },
+    }, false);
 
+    // 3) Gerente — aprova peça final
     const verdict = await managerApprove({
       brief,
       provider: art.provider,
@@ -275,15 +328,11 @@ export async function produceManagedPost(input: {
     attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
 
     if (verdict.approved) {
-      const { __renderedPng: _, __renderedMime: __, ...clean } = published.item as FeedItem & {
-        __renderedPng?: string;
-        __renderedMime?: string;
-      };
+      const { __renderedPng: _, ...clean } = published.item as FeedItem & { __renderedPng?: string };
       void _;
-      void __;
       return {
         item: clean,
-        caption: buildCaption(clean),
+        caption: buildCaption(clean, brief),
         imageUrl: published.imageUrl,
         artist: art.provider,
         attempts,
@@ -294,24 +343,30 @@ export async function produceManagedPost(input: {
       brief = {
         ...brief,
         concept: slugify(`rev-${brief.concept}-${round}`),
-        imagePrompt: `${verdict.revisePrompt}. Completely different composition from previous attempt. Full Instagram post graphic, vertical 4:5. Seed ${Date.now()}.`,
+        textZone: parseZone(undefined, brief.textZone),
+        visualPrompt: `${verdict.revisePrompt}. No text no logos no phone. Seed ${Date.now()}.`,
       };
     } else {
-      brief = await inventImagePost({
+      brief = await inventAgencyBrief({
         avoidConcepts: [...avoidConcepts, brief.concept],
         avoidTitles,
         recentCaptions: input.captions,
-      }).catch(() => brief);
+        avoidZone: brief.textZone,
+      }).catch(() => ({
+        ...brief,
+        concept: slugify(`retry-${brief.concept}`),
+        textZone: parseZone(undefined, brief.textZone),
+      }));
     }
   }
 
-  throw new Error(`falhou ao gerar post só com IA: ${attempts.map((a) => a.reason).join(" | ")}`);
+  throw new Error(`agência falhou: ${attempts.map((a) => a.reason).join(" | ")}`);
 }
 
-function buildCaption(item: FeedItem) {
+function buildCaption(item: FeedItem, brief?: AgencyBrief) {
   const lines = [
     item.hook || titleOf(item),
-    item.headline || "Single page e site sob medida — código próprio, lead no WhatsApp.",
+    brief?.onImage.sub || item.headline || "Single page e site sob medida — código próprio, lead no WhatsApp.",
     "Prumo Web · @prumo.web",
     "Orçamento no WhatsApp: (11) 96633-1995",
   ];
