@@ -5,7 +5,7 @@ import { refreshStoredTokens } from "@/lib/ig/auth";
 import { account, publishImage, recentCaptions } from "@/lib/ig/publish";
 import { insertPublication, logEvent, publishedState, saveDraft } from "@/lib/ig/store";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 async function run(req: Request) {
   if (!authorized(req)) {

@@ -16,7 +16,9 @@ function portraitSize() {
 }
 
 async function fetchBinary(url: string, init?: RequestInit): Promise<{ ok: boolean; bytes?: Buffer; contentType?: string; status: number; err?: string }> {
-  const res = await fetch(url, init);
+  const res = await fetch(url, init).catch((err) => {
+    throw err;
+  });
   const contentType = res.headers.get("content-type") || "";
   if (!res.ok) {
     const err = await res.text().catch(() => "");
@@ -48,27 +50,38 @@ async function pollinations(model: string, prompt: string, key?: string): Promis
   });
   if (key) qs.set("key", key);
 
-  const urls = [
-    `https://gen.pollinations.ai/image/${path}?${qs}`,
-    // fallback público (sem pollen) — costuma responder com flux
-    `https://image.pollinations.ai/prompt/${path}?${qs}`,
-  ];
+  // nanobanana costuma exigir pollen pago — tenta só gen (rápido em 402)
+  const urls =
+    model.includes("nanobanana")
+      ? [`https://gen.pollinations.ai/image/${path}?${qs}`]
+      : [
+          `https://gen.pollinations.ai/image/${path}?${qs}`,
+          `https://image.pollinations.ai/prompt/${path}?${qs}`,
+        ];
 
   for (const url of urls) {
     const headers: Record<string, string> = { Accept: "image/*" };
     if (key && url.includes("gen.pollinations.ai")) headers.Authorization = `Bearer ${key}`;
-    const got = await fetchBinary(url, { headers });
-    if (!got.ok || !got.bytes) {
-      console.error("[artist:pollinations]", model, url.includes("image.pollinations") ? "public" : "gen", got.status, got.err);
-      continue;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), model.includes("nanobanana") ? 12_000 : 45_000);
+    try {
+      const got = await fetchBinary(url, { headers, signal: controller.signal });
+      if (!got.ok || !got.bytes) {
+        console.error("[artist:pollinations]", model, url.includes("image.pollinations") ? "public" : "gen", got.status, got.err);
+        continue;
+      }
+      return {
+        provider: model.includes("nanobanana") ? "pollinations-nanobanana" : "pollinations-flux",
+        bytes: got.bytes,
+        contentType: got.contentType || "image/jpeg",
+        prompt,
+        model,
+      };
+    } catch (err) {
+      console.error("[artist:pollinations]", model, err);
+    } finally {
+      clearTimeout(timer);
     }
-    return {
-      provider: model.includes("nanobanana") ? "pollinations-nanobanana" : "pollinations-flux",
-      bytes: got.bytes,
-      contentType: got.contentType || "image/jpeg",
-      prompt,
-      model,
-    };
   }
   return null;
 }

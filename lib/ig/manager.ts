@@ -163,7 +163,7 @@ export async function produceManagedPost(input: {
   );
 
   const attempts: ManagedPost["attempts"] = [];
-  const maxRounds = 3;
+  const maxRounds = 2;
 
   for (let round = 0; round < maxRounds; round++) {
     const art = await generateArt(imagePrompt);
