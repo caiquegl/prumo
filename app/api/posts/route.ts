@@ -47,13 +47,44 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const ctype = req.headers.get("content-type") || "";
+
+    // JSON: { imageUrl, caption?, tags?, mediaType? } — agente pode apontar URL pública
+    if (ctype.includes("application/json")) {
+      const body = (await req.json()) as {
+        imageUrl?: string;
+        caption?: string;
+        tags?: string[] | string;
+        mediaType?: MediaKind;
+      };
+      const imageUrl = String(body.imageUrl || "").trim();
+      if (!/^https?:\/\//i.test(imageUrl)) {
+        return NextResponse.json({ error: "imageUrl http(s) obrigatória" }, { status: 400 });
+      }
+      const tags =
+        typeof body.tags === "string"
+          ? parseTags(body.tags)
+          : Array.isArray(body.tags)
+            ? body.tags.map(String).map((t) => t.replace(/^#/, "").trim()).filter(Boolean).slice(0, 12)
+            : null;
+      const mediaType: MediaKind = body.mediaType === "video" ? "video" : "image";
+      const post = await createQueuePost({
+        imageUrl,
+        blobPathname: null,
+        caption: body.caption?.trim() || null,
+        tags,
+        mediaType,
+      });
+      return NextResponse.json({ ok: true, post }, { status: 201 });
+    }
+
     const form = await req.formData();
     const file = form.get("file");
     const caption = String(form.get("caption") || "").trim() || null;
     const tags = parseTags(form.get("tags"));
 
     if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'Envie multipart com campo "file"' }, { status: 400 });
+      return NextResponse.json({ error: 'Envie multipart com "file" ou JSON com imageUrl' }, { status: 400 });
     }
 
     const kind = mediaKind(file.type);
