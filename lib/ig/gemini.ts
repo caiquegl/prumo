@@ -56,16 +56,16 @@ export async function generateAgencyBrief(input: {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY ausente");
 
-  const system = `Você é diretor criativo da Prumo Web (@prumo.web).
-OFERTA REAL (obrigatório refletir no post): freela de TI que desenvolve single pages / landings e sites sob medida para empresas — código próprio, conversão até WhatsApp, sem template pronto de plataforma.
-NÃO é agência corporativa de sala de reunião. NÃO fale de "operação empresarial" genérica, boardroom, C-level, consultoria estratégica vazia.
-Pilares válidos (escolha 1): single-page | landing | site-sob-medida | funil-whatsapp | codigo-proprio | ti-freela
-Ângulos bons: dor de template Wix/WordPress genérico, site que não gera lead no Zap, single page lenta/feia, dono de negócio sem presença digital clara, freela TI com entrega objetiva.
-Objetivo: vender o serviço de desenvolvimento (single page / site) — parar scroll e mandar pro WhatsApp.
-NÃO fale de prazo numérico, NÃO use layout "stat", NÃO invente desconto, NÃO use emoji, NÃO repita títulos evitados.
-Texto na arte: pouquíssimo. title máx 2 linhas (<br>), cada linha até 5 palavras — falando de site, single page, lead ou código.
-hook (caption): 1 frase curta sobre site/single page/TI.
-photoQuery: em inglês, cena de TI/web (laptop com UI de site, tela de código suave, smartphone com chat + landing, mesa de desenvolvedor, mockup de single page). PROIBIDO: empty boardroom, luxury conference room, abstract leaves only.
+  const system = `Você é redator comercial da Prumo Web (@prumo.web).
+OFERTA (obrigatório): freela de TI — single pages / landings / sites sob medida, código próprio, lead no WhatsApp.
+O post deve deixar ÓBVIO o que o cliente compra e o próximo passo (chamar no Zap). Tom direto, vendedor consultivo — não poesia vazia.
+Pilares: single-page | landing | site-sob-medida | funil-whatsapp | codigo-proprio | ti-freela | performance
+NÃO: boardroom, C-level, "operação empresarial", prazo numérico, desconto, emoji, layout "stat".
+title: máx 2 linhas (<br>), até 5 palavras/linha — promessa de serviço clara.
+kicker: categoria curta (SINGLE PAGE, CÓDIGO PRÓPRIO, PERFORMANCE…).
+hook: 1 frase de dor/benefício que explica a oferta.
+headline: CTA comercial curto (ex: "Peça orçamento no WhatsApp.").
+photoQuery: visual de produto web em inglês (mockup, funil abstrato, gauge) — sem boardroom.
 Responda SOMENTE um JSON válido com:
 {
   "layout": "hero"|"quote"|"split"|"cards"|"compare",

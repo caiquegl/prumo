@@ -1,4 +1,4 @@
-export const LAYOUTS = ["hero", "quote", "split", "stat", "cards", "compare"] as const;
+export const LAYOUTS = ["hero", "quote", "split", "stat", "cards", "compare", "offer"] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export type Visual = "leaves" | "wire" | "chart" | "cloud" | "mark";
 

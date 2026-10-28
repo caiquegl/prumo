@@ -4,7 +4,13 @@
  */
 
 export type ArtistResult = {
-  provider: "pollinations-nanobanana" | "pollinations-flux" | "huggingface" | "gemini-imagen" | "leonardo";
+  provider:
+    | "ideogram"
+    | "pollinations-nanobanana"
+    | "pollinations-flux"
+    | "huggingface"
+    | "gemini-imagen"
+    | "leonardo";
   bytes: Buffer;
   contentType: string;
   prompt: string;
@@ -265,15 +271,103 @@ async function pollLeonardo(generationId: string, prompt: string, key: string): 
   return null;
 }
 
+/** Ideogram 4.5 — melhor para design; usamos para VISUAL sem texto (tipografia fica no FeedCard). */
+async function ideogram(prompt: string): Promise<ArtistResult | null> {
+  const key = process.env.IDEOGRAM_API_KEY;
+  if (!key) return null;
+  const clean = `${prompt}. No text, no letters, no words, no logos, no watermarks.`;
+
+  // API v2 (Ideogram 4.5)
+  try {
+    const endpoints = [
+      "https://api.ideogram.ai/v2/image/generate/ideogram-4-5",
+      "https://api.ideogram.ai/v2/images/generate/ideogram-4-5",
+    ];
+    for (const endpoint of endpoints) {
+      const body = new FormData();
+      body.append("prompt", clean.slice(0, 2000));
+      body.append("size", "1024x1280");
+      body.append("magic_prompt", "off");
+      body.append("num_images", "1");
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Api-Key": key },
+        body,
+      });
+      if (!res.ok) {
+        console.error("[artist:ideogram:v2]", endpoint, res.status, (await res.text().catch(() => "")).slice(0, 200));
+        continue;
+      }
+      const json = (await res.json()) as {
+        data?: Array<{ url?: string }>;
+        images?: Array<{ url?: string }>;
+        created?: Array<{ url?: string }>;
+      };
+      const url = json.data?.[0]?.url || json.images?.[0]?.url || json.created?.[0]?.url;
+      if (!url) continue;
+      const got = await fetchBinary(url);
+      if (got.ok && got.bytes) {
+        return {
+          provider: "ideogram",
+          bytes: got.bytes,
+          contentType: got.contentType || "image/png",
+          prompt: clean,
+          model: "ideogram-4-5",
+          publicUrl: url,
+        };
+      }
+    }
+  } catch (err) {
+    console.error("[artist:ideogram:v2]", err);
+  }
+
+  // Fallback API v1 clássica
+  try {
+    const res = await fetch("https://api.ideogram.ai/generate", {
+      method: "POST",
+      headers: { "Api-Key": key, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image_request: {
+          prompt: clean.slice(0, 1500),
+          aspect_ratio: "ASPECT_3_4",
+          model: "V_2A",
+          magic_prompt_option: "OFF",
+          style_type: "DESIGN",
+        },
+      }),
+    });
+    if (!res.ok) {
+      console.error("[artist:ideogram:v1]", res.status, (await res.text().catch(() => "")).slice(0, 240));
+      return null;
+    }
+    const json = (await res.json()) as { data?: Array<{ url?: string }> };
+    const url = json.data?.[0]?.url;
+    if (!url) return null;
+    const got = await fetchBinary(url);
+    if (!got.ok || !got.bytes) return null;
+    return {
+      provider: "ideogram",
+      bytes: got.bytes,
+      contentType: got.contentType || "image/png",
+      prompt: clean,
+      model: "ideogram-v2a",
+      publicUrl: url,
+    };
+  } catch (err) {
+    console.error("[artist:ideogram:v1]", err);
+    return null;
+  }
+}
+
 export async function generateArt(prompt: string): Promise<ArtistResult | null> {
   const pollen = process.env.POLLINATIONS_API_KEY;
-  // Ordem pedida: nanobanana → flux → HF → Gemini Imagen → Leonardo.
-  // nanobanana costuma pedir pollen pago (402); flux/public costuma passar no free/quest.
+  // Ideogram (se houver key) → nanobanana → flux → HF → Gemini → Leonardo
   const attempts: Array<() => Promise<ArtistResult | null>> = [
+    () => ideogram(prompt),
     () => pollinations("nanobanana", prompt, pollen),
     () => pollinations("nanobanana-2", prompt, pollen),
     () => pollinations("flux", prompt, pollen),
-    () => pollinations("flux", prompt, undefined), // público image.pollinations.ai
+    () => pollinations("flux", prompt, undefined),
     () => pollinations("zimage", prompt, pollen),
     () => huggingface(prompt),
     () => geminiImagen(prompt),

@@ -129,6 +129,40 @@ function Hero({ item, theme }: { item: FeedItem; theme: Theme }) {
   );
 }
 
+/** Peça de venda: tipografia/CTA perfeitos + arte IA só no miolo (sem @/logo gerados pela IA). */
+function Offer({ item, theme }: { item: FeedItem; theme: Theme }) {
+  return (
+    <div style={frame(theme)}>
+      <Brand theme={theme} />
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 28, maxWidth: 920 }}>
+        <Kicker text={item.kicker} color={theme.accent} />
+        <div style={{ display: "flex", marginTop: 10 }}>
+          <Title text={item.title} size={58} color={theme.ink} />
+        </div>
+        {item.sub || item.hook ? (
+          <div style={{ display: "flex", marginTop: 14, fontSize: 26, lineHeight: 1.35, color: theme.soft, maxWidth: 860 }}>
+            {item.sub || item.hook}
+          </div>
+        ) : null}
+      </div>
+      <div style={{ display: "flex", flex: 1, marginTop: 28, overflow: "hidden", borderRadius: 32 }}>
+        <Scene item={item} theme={theme} w={920} h={620} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 28 }}>
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: 620 }}>
+          <div style={{ display: "flex", fontFamily: "Fraunces", fontSize: 34, letterSpacing: -0.6, lineHeight: 1.15, color: theme.ink }}>
+            {item.headline || "Seu próximo projeto pode começar aqui."}
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: 18, color: theme.soft }}>
+          <div style={{ display: "flex" }}>Orçamento no WhatsApp</div>
+          <div style={{ display: "flex", marginTop: 4, color: theme.ink, fontWeight: 700 }}>(11) 96633-1995</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Quote({ item, theme }: { item: FeedItem; theme: Theme }) {
   return (
     <div style={{ ...frame(theme), background: theme.ink, color: theme.bg }}>
@@ -299,6 +333,7 @@ function frame(theme: Theme): CSSProperties {
 
 export function FeedCard({ item, inverted = false }: { item: FeedItem; inverted?: boolean }) {
   const theme = inverted && item.layout !== "quote" ? dark : light;
+  if (item.layout === "offer") return <Offer item={item} theme={theme} />;
   if (item.layout === "hero") return <Hero item={item} theme={theme} />;
   if (item.layout === "quote") return <Quote item={item} theme={theme} />;
   if (item.layout === "stat") return <Stat item={item} theme={theme} />;
