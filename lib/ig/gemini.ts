@@ -37,10 +37,21 @@ function extractJson(text: string): AiBrief {
   return JSON.parse(raw.slice(start, end + 1)) as AiBrief;
 }
 
+function slugAngle(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40) || `angulo-${Date.now().toString(36)}`;
+}
+
 export async function generateAgencyBrief(input: {
   avoidTitles: string[];
   avoidLayouts: string[];
   recentCaptions: string[];
+  avoidAngles?: string[];
 }): Promise<AiBrief> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY ausente");
@@ -74,8 +85,10 @@ items só se layout for split ou cards. left/right só se compare.`;
 
   const user = `Evitar layouts recentes: ${input.avoidLayouts.join(", ") || "nenhum"}
 Evitar títulos: ${input.avoidTitles.slice(0, 12).join(" | ") || "nenhum"}
+Evitar ângulos/slugs recentes: ${(input.avoidAngles || []).slice(0, 12).join(", ") || "nenhum"}
 Captions recentes do perfil (não ecoar): ${input.recentCaptions.slice(0, 8).join(" || ").slice(0, 1200) || "nenhuma"}
-Gere 1 post novo sobre desenvolvimento de single page / site sob medida (TI freela). Prefira hero ou split.`;
+Gere 1 post novo sobre desenvolvimento de single page / site sob medida (TI freela).
+"angle" deve ser slug curto em inglês ou português-sem-espaço (ex: wix-vs-codigo, lcp-lento, zap-cta).`;
 
   let text = "";
   let lastError = "Gemini indisponível";
@@ -103,6 +116,7 @@ Gere 1 post novo sobre desenvolvimento de single page / site sob medida (TI free
     throw new Error("brief Gemini incompleto");
   }
   if (brief.layout === "stat") brief.layout = "hero";
+  brief.angle = slugAngle(brief.angle || brief.pillar || brief.title);
   return brief;
 }
 

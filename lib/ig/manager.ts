@@ -217,10 +217,15 @@ export async function produceManagedPost(input: {
   const avoidLayouts = input.state.published.slice(-3).map((p) => p.layout);
   const avoidTitles = input.state.published.map((p) => p.title.toLowerCase());
   const avoidConcepts = recentConcepts(input.state);
+  const avoidAngles = input.state.published
+    .slice(-8)
+    .flatMap((p) => [p.item?.angle, p.id.replace(/^agency-/, "").replace(/-[a-z0-9]+$/i, "")])
+    .filter(Boolean) as string[];
   const brief = await generateAgencyBrief({
     avoidTitles,
     avoidLayouts,
     recentCaptions: input.captions,
+    avoidAngles,
   });
 
   let design = await inventFullPostDesign(brief, avoidConcepts).catch(async () => ({

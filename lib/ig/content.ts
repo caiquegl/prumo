@@ -64,8 +64,18 @@ export function assertNoRepeat(state: IgState, item: FeedItem) {
     );
     if (sameConcept) throw new Error(`conceito visual "${item.concept}" já saiu recentemente`);
   }
-  if (item.angle && recent.some((p) => p.id.includes(item.angle!))) {
-    throw new Error(`ângulo "${item.angle}" já saiu nos últimos posts`);
+  if (item.angle) {
+    const ang = item.angle.toLowerCase();
+    const sameAngle = recent.some((p) => {
+      const prev = (p.item?.angle || "").toLowerCase();
+      if (prev && prev === ang) return true;
+      // id no formato agency-{angle}-{rand}
+      const parts = p.id.toLowerCase().split("-");
+      if (parts[0] !== "agency" || parts.length < 3) return false;
+      const mid = parts.slice(1, -1).join("-");
+      return mid === ang;
+    });
+    if (sameAngle) throw new Error(`ângulo "${item.angle}" já saiu nos últimos posts`);
   }
   if (item.photoId) {
     const used = state.published.some((p) => p.item?.photoId === item.photoId);
