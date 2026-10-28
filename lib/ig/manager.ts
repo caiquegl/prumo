@@ -159,21 +159,24 @@ async function composeMarketingCard(
   item.id = opts.id;
   item.photoUrl = photoUrl;
   item.photoId = opts.photoId;
-  // visual só importa sem foto — com foto nunca cai no leaves repetido
-  item.visual = undefined;
+  item.visual = item.visual || "mark";
 
+  // renderFeedImage resolve a foto em data URL; se falhar, cai no visual (sem retângulo branco)
   const png = await renderFeedImage(item, false);
+  if (png.byteLength < 20_000) {
+    throw new Error("PNG composto suspeito (muito pequeno)");
+  }
   try {
     const blob = await put(`ig-auto/mkt-${item.id}-${Date.now()}.png`, png, {
       access: "public",
       contentType: "image/png",
       addRandomSuffix: true,
     });
-    // draft guarda URL pública curta (data URL é só pra render)
-    const forDraft = { ...item, photoUrl: blob.url };
+    // draft: não guarda o PNG composto como photoUrl (virava “foto” vazia no re-render)
+    const forDraft = { ...item, photoUrl };
     return { item: forDraft, imageUrl: blob.url };
   } catch {
-    // OG re-renderiza a partir do draft — precisa da data URL (ou URL estável) no payload
+    // OG re-renderiza a partir do draft com a mesma photoUrl
     return { item, imageUrl: `${opts.reqOrigin}/api/og/agency?id=${encodeURIComponent(item.id)}&t=${Date.now()}` };
   }
 }
@@ -253,17 +256,31 @@ export async function produceManagedPost(input: {
       continue;
     }
     const tempId = `agency-${brief.angle}-${Date.now().toString(36)}`;
-    // data URL garante foto única no FeedCard (Satori não depende do Pollinations)
-    const photoUrl = artDataUrl(art);
-    void (await uploadArtistBytes(art, tempId)); // best-effort blob do fundo
+    // Blob público da arte (preferível) ou data URL — render embute bytes antes do Satori
+    const photoUrl = (await uploadArtistBytes(art, tempId)) || artDataUrl(art);
 
-    const composed = await composeMarketingCard(brief, photoUrl, {
-      id: tempId,
-      photoId,
-      reqOrigin: input.reqOrigin,
-      layout,
-    });
-    await input.saveDraft(composed.item.id, composed.item, false);
+    let composed: { item: FeedItem; imageUrl: string };
+    try {
+      composed = await composeMarketingCard(brief, photoUrl, {
+        id: tempId,
+        photoId,
+        reqOrigin: input.reqOrigin,
+        layout,
+      });
+    } catch (err) {
+      attempts.push({
+        provider: art.provider,
+        approved: false,
+        reason: `compose falhou: ${err instanceof Error ? err.message : "erro"}`,
+      });
+      continue;
+    }
+    // draft sem data URL gigante: guarda URL blob/http se houver
+    const draftItem =
+      photoUrl.startsWith("data:")
+        ? { ...composed.item, photoUrl: undefined, visual: composed.item.visual || "mark" }
+        : composed.item;
+    await input.saveDraft(composed.item.id, draftItem, false);
 
     const verdict = await managerApprove({ brief, provider: art.provider, imageUrl: composed.imageUrl });
     attempts.push({ provider: art.provider, approved: verdict.approved, reason: verdict.reason });
