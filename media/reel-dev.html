@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #100e0c; }
+  body { font-family: Manrope, system-ui, sans-serif; color: #f3eee6; -webkit-font-smoothing: antialiased; }
+  .reel { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #100e0c; }
+  .grain {
+    position: absolute; inset: 0; pointer-events: none; opacity: .05; z-index: 9;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .orb {
+    position: absolute; width: 820px; height: 820px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(196,90,72,.38), transparent 70%);
+    right: -260px; top: -180px; pointer-events: none;
+  }
+  .nav {
+    position: absolute; left: 64px; right: 64px; top: 72px;
+    display: flex; justify-content: space-between; align-items: center; z-index: 5;
+  }
+  .badge { width: 88px; height: 88px; border-radius: 50%; overflow: hidden; background: #111; }
+  .badge img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.18); }
+  .meta { font-size: 18px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: #e8a396; }
+  .copy { position: absolute; left: 64px; right: 64px; top: 200px; z-index: 5; }
+  .kicker { font-size: 20px; letter-spacing: .22em; text-transform: uppercase; color: #c45a48; font-weight: 800; }
+  h1 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 86px; line-height: .92; letter-spacing: -.04em; margin-top: 16px; }
+  .lead { margin-top: 18px; font-size: 28px; line-height: 1.35; color: rgba(243,238,230,.7); max-width: 900px; }
+  .board { position: absolute; left: 0; top: 520px; width: 1080px; height: 1180px; }
+  .wires { position: absolute; inset: 0; overflow: visible; }
+  .node {
+    position: absolute; width: 340px; border-radius: 28px; padding: 26px 28px;
+    background: #1c1916; border: 1px solid rgba(243,238,230,.1);
+    box-shadow: 0 24px 50px -28px rgba(0,0,0,.6);
+  }
+  .node .tag { font-size: 14px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: #e88978; }
+  .node b { display: block; margin-top: 8px; font-family: Fraunces, serif; font-size: 36px; font-weight: 500; letter-spacing: -.02em; }
+  .node span { display: block; margin-top: 6px; font-size: 20px; color: rgba(243,238,230,.58); }
+  .dock {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 620px;
+    background: #c45a48; color: #fff7f2; padding: 48px 64px 56px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    transform: translateY(110%);
+  }
+  .dock h2 { font-family: Fraunces, serif; font-size: 64px; line-height: .95; letter-spacing: -.03em; }
+  .dock .num { font-family: Fraunces, serif; font-size: 58px; margin-top: 18px; letter-spacing: -.03em; }
+  .wa {
+    margin-top: 22px; display: inline-flex; align-items: center;
+    background: #25d366; color: #0b3d1f; font-weight: 800; border-radius: 999px;
+    padding: 16px 24px; font-size: 22px; width: max-content;
+  }
+  .dock p { margin-top: 18px; font-size: 22px; font-weight: 600; opacity: .88; }
+  .progress {
+    position: absolute; left: 64px; right: 64px; bottom: 22px; height: 4px; z-index: 12;
+    background: rgba(196,90,72,.35); border-radius: 99px; overflow: hidden;
+  }
+  .progress i { display: block; height: 100%; width: 0; background: #c45a48; }
+  .foot {
+    position: absolute; left: 64px; right: 64px; bottom: 40px; z-index: 6;
+    display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: rgba(243,238,230,.55);
+  }
+</style>
+</head>
+<body>
+<div class="reel">
+  <div class="orb" id="orb"></div>
+  <div class="grain"></div>
+  <div class="nav">
+    <span class="badge"><img class="logo" src="/public/brand/logo-marca.png" alt="Web Prumo"></span>
+    <div class="meta">webprumo.com.br</div>
+  </div>
+  <div class="copy">
+    <div class="kicker" id="kicker">Desenvolvedor · site · app · integração</div>
+    <h1 id="h1">Nada conversa.</h1>
+    <p class="lead" id="lead">Site num lado. App no outro. WhatsApp solto. A operação não fecha.</p>
+  </div>
+  <div class="board">
+    <svg class="wires" id="wires" viewBox="0 0 1080 1180" width="1080" height="1180">
+      <path id="dashA" fill="none" stroke="#c45a48" stroke-width="3" stroke-dasharray="10 12" opacity="0" />
+      <path id="dashB" fill="none" stroke="#c45a48" stroke-width="3" stroke-dasharray="10 12" opacity="0" />
+      <path id="solidA" fill="none" stroke="#c45a48" stroke-width="5" stroke-linecap="round" opacity="0" />
+      <path id="solidB" fill="none" stroke="#c45a48" stroke-width="5" stroke-linecap="round" opacity="0" />
+    </svg>
+    <div class="node" id="n1"><div class="tag" id="t1">Isolado</div><b id="b1">Site</b><span id="s1">Bonito. Parado. Sem pedido.</span></div>
+    <div class="node" id="n2"><div class="tag" id="t2">Isolado</div><b id="b2">Planilha</b><span id="s2">Controle no Excel. Retrabalho.</span></div>
+    <div class="node" id="n3"><div class="tag" id="t3">Isolado</div><b id="b3">WhatsApp</b><span id="s3">Lead chega. Ninguém registra.</span></div>
+  </div>
+  <div class="foot" id="foot"><span>Web Prumo</span><span>@web.prumo</span></div>
+  <div class="dock" id="dock">
+    <h2 id="dh">Chama no WhatsApp.</h2>
+    <div class="num" id="dnum">(11) 96633-1995</div>
+    <div class="wa" id="dwa">Quero site, app ou integração</div>
+    <p>Escopo, prazo e valor fechados. webprumo.com.br</p>
+  </div>
+  <div class="progress"><i id="bar"></i></div>
+</div>
+<script>
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const ease = (p) => 1 - Math.pow(1 - p, 3);
+  const io = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const $ = (id) => document.getElementById(id);
+
+  const loose = [
+    { x: 90, y: 40 },
+    { x: 620, y: 210 },
+    { x: 240, y: 560 },
+  ];
+  const tight = [
+    { x: 200, y: 40 },
+    { x: 200, y: 300 },
+    { x: 200, y: 560 },
+  ];
+
+  function pos(el, x, y, w) {
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    if (w) el.style.width = w + "px";
+  }
+
+  function center(i, layout) {
+    return { x: layout[i].x + 170, y: layout[i].y + 70 };
+  }
+
+  function setPath(el, a, b) {
+    el.setAttribute("d", `M ${a.x} ${a.y} C ${a.x} ${(a.y + b.y) / 2}, ${b.x} ${(a.y + b.y) / 2}, ${b.x} ${b.y}`);
+  }
+
+  function dashDraw(el, p) {
+    let len = 420;
+    try { len = el.getTotalLength() || 420; } catch (e) { /* path not ready */ }
+    el.style.strokeDasharray = String(len);
+    el.style.strokeDashoffset = String(len * (1 - p));
+  }
+
+  window.render = (t) => {
+    $("bar").style.width = (t / 15) * 100 + "%";
+    $("orb").style.transform = `translate(${Math.sin(t * 0.6) * 18}px, ${Math.cos(t * 0.45) * 12}px)`;
+
+    const lock = ease(seg(t, 6.0, 7.6));
+    const fail = io(seg(t, 2.8, 4.4));
+    const hideFail = ease(seg(t, 5.8, 6.6));
+    const offer = ease(seg(t, 9.6, 10.8));
+    const cta = ease(seg(t, 12.4, 13.4));
+
+    const layout = loose.map((p0, i) => ({
+      x: lerp(p0.x, tight[i].x, lock),
+      y: lerp(p0.y, tight[i].y, lock),
+    }));
+    const jolt = (1 - lock) * fail * Math.sin(t * 18) * 6;
+    pos($("n1"), layout[0].x + jolt, layout[0].y, lerp(340, 680, lock));
+    pos($("n2"), layout[1].x - jolt, layout[1].y, lerp(340, 680, lock));
+    pos($("n3"), layout[2].x + jolt * 0.6, layout[2].y, lerp(340, 680, lock));
+
+    const c1 = center(0, layout);
+    const c2 = center(1, layout);
+    const c3 = center(2, layout);
+    setPath($("dashA"), c1, c2);
+    setPath($("dashB"), c2, c3);
+    setPath($("solidA"), c1, c2);
+    setPath($("solidB"), c2, c3);
+    $("dashA").style.opacity = String(fail * (1 - hideFail) * 0.85);
+    $("dashB").style.opacity = String(fail * (1 - hideFail) * 0.85);
+    dashDraw($("solidA"), lock);
+    dashDraw($("solidB"), lock);
+    $("solidA").style.opacity = String(lock);
+    $("solidB").style.opacity = String(lock);
+
+    if (t < 6.1) {
+      $("kicker").textContent = "Desenvolvedor · site · app · integração";
+      $("h1").textContent = t < 3.1 ? "Nada conversa." : "Três ferramentas. Zero sistema.";
+      $("lead").textContent = t < 3.1
+        ? "Site num lado. App no outro. WhatsApp solto. A operação não fecha."
+        : "Lead no Instagram. Pedido no zap. Status na planilha. Ninguém vê o todo.";
+      $("t1").textContent = "Isolado";
+      $("t2").textContent = "Isolado";
+      $("t3").textContent = "Isolado";
+      $("b1").textContent = "Site";
+      $("b2").textContent = "Planilha";
+      $("b3").textContent = "WhatsApp";
+      $("s1").textContent = "Bonito. Parado. Sem pedido.";
+      $("s2").textContent = "Controle no Excel. Retrabalho.";
+      $("s3").textContent = "Lead chega. Ninguém registra.";
+    } else {
+      $("kicker").textContent = "Web Prumo · um time";
+      $("h1").innerHTML = 'Um desenvolvedor.<br>O ciclo fecha.';
+      $("lead").textContent = "Site, app e integração no mesmo escopo — WhatsApp, CRM e pagamento falando entre si.";
+      $("t1").textContent = "Presença";
+      $("t2").textContent = "Produto";
+      $("t3").textContent = "Operação";
+      $("b1").textContent = "Site que vende";
+      $("b2").textContent = "App sob medida";
+      $("b3").textContent = "Integração";
+      $("s1").textContent = "Landing ou institucional com caminho até o pedido.";
+      $("s2").textContent = "Painel, área do cliente, fluxo do seu processo.";
+      $("s3").textContent = "WhatsApp, CRM, planilha e pagamento ligados.";
+    }
+
+    const lift = 1 + offer * 0.0;
+    $("n1").style.transform = `translateY(${(1 - offer) * 0}px) scale(${lift})`;
+    $("foot").style.opacity = String(1 - cta);
+    $("dock").style.transform = `translateY(${(1 - cta) * 110}%)`;
+    const pulse = 1 + 0.04 * Math.sin(Math.max(0, t - 13.4) * 6);
+    $("dwa").style.transform = `scale(${pulse})`;
+  };
+
+  window.__ready = true;
+  window.render(0);
+</script>
+</body>
+</html>
