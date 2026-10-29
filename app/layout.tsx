@@ -20,13 +20,17 @@ const siteUrl = "https://www.webprumo.com.br";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default:
-      "Criação de Sites e Landing Pages que Convertem | Web Prumo",
+    default: "Web Prumo | Criação de Sites e Landing Pages",
     template: "%s | Web Prumo",
   },
   description:
-    "Criação de sites, landing pages, sites institucionais e sistemas web sob medida. Web Prumo: design autoral, SEO técnico, performance e foco em conversão. Orçamento em contato@webprumo.com.br ou WhatsApp.",
+    "Web Prumo (webprumo.com.br) — criação de sites, landing pages, sites institucionais e sistemas web sob medida. Design autoral, SEO técnico e foco em conversão. Contato: contato@webprumo.com.br.",
   keywords: [
+    "Web Prumo",
+    "web prumo",
+    "webprumo",
+    "webprumo.com.br",
+    "web.prumo",
     "criação de sites",
     "criacao de sites",
     "desenvolvimento de sites",
@@ -51,10 +55,7 @@ export const metadata: Metadata = {
     "página de captura",
     "SEO para sites",
     "SEO técnico",
-    "Web Prumo",
-    "web.prumo",
     "sites que convertem",
-    "studio digital",
     "software sob medida",
   ],
   authors: [{ name: "Web Prumo", url: siteUrl }],
@@ -68,23 +69,23 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: siteUrl,
     siteName: "Web Prumo",
-    title: "Criação de Sites e Landing Pages | Web Prumo",
+    title: "Web Prumo | Criação de Sites e Landing Pages",
     description:
-      "Criação de sites profissionais, landing pages e sistemas sob medida — do brief ao ar com escopo fechado.",
+      "A Web Prumo cria sites profissionais, landing pages e sistemas sob medida — do brief ao ar com escopo fechado.",
     images: [
       {
         url: "/og.jpg",
         width: 1200,
         height: 630,
-        alt: "Web Prumo — studio digital",
+        alt: "Web Prumo — criação de sites e landing pages",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Criação de Sites e Landing Pages | Web Prumo",
+    title: "Web Prumo | Criação de Sites e Landing Pages",
     description:
-      "Criação de sites, landing pages e sistemas web com foco em conversão. Peça orçamento.",
+      "Web Prumo: criação de sites, landing pages e sistemas web com foco em conversão. Peça orçamento.",
     images: ["/og.jpg"],
   },
   robots: {
@@ -118,7 +119,21 @@ const jsonLd = {
       "@type": "Organization",
       "@id": `${siteUrl}/#organization`,
       name: "Web Prumo",
-      alternateName: ["WebPrumo", "Prumo Web"],
+      legalName: "Web Prumo",
+      alternateName: [
+        "WebPrumo",
+        "web prumo",
+        "webprumo",
+        "Web.Prumo",
+        "web.prumo",
+        "Prumo Web",
+      ],
+      brand: {
+        "@type": "Brand",
+        name: "Web Prumo",
+        url: siteUrl,
+        logo: `${siteUrl}/brand/logo-marca.png`,
+      },
       url: siteUrl,
       logo: {
         "@type": "ImageObject",
@@ -129,9 +144,12 @@ const jsonLd = {
       image: `${siteUrl}/og.jpg`,
       email: "contato@webprumo.com.br",
       telephone: "+55-11-96633-1995",
-      sameAs: ["https://instagram.com/web.prumo"],
+      sameAs: [
+        "https://www.instagram.com/web.prumo/",
+        "https://instagram.com/web.prumo",
+      ],
       description:
-        "Studio digital especializado em criação de sites, landing pages, sites institucionais e sistemas web com foco em conversão.",
+        "Web Prumo é a empresa de criação de sites, landing pages, sites institucionais e sistemas web com foco em conversão. Site oficial: webprumo.com.br.",
       aggregateRating: {
         "@type": "AggregateRating",
         ratingValue: "5",
@@ -144,9 +162,11 @@ const jsonLd = {
     {
       "@type": "ProfessionalService",
       "@id": `${siteUrl}/#service`,
-      name: "Web Prumo - Criacao de Sites e Landing Pages",
+      name: "Web Prumo — Criação de Sites e Landing Pages",
+      alternateName: ["WebPrumo", "web prumo", "webprumo.com.br"],
       image: `${siteUrl}/og.jpg`,
       url: siteUrl,
+      brand: { "@id": `${siteUrl}/#organization` },
       email: "contato@webprumo.com.br",
       telephone: "+55-11-96633-1995",
       priceRange: "$$",
@@ -259,8 +279,9 @@ const jsonLd = {
       "@id": `${siteUrl}/#website`,
       url: siteUrl,
       name: "Web Prumo",
+      alternateName: ["webprumo.com.br", "WebPrumo", "web prumo"],
       description:
-        "Criação de sites, landing pages e sistemas web que convertem.",
+        "Site oficial da Web Prumo: criação de sites, landing pages e sistemas web que convertem.",
       publisher: { "@id": `${siteUrl}/#organization` },
       inLanguage: "pt-BR",
     },
@@ -268,6 +289,14 @@ const jsonLd = {
       "@type": "FAQPage",
       "@id": `${siteUrl}/#faq`,
       mainEntity: [
+        {
+          "@type": "Question",
+          name: "O que é a Web Prumo?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "A Web Prumo (webprumo.com.br) é a empresa de criação de sites, landing pages, sites institucionais, sistemas web e integrações. Instagram oficial: @web.prumo.",
+          },
+        },
         {
           "@type": "Question",
           name: "Vocês fazem criação de sites para empresas?",

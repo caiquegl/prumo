@@ -74,6 +74,10 @@ const steps = [
 
 const faqs = [
   {
+    q: "O que é a Web Prumo?",
+    a: "A Web Prumo (webprumo.com.br, Instagram @web.prumo) é a empresa de criação de sites, landing pages, sites institucionais, sistemas web e integrações. Trabalhamos com escopo, prazo e valor fechados antes de começar.",
+  },
+  {
     q: "Vocês fazem criação de sites para empresas?",
     a: "Sim. Desenvolvemos sites profissionais, sites institucionais e páginas sob medida para empresas — com design autoral, SEO técnico e foco em gerar leads e vendas.",
   },
@@ -124,19 +128,19 @@ export default function Home() {
             </span>
           </div>
           <h1
-            className="rise display mt-6 max-w-[13ch] text-[clamp(3rem,9vw,6.8rem)]"
+            className="rise display mt-6 max-w-[16ch] text-[clamp(3rem,9vw,6.8rem)]"
             style={{ animationDelay: "90ms" }}
           >
-            Criação de sites que trabalham pelo seu{" "}
+            Web Prumo: criação de sites que trabalham pelo seu{" "}
             <span className="text-coral">negócio</span>.
           </h1>
           <p
             className="rise mt-8 max-w-xl text-lg leading-relaxed text-ink-soft md:text-xl"
             style={{ animationDelay: "180ms" }}
           >
-            Landing pages, sites institucionais, sistemas web e integrações —
-            criação de sites sob medida com design autoral, SEO e foco em
-            conversão.
+            A Web Prumo (webprumo.com.br) cria landing pages, sites
+            institucionais, sistemas web e integrações — sites sob medida com
+            design autoral, SEO técnico e foco em conversão.
           </p>
           <div className="rise mt-10 flex flex-wrap gap-3" style={{ animationDelay: "270ms" }}>
             <a className="wa-btn" href={WA} target="_blank" rel="noopener noreferrer">
@@ -315,19 +319,26 @@ export default function Home() {
             />
             <p className="display text-base text-ink">Web Prumo</p>
           </div>
-          <p>Sites · landing pages · sistemas · integrações</p>
+          <p>
+            <a href="/web-prumo" className="hover:text-ink">
+              Sobre a Web Prumo
+            </a>
+            {" · "}
+            Sites · landing pages · sistemas · integrações
+          </p>
           <div className="flex flex-col gap-1 md:items-end">
             <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">
               {CONTACT_EMAIL}
             </a>
             <a
-              href="https://instagram.com/web.prumo"
+              href="https://www.instagram.com/web.prumo/"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-ink"
             >
-              @web.prumo
+              Instagram @web.prumo
             </a>
+            <span className="text-xs">webprumo.com.br</span>
           </div>
         </div>
       </footer>

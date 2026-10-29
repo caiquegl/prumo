@@ -12,6 +12,23 @@ export type SeoPage = {
 
 export const SEO_PAGES: SeoPage[] = [
   {
+    path: "/web-prumo",
+    eyebrow: "Marca",
+    title: "Web Prumo — Quem Somos",
+    h1: "Web Prumo: sites e sistemas com precisão.",
+    description:
+      "Web Prumo (webprumo.com.br) é a empresa de criação de sites, landing pages e sistemas web. Conheça a marca, o método e como pedir orçamento.",
+    lead: "A Web Prumo — também buscada como web prumo, webprumo ou web.prumo — desenvolve presença digital sob medida: criação de sites, landing pages, sites institucionais, sistemas web e integrações, com escopo, prazo e valor fechados antes de começar.",
+    bullets: [
+      "Marca oficial: Web Prumo · site webprumo.com.br · Instagram @web.prumo",
+      "Foco em conversão: design autoral + SEO técnico + performance",
+      "Landing pages, sites institucionais, sistemas e automações",
+      "Atendimento via WhatsApp (11) 96633-1995 e contato@webprumo.com.br",
+    ],
+    waText: "Olá! Quero conhecer a Web Prumo e pedir um orçamento.",
+    priority: 1,
+  },
+  {
     path: "/criacao-de-sites",
     eyebrow: "Serviço",
     title: "Criação de Sites Profissionais",
