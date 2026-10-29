@@ -24,9 +24,12 @@ await png(32, "public/favicon-32.png");
 await png(16, "public/favicon-16.png");
 await png(48, "public/favicon-48.png");
 await png(180, "public/apple-touch-icon.png");
-await png(180, "app/apple-icon.png");
 await png(512, "public/favicon.png");
-await png(512, "app/icon.png");
+// Prefer metadata.icons + public/ over App Router auto icon routes
+// (avoids duplicate conflicting <link rel="icon"> tags for Google).
+for (const dup of ["app/icon.png", "app/apple-icon.png"]) {
+  if (fs.existsSync(dup)) fs.unlinkSync(dup);
+}
 
 try {
   const pngToIco = (await import("png-to-ico")).default;

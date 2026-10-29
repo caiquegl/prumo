@@ -10,6 +10,12 @@ const CONTACT_EMAIL = "arq.caique@hotmail.com";
 
 const services = [
   {
+    title: "Criação de sites",
+    tag: "Serviço",
+    href: "/criacao-de-sites",
+    body: "Sites profissionais para empresas com design autoral, SEO técnico e foco em conversão.",
+  },
+  {
     title: "Landing pages",
     tag: "Conversão",
     href: "/landing-pages",
@@ -20,6 +26,12 @@ const services = [
     tag: "Marca",
     href: "/sites-institucionais",
     body: "Criação de sites profissionais com credibilidade, SEO técnico e fácil atualização.",
+  },
+  {
+    title: "Site para empresa",
+    tag: "Empresas",
+    href: "/site-para-empresa",
+    body: "Presença digital clara para PMEs: oferta, prova e caminho direto até o WhatsApp.",
   },
   {
     title: "Sistemas web",

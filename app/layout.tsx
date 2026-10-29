@@ -168,14 +168,6 @@ const jsonLd = {
       ],
       description:
         "Web Prumo é a empresa de criação de sites, landing pages, sites institucionais e sistemas web com foco em conversão. Site oficial: webprumo.com.br.",
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "5",
-        bestRating: "5",
-        worstRating: "1",
-        ratingCount: "48",
-        reviewCount: "48",
-      },
     },
     {
       "@type": "ProfessionalService",
@@ -203,13 +195,6 @@ const jsonLd = {
         "@type": "GeoCoordinates",
         latitude: -23.5505,
         longitude: -46.6333,
-      },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "5.0",
-        bestRating: "5",
-        worstRating: "1",
-        ratingCount: "48",
       },
       knowsAbout: [
         "criação de sites",
@@ -288,6 +273,28 @@ const jsonLd = {
             url: `${siteUrl}/desenvolvimento-web`,
             description:
               "Sites, landings, sistemas e APIs com performance e SEO técnico.",
+          },
+        },
+        {
+          "@type": "Offer",
+          url: `${siteUrl}/site-para-empresa`,
+          itemOffered: {
+            "@type": "Service",
+            name: "Site para empresa",
+            url: `${siteUrl}/site-para-empresa`,
+            description:
+              "Site para empresa com oferta clara, prova social e CTA para WhatsApp.",
+          },
+        },
+        {
+          "@type": "Offer",
+          url: `${siteUrl}/seo-para-sites`,
+          itemOffered: {
+            "@type": "Service",
+            name: "SEO técnico para sites",
+            url: `${siteUrl}/seo-para-sites`,
+            description:
+              "SEO técnico: sitemap, metadados, dados estruturados e páginas de serviço.",
           },
         },
       ],

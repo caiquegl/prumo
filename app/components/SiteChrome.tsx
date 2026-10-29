@@ -38,15 +38,18 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
               <span className="font-semibold">Prumo</span>
             </span>
           </a>
-          <nav className="hidden items-center gap-8 text-sm text-[color:var(--ink-soft)] md:flex">
-            <a href="/landing-pages" className="hover:text-[color:var(--ink)]">
-              Landing pages
-            </a>
+          <nav className="hidden items-center gap-6 text-sm text-[color:var(--ink-soft)] lg:gap-8 md:flex">
             <a href="/criacao-de-sites" className="hover:text-[color:var(--ink)]">
               Criação de sites
             </a>
+            <a href="/landing-pages" className="hover:text-[color:var(--ink)]">
+              Landing pages
+            </a>
             <a href="/sites-institucionais" className="hover:text-[color:var(--ink)]">
               Institucionais
+            </a>
+            <a href="/sistemas-web" className="hover:text-[color:var(--ink)]">
+              Sistemas
             </a>
             <a href="/#contato" className="hover:text-[color:var(--ink)]">
               Contato

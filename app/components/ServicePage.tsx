@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { SEO_PAGES } from "../../lib/seo-pages";
+
+const siteUrl = "https://www.webprumo.com.br";
 
 const WA_BASE =
   "https://wa.me/5511966331995?text=" +
@@ -8,11 +11,12 @@ const related = [
   { href: "/criacao-de-sites", label: "criação de sites" },
   { href: "/landing-pages", label: "landing pages" },
   { href: "/sites-institucionais", label: "sites institucionais" },
+  { href: "/site-para-empresa", label: "site para empresa" },
   { href: "/sistemas-web", label: "sistemas web" },
   { href: "/integracoes", label: "integrações e automação" },
   { href: "/desenvolvimento-web", label: "desenvolvimento web" },
-  { href: "/site-para-empresa", label: "site para empresa" },
   { href: "/seo-para-sites", label: "SEO para sites" },
+  { href: "/web-prumo", label: "sobre a Web Prumo" },
 ];
 
 export function ServicePage({
@@ -34,8 +38,48 @@ export function ServicePage({
     ? "https://wa.me/5511966331995?text=" + encodeURIComponent(waText)
     : WA_BASE;
 
+  const pageMeta = SEO_PAGES.find((p) => p.path === currentPath);
+  const pageUrl = `${siteUrl}${currentPath}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Início",
+            item: `${siteUrl}/`,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: pageMeta?.title ?? title,
+            item: pageUrl,
+          },
+        ],
+      },
+      {
+        "@type": "Service",
+        name: pageMeta?.title ?? title,
+        description: pageMeta?.description ?? lead,
+        url: pageUrl,
+        provider: { "@id": `${siteUrl}/#organization` },
+        areaServed: {
+          "@type": "Country",
+          name: "Brasil",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="mx-auto max-w-3xl px-5 py-20 md:px-8 md:py-28">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">
         {eyebrow}
       </p>
