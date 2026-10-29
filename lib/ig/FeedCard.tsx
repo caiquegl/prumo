@@ -53,7 +53,7 @@ function Brand({ theme, lightText = false }: { theme: Theme; lightText?: boolean
         </div>
         <div style={{ display: "flex" }}>Prumo Web</div>
       </div>
-      <div style={{ display: "flex" }}>@prumo.web</div>
+      <div style={{ display: "flex" }}>@web.prumo</div>
     </div>
   );
 }

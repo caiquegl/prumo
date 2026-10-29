@@ -116,7 +116,7 @@ const jsonLd = {
       image: `${siteUrl}/og.jpg`,
       email: "contato@webprumo.com.br",
       telephone: "+55-11-96633-1995",
-      sameAs: ["https://instagram.com/prumo.web"],
+      sameAs: ["https://instagram.com/web.prumo"],
       description:
         "Studio digital especializado em criação de sites, landing pages, sites institucionais e sistemas web com foco em conversão.",
       aggregateRating: {

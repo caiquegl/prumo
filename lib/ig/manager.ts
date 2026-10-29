@@ -507,7 +507,7 @@ function buildCaption(item: FeedItem, brief?: AgencyBrief) {
   const lines = [
     item.hook || titleOf(item),
     brief?.scene.copy.sub || item.headline || "Single page e site sob medida — código próprio, lead no WhatsApp.",
-    "Prumo Web · @prumo.web",
+    "Prumo Web · @web.prumo",
     "Orçamento no WhatsApp: (11) 96633-1995",
   ];
   const tags = [

@@ -1,6 +1,6 @@
 # Publicação automática no Instagram
 
-Três vezes ao dia (8:00, 12:00 e 18:00 de Brasília) o Next.js gera um post 1080×1350 no visual da Prumo e publica no [@prumo.web](https://instagram.com/prumo.web).
+Três vezes ao dia (8:00, 12:00 e 18:00 de Brasília) o Next.js gera um post 1080×1350 no visual da Prumo e publica no [@web.prumo](https://instagram.com/web.prumo).
 
 Os horários no `vercel.json` estão em UTC: 10:00 (renova token), 11:00, 15:00 e 21:00 (posts) = 7:00, 8:00, 12:00 e 18:00 em Brasília.
 

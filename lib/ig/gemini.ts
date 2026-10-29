@@ -69,7 +69,7 @@ export async function generateAgencyBrief(input: {
   const preferred = DESIGNED_LAYOUTS.filter((l) => !input.avoidLayouts.includes(l));
   const layoutHint = preferred.length ? preferred.join("|") : DESIGNED_LAYOUTS.join("|");
 
-  const system = `Você é diretor criativo + redator comercial da Prumo Web (@prumo.web).
+  const system = `Você é diretor criativo + redator comercial da Prumo Web (@web.prumo).
 OFERTA: freela de TI — single page / landing / site sob medida, código próprio, lead no WhatsApp.
 
 Gere um POST DE AGÊNCIA DESENHADO (infográfico/editorial), NÃO "foto abstrata numa moldura".

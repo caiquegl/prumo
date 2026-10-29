@@ -303,12 +303,12 @@ export default function Home() {
               {CONTACT_EMAIL}
             </a>
             <a
-              href="https://instagram.com/prumo.web"
+              href="https://instagram.com/web.prumo"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-ink"
             >
-              @prumo.web
+              @web.prumo
             </a>
           </div>
         </div>
