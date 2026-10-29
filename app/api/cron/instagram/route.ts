@@ -1,15 +1,8 @@
 import { authorized } from "@/lib/ig/http";
 import { refreshStoredTokens } from "@/lib/ig/auth";
-import { account, publishQueueMedia } from "@/lib/ig/publish";
-import {
-  captionWithTags,
-  carouselUrls,
-  claimNextPending,
-  claimQueuePost,
-  markQueueFailed,
-  markQueuePublished,
-} from "@/lib/ig/queue";
-import { insertPublication, logEvent, publishedState } from "@/lib/ig/store";
+import { publishClaimedQueueItem } from "@/lib/ig/dispatch";
+import { claimNextPending, claimQueuePost, markQueueFailed } from "@/lib/ig/queue";
+import { logEvent, publishedState } from "@/lib/ig/store";
 
 export const maxDuration = 300;
 
@@ -54,7 +47,6 @@ async function run(req: Request) {
     return Response.json({ ok: true, skipped: true, slot, reason });
   }
 
-  const caption = captionWithTags(claimed.caption, claimed.tags);
   await logEvent("info", "queue", "claim pending", {
     id: claimed.id,
     mediaType: claimed.media_type,
@@ -62,46 +54,8 @@ async function run(req: Request) {
   });
 
   try {
-    const ig = await account();
-    const published = await publishQueueMedia({
-      mediaType: claimed.media_type,
-      mediaUrl: claimed.image_url,
-      children: carouselUrls(claimed),
-      caption,
-    });
-
-    await markQueuePublished(claimed.id, {
-      mediaId: published.id,
-      permalink: published.permalink,
-    });
-
-    await insertPublication({
-      slot,
-      itemId: `queue:${claimed.id}`,
-      title: `Fila #${claimed.id}`,
-      layout: claimed.media_type === "video" ? "reel" : claimed.media_type === "carousel" ? "carousel" : "feed",
-      format: claimed.media_type === "video" ? "reel" : claimed.media_type === "carousel" ? "carousel" : "post",
-      mediaId: published.id,
-      permalink: published.permalink,
-      imageUrl: claimed.image_url,
-      caption,
-    });
-
-    await logEvent("info", "publish", "post da fila publicado", {
-      slot,
-      queueId: claimed.id,
-      mediaType: claimed.media_type,
-      permalink: published.permalink,
-    });
-
-    return Response.json({
-      ok: true,
-      slot,
-      queueId: claimed.id,
-      mediaType: claimed.media_type,
-      permalink: published.permalink,
-      account: ig.username,
-    });
+    const published = await publishClaimedQueueItem(claimed, slot);
+    return Response.json(published);
   } catch (err) {
     const message = err instanceof Error ? err.message : "falhou ao publicar fila";
     await markQueueFailed(claimed.id, message);

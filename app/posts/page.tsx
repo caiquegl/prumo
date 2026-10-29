@@ -107,7 +107,7 @@ function QueueMedia({ post }: { post: QueuePost }) {
               />
             ))}
           </div>
-          <span className="absolute right-3 top-12 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="absolute left-3 top-12 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-semibold text-white">
             {index + 1}/{urls.length}
           </span>
         </>
@@ -133,6 +133,7 @@ export default function PostsPage() {
   const [error, setError] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [publishingId, setPublishingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -179,6 +180,28 @@ export default function PostsPage() {
       setError("Erro de rede no upload");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function onPublish(id: number) {
+    if (!confirm(`Publicar o post #${id} no Instagram agora?`)) return;
+    setError("");
+    setPublishingId(id);
+    setPosts((curr) => curr.map((item) => (item.id === id ? { ...item, status: "publishing" } : item)));
+    try {
+      const res = await fetch(`/api/posts/${id}/publish`, { method: "POST" });
+      const json = (await res.json()) as { error?: string; permalink?: string };
+      if (!res.ok) {
+        setError(json.error || "Falha ao publicar");
+        await load();
+        return;
+      }
+      await load();
+    } catch {
+      setError("Erro de rede ao publicar");
+      await load();
+    } finally {
+      setPublishingId(null);
     }
   }
 
@@ -307,17 +330,32 @@ export default function PostsPage() {
                 <span className="absolute left-3 top-3 z-20 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white">
                   #{p.sort_order} · {mediaKindLabel(p.media_type, slideUrls(p).length)} · {STATUS_LABEL[p.status] || p.status}
                 </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onDelete(p.id);
-                  }}
-                  disabled={deletingId === p.id}
-                  className="absolute right-3 top-3 z-30 rounded-full bg-[#c45a48] px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-[#a84838] disabled:opacity-60"
-                >
-                  {deletingId === p.id ? "Apagando…" : "Apagar"}
-                </button>
+                <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-1.5">
+                  {p.status === "pending" || p.status === "failed" || p.status === "publishing" ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void onPublish(p.id);
+                      }}
+                      disabled={publishingId === p.id || deletingId === p.id || p.status === "publishing"}
+                      className="rounded-full bg-[#141210] px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-[#c45a48] disabled:opacity-60"
+                    >
+                      {publishingId === p.id || p.status === "publishing" ? "Publicando…" : "Publicar"}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void onDelete(p.id);
+                    }}
+                    disabled={deletingId === p.id || publishingId === p.id}
+                    className="rounded-full bg-[#c45a48] px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-[#a84838] disabled:opacity-60"
+                  >
+                    {deletingId === p.id ? "Apagando…" : "Apagar"}
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col gap-3 p-4">
                 <p className="line-clamp-4 whitespace-pre-wrap text-sm text-[color:var(--ink-soft)]">
@@ -339,18 +377,30 @@ export default function PostsPage() {
                     Ver no Instagram
                   </a>
                 ) : null}
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs text-[color:var(--ink-soft)]">
                     {new Date(p.created_at).toLocaleString("pt-BR")}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => void onDelete(p.id)}
-                    disabled={deletingId === p.id}
-                    className="rounded-full bg-[color:var(--coral-deep)] px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
-                  >
-                    {deletingId === p.id ? "Apagando…" : "Apagar"}
-                  </button>
+                  <div className="flex gap-2">
+                    {p.status === "pending" || p.status === "failed" || p.status === "publishing" ? (
+                      <button
+                        type="button"
+                        onClick={() => void onPublish(p.id)}
+                        disabled={publishingId === p.id || deletingId === p.id || p.status === "publishing"}
+                        className="rounded-full bg-[color:var(--ink)] px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+                      >
+                        {publishingId === p.id || p.status === "publishing" ? "Publicando…" : "Publicar"}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => void onDelete(p.id)}
+                      disabled={deletingId === p.id || publishingId === p.id}
+                      className="rounded-full bg-[color:var(--coral-deep)] px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+                    >
+                      {deletingId === p.id ? "Apagando…" : "Apagar"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </li>
