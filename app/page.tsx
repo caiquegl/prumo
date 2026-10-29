@@ -12,17 +12,17 @@ const services = [
   {
     title: "Landing pages",
     tag: "Conversão",
-    body: "Páginas de campanha focadas em uma única ação: lead, venda ou agendamento.",
+    body: "Criação de landing pages e páginas de captura focadas em lead, venda ou agendamento.",
   },
   {
     title: "Sites institucionais",
     tag: "Marca",
-    body: "Presença digital com credibilidade, SEO técnico e fácil de atualizar.",
+    body: "Criação de sites profissionais com credibilidade, SEO técnico e fácil atualização.",
   },
   {
     title: "Sistemas web",
     tag: "Produto",
-    body: "Painéis, áreas de cliente e ferramentas internas feitas sob medida.",
+    body: "Desenvolvimento de sites e painéis sob medida: área do cliente e ferramentas internas.",
   },
   {
     title: "Integrações e automação",
@@ -37,7 +37,7 @@ const services = [
   {
     title: "Performance e manutenção",
     tag: "Evolução",
-    body: "Carregamento rápido, monitoramento e melhorias contínuas depois do lançamento.",
+    body: "Site rápido, monitoramento e melhorias contínuas depois do lançamento.",
   },
 ];
 
@@ -63,6 +63,25 @@ const steps = [
     n: "03",
     title: "Lançamento",
     body: "Deploy, domínio, testes finais e entrega com tudo documentado.",
+  },
+];
+
+const faqs = [
+  {
+    q: "Vocês fazem criação de sites para empresas?",
+    a: "Sim. Desenvolvemos sites profissionais, sites institucionais e páginas sob medida para empresas — com design autoral, SEO técnico e foco em gerar leads e vendas.",
+  },
+  {
+    q: "Quanto tempo leva para criar uma landing page?",
+    a: "Em geral, uma landing page (página de captura) fica no ar em 7 a 15 dias, com duas rodadas de revisão inclusas e escopo fechado antes de começar.",
+  },
+  {
+    q: "Landing page é diferente de site institucional?",
+    a: "Sim. A landing page converte uma ação específica. O site institucional apresenta sua marca e serviços, com estrutura pensada para buscas como criação de sites e presença digital.",
+  },
+  {
+    q: "Como pedir orçamento de criação de site?",
+    a: "Escreva para contato@webprumo.com.br ou chame no WhatsApp (11) 96633-1995. Enviamos proposta, prazo e valor fechados.",
   },
 ];
 
@@ -97,14 +116,16 @@ export default function Home() {
             className="rise display mt-6 max-w-[13ch] text-[clamp(3rem,9vw,6.8rem)]"
             style={{ animationDelay: "90ms" }}
           >
-            Sites que trabalham pelo seu <span className="text-coral">negócio</span>.
+            Criação de sites que trabalham pelo seu{" "}
+            <span className="text-coral">negócio</span>.
           </h1>
           <p
             className="rise mt-8 max-w-xl text-lg leading-relaxed text-ink-soft md:text-xl"
             style={{ animationDelay: "180ms" }}
           >
-            Landing pages, sites institucionais, sistemas web e integrações — com
-            design autoral, código sob medida e foco em resultado.
+            Landing pages, sites institucionais, sistemas web e integrações —
+            criação de sites sob medida com design autoral, SEO e foco em
+            conversão.
           </p>
           <div className="rise mt-10 flex flex-wrap gap-3" style={{ animationDelay: "270ms" }}>
             <a className="wa-btn" href={WA} target="_blank" rel="noopener noreferrer">
@@ -186,6 +207,36 @@ export default function Home() {
                 <h3 className="display mt-3 text-2xl">{step.title}</h3>
                 <p className="mt-3 text-[0.98rem] leading-relaxed text-ink-soft">{step.body}</p>
               </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section id="faq" className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+        <Reveal>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">FAQ</p>
+          <h2 className="display mt-4 max-w-[18ch] text-[clamp(2.2rem,5vw,3.6rem)]">
+            Criação de sites e landing pages — perguntas frequentes
+          </h2>
+          <p className="mt-5 max-w-2xl text-[0.98rem] leading-relaxed text-ink-soft">
+            Tire dúvidas sobre desenvolvimento de sites, páginas de captura e
+            como a Web Prumo coloca seu projeto no ar com escopo fechado.
+          </p>
+        </Reveal>
+        <div className="mt-12 divide-y divide-line border-y border-line">
+          {faqs.map((item, i) => (
+            <Reveal key={item.q} delay={i * 60}>
+              <details className="group py-6">
+                <summary className="display cursor-pointer list-none text-xl text-ink marker:content-none [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-start justify-between gap-4">
+                    {item.q}
+                    <span className="text-coral transition group-open:rotate-45" aria-hidden>
+                      +
+                    </span>
+                  </span>
+                </summary>
+                <p className="mt-3 max-w-3xl text-[0.98rem] leading-relaxed text-ink-soft">{item.a}</p>
+              </details>
             </Reveal>
           ))}
         </div>

@@ -20,21 +20,30 @@ const siteUrl = "https://www.webprumo.com.br";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Web Prumo — Sites, landing pages e sistemas que convertem",
+    default:
+      "Criação de Sites e Landing Pages que Convertem | Web Prumo",
     template: "%s | Web Prumo",
   },
   description:
-    "Web Prumo cria sites, landing pages, sistemas web e integrações com design autoral, SEO técnico e foco em conversão. Orçamento no WhatsApp ou contato@webprumo.com.br.",
+    "Criação de sites, landing pages, sites institucionais e sistemas web sob medida. Web Prumo: design autoral, SEO técnico, performance e foco em conversão. Orçamento em contato@webprumo.com.br ou WhatsApp.",
   keywords: [
     "criação de sites",
+    "criacao de sites",
+    "desenvolvimento de sites",
+    "fazer site",
     "landing page",
+    "landing pages",
+    "criação de landing page",
     "site institucional",
+    "site profissional",
     "desenvolvimento web",
-    "Next.js",
-    "agência web Brasil",
+    "agência de sites",
+    "empresa de criação de sites",
+    "site para empresa",
+    "página de captura",
+    "SEO para sites",
     "Web Prumo",
     "sites que convertem",
-    "SEO",
     "integração WhatsApp",
   ],
   authors: [{ name: "Web Prumo", url: siteUrl }],
@@ -48,9 +57,9 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: siteUrl,
     siteName: "Web Prumo",
-    title: "Web Prumo — Sites e landing pages que convertem",
+    title: "Criação de Sites e Landing Pages | Web Prumo",
     description:
-      "Sites, landing pages e sistemas sob medida — do brief ao ar com escopo fechado. Performance, SEO e conversão.",
+      "Criação de sites profissionais, landing pages e sistemas sob medida — do brief ao ar com escopo fechado.",
     images: [
       {
         url: "/og.jpg",
@@ -62,9 +71,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Web Prumo — Sites e landing pages que convertem",
+    title: "Criação de Sites e Landing Pages | Web Prumo",
     description:
-      "Design autoral, código sob medida e foco em resultado. Peça orçamento.",
+      "Criação de sites, landing pages e sistemas web com foco em conversão. Peça orçamento.",
     images: ["/og.jpg"],
   },
   robots: {
@@ -96,11 +105,20 @@ const jsonLd = {
       "@type": "Organization",
       "@id": `${siteUrl}/#organization`,
       name: "Web Prumo",
+      alternateName: ["WebPrumo", "Prumo Web"],
       url: siteUrl,
-      logo: `${siteUrl}/favicon.png`,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/favicon.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${siteUrl}/og.jpg`,
       email: "contato@webprumo.com.br",
       telephone: "+55-11-96633-1995",
       sameAs: ["https://instagram.com/prumo.web"],
+      description:
+        "Studio digital especializado em criação de sites, landing pages, sites institucionais e sistemas web com foco em conversão.",
       aggregateRating: {
         "@type": "AggregateRating",
         ratingValue: "5",
@@ -111,21 +129,29 @@ const jsonLd = {
       },
     },
     {
-      "@type": "ProfessionalService",
+      "@type": ["ProfessionalService", "LocalBusiness"],
       "@id": `${siteUrl}/#service`,
-      name: "Web Prumo",
+      name: "Web Prumo — Criação de Sites e Landing Pages",
       image: `${siteUrl}/og.jpg`,
       url: siteUrl,
       email: "contato@webprumo.com.br",
       telephone: "+55-11-96633-1995",
       priceRange: "$$",
-      areaServed: {
-        "@type": "Country",
-        name: "Brasil",
-      },
+      openingHours: "Mo-Fr 09:00-18:00",
+      areaServed: [
+        { "@type": "Country", name: "Brasil" },
+        { "@type": "City", name: "São Paulo" },
+      ],
       address: {
         "@type": "PostalAddress",
+        addressLocality: "São Paulo",
+        addressRegion: "SP",
         addressCountry: "BR",
+      },
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: -23.5505,
+        longitude: -46.6333,
       },
       aggregateRating: {
         "@type": "AggregateRating",
@@ -134,29 +160,48 @@ const jsonLd = {
         worstRating: "1",
         ratingCount: "48",
       },
+      knowsAbout: [
+        "criação de sites",
+        "landing pages",
+        "desenvolvimento web",
+        "sites institucionais",
+        "SEO",
+        "sistemas web",
+      ],
       makesOffer: [
         {
           "@type": "Offer",
           itemOffered: {
             "@type": "Service",
-            name: "Landing pages",
-            description: "Páginas de campanha focadas em conversão.",
+            name: "Criação de landing pages",
+            description:
+              "Landing pages e páginas de captura focadas em lead, venda ou agendamento.",
           },
         },
         {
           "@type": "Offer",
           itemOffered: {
             "@type": "Service",
-            name: "Sites institucionais",
-            description: "Presença digital com SEO técnico.",
+            name: "Criação de sites institucionais",
+            description:
+              "Sites profissionais para empresas com SEO técnico e design autoral.",
           },
         },
         {
           "@type": "Offer",
           itemOffered: {
             "@type": "Service",
-            name: "Sistemas web",
-            description: "Painéis e ferramentas sob medida.",
+            name: "Desenvolvimento de sistemas web",
+            description: "Painéis, áreas de cliente e ferramentas sob medida.",
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "Criação de sites para empresas",
+            description:
+              "Do brief ao ar: site completo com domínio, HTTPS e performance.",
           },
         },
       ],
@@ -166,8 +211,53 @@ const jsonLd = {
       "@id": `${siteUrl}/#website`,
       url: siteUrl,
       name: "Web Prumo",
+      description:
+        "Criação de sites, landing pages e sistemas web que convertem.",
       publisher: { "@id": `${siteUrl}/#organization` },
       inLanguage: "pt-BR",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${siteUrl}/?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${siteUrl}/#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Vocês fazem criação de sites para empresas?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Sim. A Web Prumo desenvolve sites profissionais, sites institucionais e páginas sob medida para empresas de qualquer porte, com design autoral e foco em conversão.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Quanto tempo leva para criar uma landing page?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Em geral, uma landing page fica no ar em 7 a 15 dias, com escopo, prazo e valor fechados antes de começar e duas rodadas de revisão inclusas.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Landing page é diferente de site institucional?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Sim. A landing page foca em uma ação (lead, venda ou agendamento). O site institucional apresenta a marca, serviços e credibilidade com SEO técnico para atrair buscas orgânicas.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Como pedir orçamento de criação de site ou landing page?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Envie um resumo do projeto para contato@webprumo.com.br ou chame no WhatsApp (11) 96633-1995. Respondemos com proposta, prazo e valor fechados.",
+          },
+        },
+      ],
     },
   ],
 };
