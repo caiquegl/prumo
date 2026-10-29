@@ -129,9 +129,9 @@ const jsonLd = {
       },
     },
     {
-      "@type": ["ProfessionalService", "LocalBusiness"],
+      "@type": "ProfessionalService",
       "@id": `${siteUrl}/#service`,
-      name: "Web Prumo — Criação de Sites e Landing Pages",
+      name: "Web Prumo - Criacao de Sites e Landing Pages",
       image: `${siteUrl}/og.jpg`,
       url: siteUrl,
       email: "contato@webprumo.com.br",
@@ -215,11 +215,6 @@ const jsonLd = {
         "Criação de sites, landing pages e sistemas web que convertem.",
       publisher: { "@id": `${siteUrl}/#organization` },
       inLanguage: "pt-BR",
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${siteUrl}/?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
     },
     {
       "@type": "FAQPage",
