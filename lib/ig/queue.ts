@@ -3,7 +3,7 @@ import { ensureSchema } from "./store";
 
 export type QueueStatus = "pending" | "publishing" | "published" | "failed";
 
-export type MediaKind = "image" | "video";
+export type MediaKind = "image" | "video" | "carousel";
 
 export type QueuePost = {
   id: number;
@@ -12,6 +12,7 @@ export type QueuePost = {
   caption: string | null;
   tags: string[] | null;
   media_type: MediaKind;
+  children: string[] | null;
   status: QueueStatus;
   sort_order: number;
   published_at: string | null;
@@ -45,6 +46,7 @@ export async function ensureQueueSchema() {
     )`;
   await sql`ALTER TABLE ig_queue ADD COLUMN IF NOT EXISTS media_type TEXT NOT NULL DEFAULT 'image'`;
   await sql`ALTER TABLE ig_queue ADD COLUMN IF NOT EXISTS tags JSONB`;
+  await sql`ALTER TABLE ig_queue ADD COLUMN IF NOT EXISTS children JSONB`;
   await sql`CREATE INDEX IF NOT EXISTS ig_queue_status_sort_idx ON ig_queue (status, sort_order ASC, id ASC)`;
   queueReady = true;
 }
@@ -85,25 +87,58 @@ export async function nextSortOrder(): Promise<number> {
   return Number(rows[0]?.n || 1);
 }
 
+export function httpUrls(raw: unknown): string[] {
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of list) {
+    const url = String(item || "").trim();
+    if (!/^https?:\/\//i.test(url) || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+
+export function carouselUrls(post: Pick<QueuePost, "media_type" | "image_url" | "children">): string[] {
+  const kids = httpUrls(post.children);
+  if (post.media_type === "carousel" && kids.length >= 2) return kids;
+  return post.image_url ? [post.image_url] : [];
+}
+
+function parseMediaKind(raw: unknown, childCount: number): MediaKind {
+  if (raw === "video") return "video";
+  if (raw === "carousel" || childCount >= 2) return "carousel";
+  return "image";
+}
+
 export async function createQueuePost(input: {
   imageUrl: string;
   blobPathname?: string | null;
   caption?: string | null;
   tags?: string[] | null;
   mediaType?: MediaKind;
+  children?: string[] | null;
 }): Promise<QueuePost> {
   await ensureQueueSchema();
   const order = await nextSortOrder();
   const tagsJson = input.tags?.length ? JSON.stringify(input.tags) : null;
-  const mediaType = input.mediaType === "video" ? "video" : "image";
+  const children = httpUrls(input.children);
+  const mediaType = parseMediaKind(input.mediaType, children.length);
+  if (mediaType === "carousel" && (children.length < 2 || children.length > 10)) {
+    throw new Error("Carrossel precisa de 2 a 10 imagens");
+  }
+  const childrenJson = mediaType === "carousel" ? JSON.stringify(children) : null;
+  const cover = mediaType === "carousel" ? children[0]! : input.imageUrl;
   const rows = (await db()`
-    INSERT INTO ig_queue (image_url, blob_pathname, caption, tags, media_type, status, sort_order)
+    INSERT INTO ig_queue (image_url, blob_pathname, caption, tags, media_type, children, status, sort_order)
     VALUES (
-      ${input.imageUrl},
+      ${cover},
       ${input.blobPathname || null},
       ${input.caption || null},
       ${tagsJson}::jsonb,
       ${mediaType},
+      ${childrenJson}::jsonb,
       'pending',
       ${order}
     )

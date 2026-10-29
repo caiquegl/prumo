@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/guard";
-import { createQueuePost, listQueuePosts, type MediaKind } from "@/lib/ig/queue";
+import { createQueuePost, httpUrls, listQueuePosts, type MediaKind } from "@/lib/ig/queue";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]);
 const VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm"]);
@@ -49,15 +49,17 @@ export async function POST(req: NextRequest) {
   try {
     const ctype = req.headers.get("content-type") || "";
 
-    // JSON: { imageUrl, caption?, tags?, mediaType? } — agente pode apontar URL pública
+    // JSON: { imageUrl, children?, caption?, tags?, mediaType? } — agente pode apontar URL pública
     if (ctype.includes("application/json")) {
       const body = (await req.json()) as {
         imageUrl?: string;
+        children?: unknown;
         caption?: string;
         tags?: string[] | string;
         mediaType?: MediaKind;
       };
-      const imageUrl = String(body.imageUrl || "").trim();
+      const children = httpUrls([body.imageUrl, ...(Array.isArray(body.children) ? body.children : [])]);
+      const imageUrl = children[0] || String(body.imageUrl || "").trim();
       if (!/^https?:\/\//i.test(imageUrl)) {
         return NextResponse.json({ error: "imageUrl http(s) obrigatória" }, { status: 400 });
       }
@@ -67,26 +69,68 @@ export async function POST(req: NextRequest) {
           : Array.isArray(body.tags)
             ? body.tags.map(String).map((t) => t.replace(/^#/, "").trim()).filter(Boolean).slice(0, 12)
             : null;
-      const mediaType: MediaKind = body.mediaType === "video" ? "video" : "image";
+      const mediaType: MediaKind =
+        body.mediaType === "video"
+          ? "video"
+          : body.mediaType === "carousel" || children.length >= 2
+            ? "carousel"
+            : "image";
       const post = await createQueuePost({
         imageUrl,
         blobPathname: null,
         caption: body.caption?.trim() || null,
         tags,
         mediaType,
+        children: mediaType === "carousel" ? children : null,
       });
       return NextResponse.json({ ok: true, post }, { status: 201 });
     }
 
     const form = await req.formData();
-    const file = form.get("file");
+    const files = form
+      .getAll("file")
+      .filter((item): item is File => item instanceof File && item.size > 0);
     const caption = String(form.get("caption") || "").trim() || null;
     const tags = parseTags(form.get("tags"));
 
-    if (!file || !(file instanceof File)) {
+    if (!files.length) {
       return NextResponse.json({ error: 'Envie multipart com "file" ou JSON com imageUrl' }, { status: 400 });
     }
 
+    if (files.length > 1) {
+      if (files.length > 10) {
+        return NextResponse.json({ error: "Carrossel aceita no máximo 10 imagens" }, { status: 400 });
+      }
+      if (files.some((file) => mediaKind(file.type) !== "image")) {
+        return NextResponse.json({ error: "Carrossel só com imagens (jpeg/png/webp/gif)" }, { status: 400 });
+      }
+      const urls: string[] = [];
+      let firstPath: string | null = null;
+      for (const [index, file] of files.entries()) {
+        if (file.size > 12 * 1024 * 1024) {
+          return NextResponse.json({ error: "Arquivo maior que 12MB" }, { status: 400 });
+        }
+        const original = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || `slide-${index + 1}.jpg`;
+        const blob = await put(`ig-queue/${Date.now()}-${original}`, file, {
+          access: "public",
+          contentType: file.type,
+          addRandomSuffix: true,
+        });
+        urls.push(blob.url);
+        if (!firstPath) firstPath = blob.pathname;
+      }
+      const post = await createQueuePost({
+        imageUrl: urls[0]!,
+        blobPathname: firstPath,
+        caption,
+        tags,
+        mediaType: "carousel",
+        children: urls,
+      });
+      return NextResponse.json({ ok: true, post }, { status: 201 });
+    }
+
+    const file = files[0]!;
     const kind = mediaKind(file.type);
     if (!kind) {
       return NextResponse.json(

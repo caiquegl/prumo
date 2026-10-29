@@ -3,6 +3,7 @@ import { refreshStoredTokens } from "@/lib/ig/auth";
 import { account, publishQueueMedia } from "@/lib/ig/publish";
 import {
   captionWithTags,
+  carouselUrls,
   claimNextPending,
   claimQueuePost,
   markQueueFailed,
@@ -63,8 +64,9 @@ async function run(req: Request) {
   try {
     const ig = await account();
     const published = await publishQueueMedia({
-      mediaType: claimed.media_type === "video" ? "video" : "image",
+      mediaType: claimed.media_type,
       mediaUrl: claimed.image_url,
+      children: carouselUrls(claimed),
       caption,
     });
 
@@ -77,8 +79,8 @@ async function run(req: Request) {
       slot,
       itemId: `queue:${claimed.id}`,
       title: `Fila #${claimed.id}`,
-      layout: claimed.media_type === "video" ? "reel" : "feed",
-      format: claimed.media_type === "video" ? "reel" : "post",
+      layout: claimed.media_type === "video" ? "reel" : claimed.media_type === "carousel" ? "carousel" : "feed",
+      format: claimed.media_type === "video" ? "reel" : claimed.media_type === "carousel" ? "carousel" : "post",
       mediaId: published.id,
       permalink: published.permalink,
       imageUrl: claimed.image_url,

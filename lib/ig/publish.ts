@@ -71,13 +71,44 @@ export async function publishVideo(videoUrl: string, caption: string) {
   return { id, permalink };
 }
 
+/** Carrossel de 2–10 imagens (Graph media_type=CAROUSEL). */
+export async function publishCarousel(imageUrls: string[], caption: string) {
+  if (imageUrls.length < 2 || imageUrls.length > 10) {
+    throw new Error("Carrossel precisa de 2 a 10 imagens");
+  }
+  const igId = igUserId();
+  const childIds: string[] = [];
+  for (const url of imageUrls) {
+    const { id } = await call("POST", `${igId}/media`, {
+      image_url: url,
+      is_carousel_item: "true",
+    });
+    await waitContainer(id);
+    childIds.push(id);
+  }
+  const { id: container } = await call("POST", `${igId}/media`, {
+    media_type: "CAROUSEL",
+    children: childIds.join(","),
+    caption,
+  });
+  await waitContainer(container);
+  const { id } = await call("POST", `${igId}/media_publish`, { creation_id: container });
+  const { permalink } = await call("GET", id, { fields: "permalink" });
+  return { id, permalink };
+}
+
 export async function publishQueueMedia(input: {
-  mediaType: "image" | "video";
+  mediaType: "image" | "video" | "carousel";
   mediaUrl: string;
   caption: string;
+  children?: string[];
 }) {
   if (input.mediaType === "video") {
     return publishVideo(input.mediaUrl, input.caption);
+  }
+  if (input.mediaType === "carousel") {
+    const urls = input.children?.length ? input.children : [input.mediaUrl];
+    return publishCarousel(urls, input.caption);
   }
   return publishImage(input.mediaUrl, input.caption);
 }

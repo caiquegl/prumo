@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type QueuePost = {
@@ -8,13 +8,113 @@ type QueuePost = {
   image_url: string;
   caption: string | null;
   tags: string[] | null;
-  media_type: "image" | "video";
+  media_type: "image" | "video" | "carousel";
+  children: string[] | null;
   status: string;
   sort_order: number;
   permalink: string | null;
   created_at: string;
   error: string | null;
 };
+
+function mediaKindLabel(type: QueuePost["media_type"], count = 1) {
+  if (type === "video") return "vídeo";
+  if (type === "carousel") return `carrossel · ${count} fotos`;
+  return "foto";
+}
+
+function slideUrls(post: QueuePost) {
+  let kids: string[] = [];
+  if (Array.isArray(post.children)) kids = post.children.map(String).filter(Boolean);
+  else if (typeof post.children === "string") {
+    try {
+      const parsed = JSON.parse(post.children) as unknown;
+      if (Array.isArray(parsed)) kids = parsed.map(String).filter(Boolean);
+    } catch {
+      kids = [];
+    }
+  }
+  if (post.media_type === "carousel" && kids.length >= 2) return kids;
+  return post.image_url ? [post.image_url] : [];
+}
+
+function QueueMedia({ post }: { post: QueuePost }) {
+  const urls = slideUrls(post);
+  const [index, setIndex] = useState(0);
+  const startX = useRef<number | null>(null);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [post.id]);
+
+  const go = (next: number) => {
+    if (!urls.length) return;
+    setIndex((next + urls.length) % urls.length);
+  };
+
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    startX.current = e.clientX;
+  }
+  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
+    if (startX.current == null) return;
+    const delta = e.clientX - startX.current;
+    startX.current = null;
+    if (delta > 40) go(index - 1);
+    if (delta < -40) go(index + 1);
+  }
+
+  if (post.media_type === "video") {
+    return <video src={post.image_url} className="h-full w-full object-cover" controls muted playsInline />;
+  }
+
+  const src = urls[index] || post.image_url;
+  const carousel = urls.length > 1;
+
+  return (
+    <div
+      className="relative h-full w-full select-none"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
+      {carousel ? (
+        <>
+          <button
+            type="button"
+            aria-label="Slide anterior"
+            onClick={() => go(index - 1)}
+            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label="Próximo slide"
+            onClick={() => go(index + 1)}
+            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white"
+          >
+            ›
+          </button>
+          <div className="absolute bottom-3 left-0 right-0 z-10 flex justify-center gap-1.5">
+            {urls.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                aria-label={`Slide ${i + 1}`}
+                onClick={() => setIndex(i)}
+                className={`h-1.5 rounded-full ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/50"}`}
+              />
+            ))}
+          </div>
+          <span className="absolute right-3 top-12 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-semibold text-white">
+            {index + 1}/{urls.length}
+          </span>
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Na fila",
@@ -31,7 +131,7 @@ export default function PostsPage() {
   const [caption, setCaption] = useState("");
   const [tags, setTags] = useState("prumoweb, singlepage, landingpage");
   const [error, setError] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const load = useCallback(async () => {
     setError("");
@@ -55,12 +155,12 @@ export default function PostsPage() {
 
   async function onUpload(e: FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (!files.length) return;
     setUploading(true);
     setError("");
     try {
       const form = new FormData();
-      form.set("file", file);
+      for (const item of files) form.append("file", item);
       if (caption.trim()) form.set("caption", caption.trim());
       if (tags.trim()) form.set("tags", tags.trim());
       const res = await fetch("/api/posts", { method: "POST", body: form });
@@ -69,7 +169,7 @@ export default function PostsPage() {
         setError(json.error || "Upload falhou");
         return;
       }
-      setFile(null);
+      setFiles([]);
       setCaption("");
       const input = document.getElementById("post-file") as HTMLInputElement | null;
       if (input) input.value = "";
@@ -105,7 +205,7 @@ export default function PostsPage() {
           <p className="text-sm font-semibold tracking-[0.2em] text-[color:var(--ink-soft)]">FILA IG</p>
           <h1 className="display mt-2 text-4xl md:text-5xl">Posts</h1>
           <p className="mt-2 max-w-xl text-[color:var(--ink-soft)]">
-            Foto ou vídeo + legenda e tags. O worker publica os <strong>pending</strong> em ordem.
+            Foto, vídeo ou carrossel + legenda e tags. O worker publica os <strong>pending</strong> em ordem.
           </p>
         </div>
         <button
@@ -124,12 +224,13 @@ export default function PostsPage() {
         <h2 className="text-lg font-semibold">Novo post</h2>
         <div className="mt-4 grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium">
-            Arquivo (imagem ou vídeo mp4)
+            Arquivo (uma foto/vídeo, ou várias fotos para carrossel)
             <input
               id="post-file"
               type="file"
+              multiple
               accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => setFiles(Array.from(e.target.files || []))}
               className="rounded-xl border border-[color:var(--line)] bg-white px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--bg-deep)] file:px-3 file:py-1.5 file:text-sm file:font-semibold"
             />
           </label>
@@ -154,12 +255,13 @@ export default function PostsPage() {
           </label>
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <button type="submit" disabled={!file || uploading} className="wa-btn disabled:opacity-50">
+          <button type="submit" disabled={!files.length || uploading} className="wa-btn disabled:opacity-50">
             {uploading ? "Enviando…" : "Adicionar à fila"}
           </button>
-          {file ? (
+          {files.length ? (
             <span className="text-sm text-[color:var(--ink-soft)]">
-              {file.type.startsWith("video/") ? "🎬" : "🖼"} {file.name} · {(file.size / 1024).toFixed(0)} KB
+              {files.length > 1 ? `🎠 ${files.length} fotos (carrossel)` : files[0]!.type.startsWith("video/") ? "🎬" : "🖼"}{" "}
+              {files.length === 1 ? `${files[0]!.name} · ${(files[0]!.size / 1024).toFixed(0)} KB` : null}
             </span>
           ) : null}
         </div>
@@ -193,14 +295,9 @@ export default function PostsPage() {
               className="overflow-hidden rounded-2xl border border-[color:var(--line)] bg-white/80 shadow-[0_1px_0_rgba(26,25,23,0.04)]"
             >
               <div className="relative aspect-[4/5] bg-[color:var(--bg-deep)]">
-                {p.media_type === "video" ? (
-                  <video src={p.image_url} className="h-full w-full object-cover" controls muted playsInline />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image_url} alt="" className="h-full w-full object-cover" />
-                )}
-                <span className="absolute left-3 top-3 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white">
-                  #{p.sort_order} · {p.media_type === "video" ? "vídeo" : "foto"} · {STATUS_LABEL[p.status] || p.status}
+                <QueueMedia post={p} />
+                <span className="absolute left-3 top-3 z-20 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white">
+                  #{p.sort_order} · {mediaKindLabel(p.media_type, slideUrls(p).length)} · {STATUS_LABEL[p.status] || p.status}
                 </span>
               </div>
               <div className="flex flex-col gap-3 p-4">
