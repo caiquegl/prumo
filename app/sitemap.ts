@@ -11,7 +11,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
-      images: [`${site}/og.jpg`],
     },
     ...SEO_PAGES.map((p) => ({
       url: `${site}${p.path}`,
