@@ -39,14 +39,14 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
             </span>
           </a>
           <nav className="hidden items-center gap-8 text-sm text-[color:var(--ink-soft)] md:flex">
-            <a href="/#como" className="hover:text-[color:var(--ink)]">
-              Como fazemos
+            <a href="/landing-pages" className="hover:text-[color:var(--ink)]">
+              Landing pages
             </a>
-            <a href="/#servicos" className="hover:text-[color:var(--ink)]">
-              Serviços
+            <a href="/criacao-de-sites" className="hover:text-[color:var(--ink)]">
+              Criação de sites
             </a>
-            <a href="/#metodo" className="hover:text-[color:var(--ink)]">
-              Método
+            <a href="/sites-institucionais" className="hover:text-[color:var(--ink)]">
+              Institucionais
             </a>
             <a href="/#contato" className="hover:text-[color:var(--ink)]">
               Contato

@@ -55,12 +55,12 @@ export function ServicePage({
         <a className="wa-btn" href={wa} target="_blank" rel="noopener noreferrer">
           Pedir orçamento no WhatsApp
         </a>
-        <Link
-          href="/#contato"
+        <a
+          href="mailto:arq.caique@hotmail.com"
           className="inline-flex items-center text-sm font-semibold uppercase tracking-[0.18em] text-ink-soft hover:text-ink"
         >
-          contato@webprumo.com.br
-        </Link>
+          arq.caique@hotmail.com
+        </a>
       </div>
       <nav className="mt-16 border-t border-line pt-8" aria-label="Outros serviços">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-soft">

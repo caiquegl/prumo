@@ -23,7 +23,7 @@ export const SEO_PAGES: SeoPage[] = [
       "Marca oficial: Web Prumo · site webprumo.com.br · Instagram @web.prumo",
       "Foco em conversão: design autoral + SEO técnico + performance",
       "Landing pages, sites institucionais, sistemas e automações",
-      "Atendimento via WhatsApp (11) 96633-1995 e contato@webprumo.com.br",
+      "Atendimento via WhatsApp (11) 96633-1995 e arq.caique@hotmail.com",
     ],
     waText: "Olá! Quero conhecer a Web Prumo e pedir um orçamento.",
     priority: 1,

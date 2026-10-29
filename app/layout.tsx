@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: "%s | Web Prumo",
   },
   description:
-    "Web Prumo (webprumo.com.br) — criação de sites, landing pages, sites institucionais e sistemas web sob medida. Design autoral, SEO técnico e foco em conversão. Contato: contato@webprumo.com.br.",
+    "Web Prumo (webprumo.com.br) — criação de sites, landing pages, sites institucionais e sistemas web sob medida. Design autoral, SEO técnico e foco em conversão. Contato: arq.caique@hotmail.com.",
   keywords: [
     "Web Prumo",
     "web prumo",
@@ -106,15 +106,20 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.png", sizes: "192x192", type: "image/png" },
       { url: "/favicon.png", sizes: "512x512", type: "image/png" },
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
-    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon-48.png",
   },
   category: "technology",
+  manifest: "/site.webmanifest",
+  other: {
+    "msapplication-TileColor": "#1a1917",
+  },
 };
 
 const jsonLd = {
@@ -147,8 +152,16 @@ const jsonLd = {
         height: 1024,
       },
       image: `${siteUrl}/og.jpg`,
-      email: "contato@webprumo.com.br",
+      email: "arq.caique@hotmail.com",
       telephone: "+55-11-96633-1995",
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        email: "arq.caique@hotmail.com",
+        telephone: "+55-11-96633-1995",
+        availableLanguage: ["Portuguese", "pt-BR"],
+        areaServed: "BR",
+      },
       sameAs: [
         "https://www.instagram.com/web.prumo/",
         "https://instagram.com/web.prumo",
@@ -172,7 +185,7 @@ const jsonLd = {
       image: `${siteUrl}/og.jpg`,
       url: siteUrl,
       brand: { "@id": `${siteUrl}/#organization` },
-      email: "contato@webprumo.com.br",
+      email: "arq.caique@hotmail.com",
       telephone: "+55-11-96633-1995",
       priceRange: "$$",
       openingHours: "Mo-Fr 09:00-18:00",
@@ -331,7 +344,7 @@ const jsonLd = {
           name: "Como pedir orçamento de criação de site ou landing page?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Envie um resumo do projeto para contato@webprumo.com.br ou chame no WhatsApp (11) 96633-1995. Respondemos com proposta, prazo e valor fechados.",
+            text: "Envie um resumo do projeto para arq.caique@hotmail.com ou chame no WhatsApp (11) 96633-1995. Respondemos com proposta, prazo e valor fechados.",
           },
         },
       ],

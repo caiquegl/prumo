@@ -6,7 +6,7 @@ const WA =
   "https://wa.me/5511966331995?text=" +
   encodeURIComponent("Olá! Quero um orçamento com a Web Prumo.");
 
-const CONTACT_EMAIL = "contato@webprumo.com.br";
+const CONTACT_EMAIL = "arq.caique@hotmail.com";
 
 const services = [
   {
@@ -91,7 +91,7 @@ const faqs = [
   },
   {
     q: "Como pedir orçamento de criação de site?",
-    a: "Escreva para contato@webprumo.com.br ou chame no WhatsApp (11) 96633-1995. Enviamos proposta, prazo e valor fechados.",
+    a: "Escreva para arq.caique@hotmail.com ou chame no WhatsApp (11) 96633-1995. Enviamos proposta, prazo e valor fechados.",
   },
 ];
 
