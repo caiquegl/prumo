@@ -171,9 +171,9 @@ export function BuildStory() {
       <div className="sticky top-0 flex h-screen items-center overflow-hidden">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-6 px-5 md:grid-cols-[0.8fr_1.2fr] md:gap-12 md:px-8">
           <div className="order-2 md:order-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">
               Como construímos
-            </p>
+            </h2>
 
             <ol className="mt-6 hidden space-y-5 md:block">
               {STEPS.map((step, i) => (

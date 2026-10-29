@@ -158,19 +158,22 @@ export default function Home() {
         </Reveal>
         <ul className="mt-14 border-b border-line">
           {services.map((service, i) => (
-            <Reveal key={service.title} delay={i * 60}>
-              <li className="service-row grid cursor-default gap-3 border-t border-line py-7 md:grid-cols-[1.1fr_1fr_auto] md:items-center md:gap-8">
-                <h3 className="service-title display text-[clamp(1.6rem,3vw,2.3rem)]">
-                  {service.title}
-                </h3>
-                <p className="text-[0.98rem] leading-relaxed text-ink-soft">{service.body}</p>
-                <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink-soft">
-                  {service.tag}
-                  <span className="service-arrow text-coral" aria-hidden>
-                    →
-                  </span>
+            <Reveal
+              key={service.title}
+              as="li"
+              delay={i * 60}
+              className="service-row grid cursor-default gap-3 border-t border-line py-7 md:grid-cols-[1.1fr_1fr_auto] md:items-center md:gap-8"
+            >
+              <h3 className="service-title display text-[clamp(1.6rem,3vw,2.3rem)]">
+                {service.title}
+              </h3>
+              <p className="text-[0.98rem] leading-relaxed text-ink-soft">{service.body}</p>
+              <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink-soft">
+                {service.tag}
+                <span className="service-arrow text-coral" aria-hidden>
+                  →
                 </span>
-              </li>
+              </span>
             </Reveal>
           ))}
         </ul>
@@ -183,12 +186,12 @@ export default function Home() {
               <p className="display text-[clamp(2.6rem,5vw,3.8rem)]">
                 {item.value}
                 {item.unit && (
-                  <span className="ml-2 font-sans text-base tracking-normal text-[#a9a29a]">
+                  <span className="ml-2 font-sans text-base tracking-normal text-[#d4cdc2]">
                     {item.unit}
                   </span>
                 )}
               </p>
-              <p className="mt-3 max-w-[22ch] text-sm leading-relaxed text-[#c9c2b8]">{item.label}</p>
+              <p className="mt-3 max-w-[22ch] text-sm leading-relaxed text-[#e4ddd2]">{item.label}</p>
             </Reveal>
           ))}
         </div>
@@ -271,7 +274,7 @@ export default function Home() {
             >
               Chamar no WhatsApp <span aria-hidden>→</span>
             </a>
-            <p className="mt-4 text-sm text-[#a9a29a]">(11) 96633-1995</p>
+            <p className="mt-4 text-sm text-[#d4cdc2]">(11) 96633-1995</p>
             <a
               href={`mailto:${CONTACT_EMAIL}`}
               className="mt-2 block text-sm font-medium text-[#f7f2ea] underline decoration-coral/60 underline-offset-4 hover:decoration-coral"

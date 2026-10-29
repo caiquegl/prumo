@@ -18,12 +18,16 @@ export function TextReveal() {
           <p className="display text-[clamp(1.9rem,4.6vw,3.9rem)] leading-[1.12]">
             {words.map((word, i) => {
               const start = (i / words.length) * 0.85;
-              const opacity = 0.12 + 0.88 * segment(p, start, start + 0.08);
+              const t = segment(p, start, start + 0.08);
+              const accent = ACCENT.has(word);
               return (
                 <span
                   key={i}
-                  className={ACCENT.has(word) ? "text-coral" : undefined}
-                  style={{ opacity }}
+                  style={{
+                    color: accent
+                      ? `color-mix(in srgb, var(--coral) ${Math.round(55 + t * 45)}%, var(--ink-soft))`
+                      : `color-mix(in srgb, var(--ink) ${Math.round(t * 100)}%, var(--ink-soft))`,
+                  }}
                 >
                   {word}{" "}
                 </span>
