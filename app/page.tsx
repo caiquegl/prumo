@@ -12,16 +12,19 @@ const services = [
   {
     title: "Landing pages",
     tag: "Conversão",
+    href: "/landing-pages",
     body: "Criação de landing pages e páginas de captura focadas em lead, venda ou agendamento.",
   },
   {
     title: "Sites institucionais",
     tag: "Marca",
+    href: "/sites-institucionais",
     body: "Criação de sites profissionais com credibilidade, SEO técnico e fácil atualização.",
   },
   {
     title: "Sistemas web",
     tag: "Produto",
+    href: "/criacao-de-sites",
     body: "Desenvolvimento de sites e painéis sob medida: área do cliente e ferramentas internas.",
   },
   {
@@ -165,7 +168,13 @@ export default function Home() {
               className="service-row grid cursor-default gap-3 border-t border-line py-7 md:grid-cols-[1.1fr_1fr_auto] md:items-center md:gap-8"
             >
               <h3 className="service-title display text-[clamp(1.6rem,3vw,2.3rem)]">
-                {service.title}
+                {"href" in service && service.href ? (
+                  <a href={service.href} className="hover:text-coral">
+                    {service.title}
+                  </a>
+                ) : (
+                  service.title
+                )}
               </h3>
               <p className="text-[0.98rem] leading-relaxed text-ink-soft">{service.body}</p>
               <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink-soft">
