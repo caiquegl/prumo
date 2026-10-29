@@ -111,11 +111,13 @@ export default function Home() {
           <div className="rise flex flex-wrap items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/logo-instagram.png"
+              src="/brand/logo-favicon.png"
               alt="Web Prumo"
-              width={120}
-              height={120}
-              className="h-16 w-16 object-contain md:h-20 md:w-20"
+              width={80}
+              height={80}
+              decoding="async"
+              fetchPriority="high"
+              className="h-14 w-14 object-contain md:h-16 md:w-16"
             />
             <span
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white/70 px-3 py-1 text-xs font-semibold text-ink"

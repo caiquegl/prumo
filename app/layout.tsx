@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
+import { Analytics } from "./components/Analytics";
 import { SiteChrome } from "./components/SiteChrome";
 import "./globals.css";
 
@@ -7,12 +8,16 @@ const display = Fraunces({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+  display: "swap",
+  preload: true,
 });
 
 const body = Manrope({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: true,
 });
 
 const siteUrl = "https://www.webprumo.com.br";
@@ -342,6 +347,12 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full`}>
       <head>
+        <link
+          rel="preload"
+          href="/brand/logo-favicon.png"
+          as="image"
+          type="image/png"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -350,6 +361,7 @@ export default function RootLayout({
       <body className="min-h-full antialiased">
         <div className="grain" aria-hidden />
         <SiteChrome>{children}</SiteChrome>
+        <Analytics />
       </body>
     </html>
   );

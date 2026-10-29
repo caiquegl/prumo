@@ -29,6 +29,8 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
               alt=""
               width={36}
               height={36}
+              decoding="async"
+              fetchPriority="high"
               className="h-9 w-9 object-contain"
             />
             <span className="display text-[1.2rem] tracking-tight">
