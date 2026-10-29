@@ -2,7 +2,7 @@
   "name": "prumo-worker",
   "private": true,
   "type": "module",
-  "description": "Publicação automática no Instagram (@prumo.web) — roda no GitHub Actions",
+  "description": "Publicação automática no Instagram (@web.prumo) — roda no GitHub Actions",
   "scripts": {
     "start": "node run.mjs",
     "preview": "DRY_RUN=true node run.mjs"

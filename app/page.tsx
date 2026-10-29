@@ -24,23 +24,26 @@ const services = [
   {
     title: "Sistemas web",
     tag: "Produto",
-    href: "/criacao-de-sites",
+    href: "/sistemas-web",
     body: "Desenvolvimento de sites e painéis sob medida: área do cliente e ferramentas internas.",
   },
   {
     title: "Integrações e automação",
     tag: "Operação",
+    href: "/integracoes",
     body: "WhatsApp, CRM, planilhas, pagamentos e APIs conversando entre si.",
   },
   {
-    title: "Segurança",
-    tag: "Confiança",
-    body: "HTTPS, autenticação, cuidado com dados e dependências sempre atualizadas.",
+    title: "Desenvolvimento web",
+    tag: "Tecnologia",
+    href: "/desenvolvimento-web",
+    body: "Sites, landings, sistemas e APIs — código próprio com performance e SEO técnico.",
   },
   {
-    title: "Performance e manutenção",
-    tag: "Evolução",
-    body: "Site rápido, monitoramento e melhorias contínuas depois do lançamento.",
+    title: "SEO para sites",
+    tag: "Busca",
+    href: "/seo-para-sites",
+    body: "Sitemap, Search Console, dados estruturados e páginas que ranqueiam o que seu cliente pesquisa.",
   },
 ];
 
