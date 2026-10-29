@@ -105,6 +105,14 @@ export default function Home() {
         />
         <div className="relative mx-auto flex min-h-[calc(100svh-65px)] max-w-6xl flex-col justify-center px-5 py-20 md:px-8">
           <div className="rise flex flex-wrap items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-instagram.png"
+              alt="Web Prumo"
+              width={56}
+              height={56}
+              className="h-12 w-12 rounded-full border border-line bg-white object-contain p-1 shadow-sm md:h-14 md:w-14"
+            />
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">
               Web Prumo Studio
             </p>
@@ -299,7 +307,17 @@ export default function Home() {
 
       <footer className="border-t border-line bg-bg-deep">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-ink-soft md:flex-row md:items-center md:justify-between md:px-8">
-          <p className="display text-base text-ink">Web Prumo Studio</p>
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-favicon.png"
+              alt=""
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+            />
+            <p className="display text-base text-ink">Web Prumo Studio</p>
+          </div>
           <p>Sites · landing pages · sistemas · integrações</p>
           <div className="flex flex-col gap-1 md:items-end">
             <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">

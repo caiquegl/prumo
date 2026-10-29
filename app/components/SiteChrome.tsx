@@ -18,8 +18,23 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
     <>
       <header className="sticky top-0 z-40 border-b border-[color:var(--line)] bg-[color:var(--glass)] backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
-          <a href="/" className="display text-[1.35rem] tracking-tight text-[color:var(--ink)]">
-            Web <span className="text-[color:var(--coral)]">Prumo</span>
+          <a
+            href="/"
+            className="flex items-center gap-2.5 text-[color:var(--ink)]"
+            aria-label="Web Prumo — início"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-favicon.png"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 object-contain"
+            />
+            <span className="display text-[1.2rem] tracking-tight">
+              <span className="text-[color:var(--coral)] font-medium">Web</span>{" "}
+              <span className="font-semibold">Prumo</span>
+            </span>
           </a>
           <nav className="hidden items-center gap-8 text-sm text-[color:var(--ink-soft)] md:flex">
             <a href="/#como" className="hover:text-[color:var(--ink)]">

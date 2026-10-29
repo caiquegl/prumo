@@ -122,9 +122,9 @@ const jsonLd = {
       url: siteUrl,
       logo: {
         "@type": "ImageObject",
-        url: `${siteUrl}/favicon.png`,
-        width: 512,
-        height: 512,
+        url: `${siteUrl}/brand/logo-marca.png`,
+        width: 1024,
+        height: 1024,
       },
       image: `${siteUrl}/og.jpg`,
       email: "contato@webprumo.com.br",
