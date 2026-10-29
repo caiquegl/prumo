@@ -32,7 +32,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
               className="h-9 w-9 object-contain"
             />
             <span className="display text-[1.2rem] tracking-tight">
-              <span className="text-[color:var(--coral)] font-medium">Web</span>{" "}
+              <span className="font-medium text-[color:var(--coral)]">Web</span>{" "}
               <span className="font-semibold">Prumo</span>
             </span>
           </a>

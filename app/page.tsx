@@ -109,13 +109,10 @@ export default function Home() {
             <img
               src="/brand/logo-instagram.png"
               alt="Web Prumo"
-              width={56}
-              height={56}
-              className="h-12 w-12 rounded-full border border-line bg-white object-contain p-1 shadow-sm md:h-14 md:w-14"
+              width={120}
+              height={120}
+              className="h-16 w-16 object-contain md:h-20 md:w-20"
             />
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">
-              Web Prumo Studio
-            </p>
             <span
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white/70 px-3 py-1 text-xs font-semibold text-ink"
               aria-label="Nota 5 de 5"
@@ -316,7 +313,7 @@ export default function Home() {
               height={32}
               className="h-8 w-8 object-contain"
             />
-            <p className="display text-base text-ink">Web Prumo Studio</p>
+            <p className="display text-base text-ink">Web Prumo</p>
           </div>
           <p>Sites · landing pages · sistemas · integrações</p>
           <div className="flex flex-col gap-1 md:items-end">
