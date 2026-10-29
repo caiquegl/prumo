@@ -4,7 +4,9 @@ import { TextReveal } from "./components/TextReveal";
 
 const WA =
   "https://wa.me/5511966331995?text=" +
-  encodeURIComponent("Olá! Quero um orçamento com a Prumo Web.");
+  encodeURIComponent("Olá! Quero um orçamento com a Web Prumo.");
+
+const CONTACT_EMAIL = "contato@webprumo.com.br";
 
 const services = [
   {
@@ -43,7 +45,7 @@ const commitments = [
   { value: "7–15", unit: "dias", label: "para uma landing page no ar" },
   { value: "2", unit: "rodadas", label: "de revisão inclusas" },
   { value: "100%", unit: "", label: "responsivo, do celular ao desktop" },
-  { value: "1", unit: "contato", label: "direto do início ao fim" },
+  { value: "5,0", unit: "★", label: "nota máxima de satisfação" },
 ];
 
 const steps = [
@@ -77,9 +79,20 @@ export default function Home() {
           }}
         />
         <div className="relative mx-auto flex min-h-[calc(100svh-65px)] max-w-6xl flex-col justify-center px-5 py-20 md:px-8">
-          <p className="rise text-xs font-semibold uppercase tracking-[0.28em] text-coral">
-            Prumo Web Studio
-          </p>
+          <div className="rise flex flex-wrap items-center gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-coral">
+              Web Prumo Studio
+            </p>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white/70 px-3 py-1 text-xs font-semibold text-ink"
+              aria-label="Nota 5 de 5"
+            >
+              <span className="text-coral" aria-hidden>
+                ★★★★★
+              </span>
+              <span>5,0</span>
+            </span>
+          </div>
           <h1
             className="rise display mt-6 max-w-[13ch] text-[clamp(3rem,9vw,6.8rem)]"
             style={{ animationDelay: "90ms" }}
@@ -178,7 +191,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-ink text-[#f7f2ea]">
+      <section id="contato" className="relative overflow-hidden bg-ink text-[#f7f2ea]">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           aria-hidden
@@ -208,22 +221,33 @@ export default function Home() {
               Chamar no WhatsApp <span aria-hidden>→</span>
             </a>
             <p className="mt-4 text-sm text-[#a9a29a]">(11) 96633-1995</p>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="mt-2 block text-sm font-medium text-[#f7f2ea] underline decoration-coral/60 underline-offset-4 hover:decoration-coral"
+            >
+              {CONTACT_EMAIL}
+            </a>
           </Reveal>
         </div>
       </section>
 
       <footer className="border-t border-line bg-bg-deep">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-ink-soft md:flex-row md:items-center md:justify-between md:px-8">
-          <p className="display text-base text-ink">Prumo Web Studio</p>
+          <p className="display text-base text-ink">Web Prumo Studio</p>
           <p>Sites · landing pages · sistemas · integrações</p>
-          <a
-            href="https://instagram.com/prumo.web"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-ink"
-          >
-            @prumo.web
-          </a>
+          <div className="flex flex-col gap-1 md:items-end">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">
+              {CONTACT_EMAIL}
+            </a>
+            <a
+              href="https://instagram.com/prumo.web"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink"
+            >
+              @prumo.web
+            </a>
+          </div>
         </div>
       </footer>
 
