@@ -26,7 +26,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  const result = await publishQueuePostNow(id);
+  const republish = req.nextUrl.searchParams.get("republish") === "1";
+  const result = await publishQueuePostNow(id, { republish });
   if (!result.ok) {
     return NextResponse.json({ error: result.error, queueId: "queueId" in result ? result.queueId : id }, { status: result.status });
   }

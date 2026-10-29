@@ -193,8 +193,17 @@ export async function reclaimStalePublishing(minutes = 20): Promise<number> {
 }
 
 /** Claim de um item específico (publicação manual). */
-export async function claimQueuePost(id: number): Promise<QueuePost | null> {
+export async function claimQueuePost(id: number, opts?: { republish?: boolean }): Promise<QueuePost | null> {
   await ensureQueueSchema();
+  if (opts?.republish) {
+    const rows = (await db()`
+      UPDATE ig_queue
+      SET status = 'publishing', error = null, updated_at = now()
+      WHERE id = ${id} AND status IN ('pending', 'failed', 'published')
+      RETURNING *
+    `) as QueuePost[];
+    return rows[0] ?? null;
+  }
   const rows = (await db()`
     UPDATE ig_queue
     SET status = 'publishing', error = null, updated_at = now()

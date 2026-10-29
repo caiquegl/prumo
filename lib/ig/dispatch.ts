@@ -53,13 +53,19 @@ export async function publishClaimedQueueItem(claimed: QueuePost, slot: string) 
   };
 }
 
-export async function publishQueuePostNow(id: number) {
+export async function publishQueuePostNow(id: number, opts?: { republish?: boolean }) {
   const slot = `manual-${new Date().toISOString().slice(0, 16)}`;
-  const claimed = await claimQueuePost(id);
+  const claimed = await claimQueuePost(id, opts);
   if (!claimed) {
-    return { ok: false as const, status: 409, error: `post ${id} não está pending/failed` };
+    return {
+      ok: false as const,
+      status: 409,
+      error: opts?.republish
+        ? `post ${id} não pode ser republicado neste status`
+        : `post ${id} não está pending/failed`,
+    };
   }
-  await logEvent("info", "queue", "publicar agora", {
+  await logEvent("info", "queue", opts?.republish ? "republicar agora" : "publicar agora", {
     id: claimed.id,
     mediaType: claimed.media_type,
     slot,

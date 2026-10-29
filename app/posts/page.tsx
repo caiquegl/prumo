@@ -1,127 +1,15 @@
 "use client";
 
-import { FormEvent, PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type QueuePost = {
-  id: number;
-  image_url: string;
-  caption: string | null;
-  tags: string[] | null;
-  media_type: "image" | "video" | "carousel";
-  children: string[] | null;
-  status: string;
-  sort_order: number;
-  permalink: string | null;
-  created_at: string;
-  error: string | null;
-};
-
-function mediaKindLabel(type: QueuePost["media_type"], count = 1) {
-  if (type === "video") return "vídeo";
-  if (type === "carousel") return `carrossel · ${count} fotos`;
-  return "foto";
-}
-
-function slideUrls(post: QueuePost) {
-  let kids: string[] = [];
-  if (Array.isArray(post.children)) kids = post.children.map(String).filter(Boolean);
-  else if (typeof post.children === "string") {
-    try {
-      const parsed = JSON.parse(post.children) as unknown;
-      if (Array.isArray(parsed)) kids = parsed.map(String).filter(Boolean);
-    } catch {
-      kids = [];
-    }
-  }
-  if (post.media_type === "carousel" && kids.length >= 2) return kids;
-  return post.image_url ? [post.image_url] : [];
-}
-
-function QueueMedia({ post }: { post: QueuePost }) {
-  const urls = slideUrls(post);
-  const [index, setIndex] = useState(0);
-  const startX = useRef<number | null>(null);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [post.id]);
-
-  const go = (next: number) => {
-    if (!urls.length) return;
-    setIndex((next + urls.length) % urls.length);
-  };
-
-  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
-    startX.current = e.clientX;
-  }
-  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
-    if (startX.current == null) return;
-    const delta = e.clientX - startX.current;
-    startX.current = null;
-    if (delta > 40) go(index - 1);
-    if (delta < -40) go(index + 1);
-  }
-
-  if (post.media_type === "video") {
-    return <video src={post.image_url} className="h-full w-full object-cover" controls muted playsInline />;
-  }
-
-  const src = urls[index] || post.image_url;
-  const carousel = urls.length > 1;
-
-  return (
-    <div
-      className="relative h-full w-full select-none"
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
-      {carousel ? (
-        <>
-          <button
-            type="button"
-            aria-label="Slide anterior"
-            onClick={() => go(index - 1)}
-            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            aria-label="Próximo slide"
-            onClick={() => go(index + 1)}
-            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white"
-          >
-            ›
-          </button>
-          <div className="absolute bottom-3 left-0 right-0 z-10 flex justify-center gap-1.5">
-            {urls.map((url, i) => (
-              <button
-                key={url}
-                type="button"
-                aria-label={`Slide ${i + 1}`}
-                onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/50"}`}
-              />
-            ))}
-          </div>
-          <span className="absolute left-3 top-12 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-semibold text-white">
-            {index + 1}/{urls.length}
-          </span>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Na fila",
-  publishing: "Publicando",
-  published: "Publicado",
-  failed: "Falhou",
-};
+import { IgModal } from "./IgModal";
+import {
+  mediaKindLabel,
+  QueueMedia,
+  slideUrls,
+  STATUS_LABEL,
+  type QueuePost,
+} from "./media";
 
 export default function PostsPage() {
   const router = useRouter();
@@ -134,6 +22,7 @@ export default function PostsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [publishingId, setPublishingId] = useState<number | null>(null);
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -154,6 +43,9 @@ export default function PostsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const openPost = posts.find((p) => p.id === openId) || null;
+  const busy = publishingId != null || deletingId != null;
 
   async function onUpload(e: FormEvent) {
     e.preventDefault();
@@ -183,14 +75,18 @@ export default function PostsPage() {
     }
   }
 
-  async function onPublish(id: number) {
-    if (!confirm(`Publicar o post #${id} no Instagram agora?`)) return;
+  async function onPublish(id: number, republish = false) {
+    const msg = republish
+      ? `Republicar o post #${id} no Instagram agora? Isso cria um post novo.`
+      : `Publicar o post #${id} no Instagram agora?`;
+    if (!confirm(msg)) return;
     setError("");
     setPublishingId(id);
     setPosts((curr) => curr.map((item) => (item.id === id ? { ...item, status: "publishing" } : item)));
     try {
-      const res = await fetch(`/api/posts/${id}/publish`, { method: "POST" });
-      const json = (await res.json()) as { error?: string; permalink?: string };
+      const qs = republish ? "?republish=1" : "";
+      const res = await fetch(`/api/posts/${id}/publish${qs}`, { method: "POST" });
+      const json = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(json.error || "Falha ao publicar");
         await load();
@@ -217,10 +113,24 @@ export default function PostsPage() {
         return;
       }
       setPosts((curr) => curr.filter((item) => item.id !== id));
+      if (openId === id) setOpenId(null);
     } catch {
       setError("Erro de rede ao apagar");
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function onSave(id: number, nextCaption: string, nextTags: string[]) {
+    const res = await fetch(`/api/posts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ caption: nextCaption, tags: nextTags }),
+    });
+    const json = (await res.json()) as { error?: string; post?: QueuePost };
+    if (!res.ok) throw new Error(json.error || "Falha ao salvar");
+    if (json.post) {
+      setPosts((curr) => curr.map((item) => (item.id === id ? { ...item, ...json.post } : item)));
     }
   }
 
@@ -236,7 +146,7 @@ export default function PostsPage() {
           <p className="text-sm font-semibold tracking-[0.2em] text-[color:var(--ink-soft)]">FILA IG</p>
           <h1 className="display mt-2 text-4xl md:text-5xl">Posts</h1>
           <p className="mt-2 max-w-xl text-[color:var(--ink-soft)]">
-            Foto, vídeo ou carrossel + legenda e tags. O worker publica os <strong>pending</strong> em ordem.
+            Clique no card para ver como fica no Instagram, editar legenda e hashtags, publicar ou republicar.
           </p>
         </div>
         <button
@@ -323,7 +233,8 @@ export default function PostsPage() {
           {posts.map((p) => (
             <li
               key={p.id}
-              className="overflow-hidden rounded-2xl border border-[color:var(--line)] bg-white/80 shadow-[0_1px_0_rgba(26,25,23,0.04)]"
+              className="cursor-pointer overflow-hidden rounded-2xl border border-[color:var(--line)] bg-white/80 shadow-[0_1px_0_rgba(26,25,23,0.04)]"
+              onClick={() => setOpenId(p.id)}
             >
               <div className="relative aspect-[4/5] bg-[color:var(--bg-deep)]">
                 <QueueMedia post={p} />
@@ -342,6 +253,19 @@ export default function PostsPage() {
                       className="rounded-full bg-[#141210] px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-[#c45a48] disabled:opacity-60"
                     >
                       {publishingId === p.id || p.status === "publishing" ? "Publicando…" : "Publicar"}
+                    </button>
+                  ) : null}
+                  {p.status === "published" ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void onPublish(p.id, true);
+                      }}
+                      disabled={publishingId === p.id || deletingId === p.id}
+                      className="rounded-full bg-[#141210] px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-[#c45a48] disabled:opacity-60"
+                    >
+                      {publishingId === p.id ? "Publicando…" : "Republicar"}
                     </button>
                   ) : null}
                   <button
@@ -372,6 +296,7 @@ export default function PostsPage() {
                     href={p.permalink}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="text-xs font-semibold text-[color:var(--coral-deep)]"
                   >
                     Ver no Instagram
@@ -385,16 +310,35 @@ export default function PostsPage() {
                     {p.status === "pending" || p.status === "failed" || p.status === "publishing" ? (
                       <button
                         type="button"
-                        onClick={() => void onPublish(p.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onPublish(p.id);
+                        }}
                         disabled={publishingId === p.id || deletingId === p.id || p.status === "publishing"}
                         className="rounded-full bg-[color:var(--ink)] px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                       >
                         {publishingId === p.id || p.status === "publishing" ? "Publicando…" : "Publicar"}
                       </button>
                     ) : null}
+                    {p.status === "published" ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onPublish(p.id, true);
+                        }}
+                        disabled={publishingId === p.id || deletingId === p.id}
+                        className="rounded-full bg-[color:var(--ink)] px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+                      >
+                        {publishingId === p.id ? "Publicando…" : "Republicar"}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
-                      onClick={() => void onDelete(p.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void onDelete(p.id);
+                      }}
                       disabled={deletingId === p.id || publishingId === p.id}
                       className="rounded-full bg-[color:var(--coral-deep)] px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                     >
@@ -407,6 +351,18 @@ export default function PostsPage() {
           ))}
         </ul>
       </section>
+
+      {openPost ? (
+        <IgModal
+          post={openPost}
+          busy={busy}
+          onClose={() => setOpenId(null)}
+          onSave={(nextCaption, nextTags) => onSave(openPost.id, nextCaption, nextTags)}
+          onPublish={() => void onPublish(openPost.id)}
+          onRepublish={() => void onPublish(openPost.id, true)}
+          onDelete={() => void onDelete(openPost.id)}
+        />
+      ) : null}
     </main>
   );
 }
