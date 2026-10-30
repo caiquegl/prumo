@@ -55,46 +55,53 @@
     position: absolute; top: 8px; left: 50%; width: 8px; height: 8px; margin-left: -4px;
     border-radius: 50%; background: #1c1c1e; z-index: 4;
   }
-  .screen { position: absolute; inset: 16px 10px 10px; overflow: hidden; background: #f6f1e8; }
-  .view {
-    position: absolute; inset: 0; background: #f6f1e8; color: #1c1612;
-    padding: 28px 32px; opacity: 0;
-  }
+  .screen { position: absolute; inset: 16px 10px 10px; overflow: hidden; background: #f4efe6; }
+  .track { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+  .slide { height: 594px; overflow: hidden; position: relative; background: #f6f1e8; color: #1c1612; }
+  .pad { padding: 26px 28px 22px; }
   .kicker { font-size: 13px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: #c45a48; }
-  .view h2 { font-family: Fraunces, serif; font-weight: 500; font-size: 42px; letter-spacing: -.03em; line-height: 1; margin-top: 8px; }
-  .idx { margin-top: 28px; display: flex; flex-direction: column; gap: 14px; }
-  .idx .row {
-    display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: center;
-    background: #fff; border-radius: 18px; padding: 18px 20px;
+  .slide h2 { font-family: Fraunces, serif; font-weight: 500; font-size: 40px; letter-spacing: -.03em; line-height: 1; margin-top: 8px; }
+  .blocks { margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .block {
+    display: grid; grid-template-columns: 72px 1fr; gap: 8px; align-items: center;
+    background: #fff; border-radius: 18px; padding: 18px 18px;
+    box-shadow: 0 16px 30px -24px rgba(0,0,0,.45);
   }
-  .idx .row b { display: block; font-family: Fraunces, serif; font-size: 28px; font-weight: 500; }
-  .idx .row span { display: block; margin-top: 2px; font-size: 16px; color: rgba(28,22,18,.5); }
-  .idx .n { font-family: Fraunces, serif; font-size: 26px; color: #c45a48; }
-  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 26px; }
-  .stat { background: #fff; border-radius: 16px; padding: 18px 16px; }
-  .stat .v { font-family: Fraunces, serif; font-size: 36px; letter-spacing: -.03em; }
-  .stat .l { margin-top: 4px; font-size: 14px; color: rgba(28,22,18,.5); font-weight: 700; }
-  .list { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .item {
-    background: #fff; border-radius: 14px; padding: 14px 16px;
+  .block .n { font-family: Fraunces, serif; font-size: 28px; color: #c45a48; }
+  .block b { display: block; font-family: Fraunces, serif; font-size: 28px; font-weight: 500; }
+  .block span { display: block; margin-top: 2px; font-size: 16px; color: rgba(28,22,18,.5); }
+  .ph { height: 248px; overflow: hidden; position: relative; }
+  .ph img { width: 100%; height: 120%; object-fit: cover; display: block; }
+  .ph .tag {
+    position: absolute; left: 18px; bottom: 16px; background: rgba(20,16,12,.72); color: #fff7f2;
+    font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+    padding: 8px 12px; border-radius: 999px;
+  }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 16px 22px 0; }
+  .metric { background: #fff; border-radius: 16px; padding: 16px 14px; }
+  .metric .v { font-family: Fraunces, serif; font-size: 34px; letter-spacing: -.03em; }
+  .metric .l { margin-top: 4px; font-size: 14px; font-weight: 700; color: rgba(28,22,18,.5); }
+  .rowline {
+    margin: 14px 22px 0; background: #fff; border-radius: 16px; padding: 16px 18px;
     display: flex; justify-content: space-between; align-items: center;
   }
-  .item b { display: block; font-size: 18px; }
-  .item span { display: block; margin-top: 2px; font-size: 14px; color: rgba(28,22,18,.48); }
+  .rowline b { display: block; font-size: 18px; }
+  .rowline span { display: block; margin-top: 2px; font-size: 14px; color: rgba(28,22,18,.5); }
   .pill { font-size: 13px; font-weight: 800; color: #1a7a3a; }
-  .wires { margin-top: 22px; display: flex; flex-direction: column; gap: 0; position: relative; }
-  .node {
-    display: grid; grid-template-columns: 18px 1fr auto; gap: 16px; align-items: center;
-    padding: 16px 0;
+  .flow { padding: 28px 28px 0; display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    display: grid; grid-template-columns: 84px 1fr auto; gap: 16px; align-items: center;
+    background: #fff; border-radius: 20px; padding: 18px 18px;
+    box-shadow: 0 16px 30px -24px rgba(0,0,0,.4);
   }
-  .node .dotn { width: 14px; height: 14px; border-radius: 50%; background: #c45a48; justify-self: center; }
-  .node b { display: block; font-size: 26px; font-family: Fraunces, serif; font-weight: 500; }
-  .node span { display: block; margin-top: 2px; font-size: 15px; color: rgba(28,22,18,.5); }
-  .spine {
-    position: absolute; left: 6px; top: 28px; bottom: 28px; width: 2px; background: #e4d8cc; overflow: hidden;
+  .mark {
+    width: 84px; height: 72px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: Fraunces, serif; font-size: 28px; color: #fff7f2;
   }
-  .spine i { display: block; width: 100%; height: 0; background: #c45a48; }
-  .land { padding: 0; display: grid; grid-template-columns: .92fr 1.08fr; }
+  .card b { display: block; font-family: Fraunces, serif; font-size: 28px; font-weight: 500; }
+  .card span { display: block; margin-top: 2px; font-size: 15px; color: rgba(28,22,18,.52); }
+  .land { display: grid; grid-template-columns: .92fr 1.08fr; background: #f6f1e8; }
   .land .copy { padding: 36px 28px; display: flex; flex-direction: column; justify-content: center; }
   .land h2 { font-size: 48px; }
   .land h2 em { font-style: italic; color: #c45a48; }
@@ -153,46 +160,48 @@
         <div class="bezel">
           <div class="cam"></div>
           <div class="screen">
-            <div class="view" id="v0">
-              <div class="kicker">Web Prumo · desenvolvimento</div>
-              <h2>O que a gente entrega.</h2>
-              <div class="idx">
-                <div class="row" id="r0"><div class="n">01</div><div><b>Plataformas</b><span>O sistema do dia a dia.</span></div></div>
-                <div class="row" id="r1"><div class="n">02</div><div><b>Integrações</b><span>WhatsApp, pagamento, agenda.</span></div></div>
-                <div class="row" id="r2"><div class="n">03</div><div><b>Landing pages</b><span>A página que apresenta.</span></div></div>
-              </div>
-            </div>
-            <div class="view" id="v1">
-              <div class="kicker">Plataforma · Maré</div>
-              <h2>Operação do dia.</h2>
-              <div class="stats">
-                <div class="stat" id="s0"><div class="v">12</div><div class="l">reservas hoje</div></div>
-                <div class="stat" id="s1"><div class="v">18</div><div class="l">suítes no ar</div></div>
-                <div class="stat" id="s2"><div class="v">4</div><div class="l">check-ins</div></div>
-              </div>
-              <div class="list">
-                <div class="item" id="i0"><div><b>Suíte norte · 15h</b><span>Check-in confirmado</span></div><div class="pill">no sistema</div></div>
-                <div class="item" id="i1"><div><b>Casa do mar · 18h</b><span>Hóspede a caminho</span></div><div class="pill">no sistema</div></div>
-              </div>
-            </div>
-            <div class="view" id="v2">
-              <div class="kicker">Integração</div>
-              <h2>Um fluxo só.</h2>
-              <div class="wires">
-                <div class="spine"><i id="spine"></i></div>
-                <div class="node" id="n0"><div class="dotn"></div><div><b>WhatsApp</b><span>O pedido entra por aqui.</span></div><div class="pill">ligado</div></div>
-                <div class="node" id="n1"><div class="dotn"></div><div><b>Pagamento</b><span>Confirma sem planilha.</span></div><div class="pill">ligado</div></div>
-                <div class="node" id="n2"><div class="dotn"></div><div><b>Agenda</b><span>O horário já fica marcado.</span></div><div class="pill">ligado</div></div>
-              </div>
-            </div>
-            <div class="view land" id="v3">
-              <div class="copy">
-                <div class="kicker">Landing · Maré</div>
-                <h2>A casa e<br><em>o mar.</em></h2>
-                <p>Página desenvolvida para apresentar a pousada — foto, texto e um caminho.</p>
-                <div class="link">Conhecer a casa</div>
-              </div>
-              <div class="shot"><img class="hero-photo" src="/media/reel-laptop/hero.jpg" alt=""></div>
+            <div class="track" id="track">
+              <section class="slide">
+                <div class="pad">
+                  <div class="kicker">Web Prumo · desenvolvimento</div>
+                  <h2>O que a gente entrega.</h2>
+                  <div class="blocks">
+                    <div class="block" id="r0"><div class="n">01</div><div><b>Plataformas</b><span>O sistema do dia a dia.</span></div></div>
+                    <div class="block" id="r1"><div class="n">02</div><div><b>Integrações</b><span>WhatsApp, pagamento, agenda.</span></div></div>
+                    <div class="block" id="r2"><div class="n">03</div><div><b>Landing pages</b><span>A página que apresenta.</span></div></div>
+                  </div>
+                </div>
+              </section>
+              <section class="slide">
+                <div class="ph"><img id="suite" src="/media/reel-laptop/suite.jpg" alt=""><div class="tag">Plataforma</div></div>
+                <div class="metrics">
+                  <div class="metric" id="s0"><div class="v">12</div><div class="l">reservas hoje</div></div>
+                  <div class="metric" id="s1"><div class="v">18</div><div class="l">suítes no ar</div></div>
+                  <div class="metric" id="s2"><div class="v">4</div><div class="l">check-ins</div></div>
+                </div>
+                <div class="rowline" id="i0"><div><b>Suíte norte · 15h</b><span>Check-in confirmado</span></div><div class="pill">no sistema</div></div>
+                <div class="rowline" id="i1"><div><b>Casa do mar · 18h</b><span>Hóspede a caminho</span></div><div class="pill">no sistema</div></div>
+              </section>
+              <section class="slide">
+                <div class="pad" style="padding-bottom:0">
+                  <div class="kicker">Integração</div>
+                  <h2>Um fluxo só.</h2>
+                </div>
+                <div class="flow">
+                  <div class="card" id="n0"><div class="mark" style="background:#25d366">W</div><div><b>WhatsApp</b><span>O pedido entra por aqui.</span></div><div class="pill">ligado</div></div>
+                  <div class="card" id="n1"><div class="mark" style="background:#c45a48">P</div><div><b>Pagamento</b><span>Confirma sem planilha.</span></div><div class="pill">ligado</div></div>
+                  <div class="card" id="n2"><div class="mark" style="background:#1c1612">A</div><div><b>Agenda</b><span>O horário já fica marcado.</span></div><div class="pill">ligado</div></div>
+                </div>
+              </section>
+              <section class="slide land">
+                <div class="copy">
+                  <div class="kicker">Landing · Maré</div>
+                  <h2>A casa e<br><em>o mar.</em></h2>
+                  <p>Página desenvolvida para apresentar a pousada — foto, texto e um caminho.</p>
+                  <div class="link">Conhecer a casa</div>
+                </div>
+                <div class="shot"><img class="hero-photo" src="/media/reel-laptop/hero.jpg" alt=""></div>
+              </section>
             </div>
           </div>
         </div>
@@ -209,59 +218,69 @@
   <div class="progress"><i id="bar"></i></div>
 </div>
 <script>
+  const H = 594;
   const clamp = (v) => Math.min(1, Math.max(0, v));
   const seg = (t, a, b) => clamp((t - a) / (b - a));
   const ease = (p) => 1 - Math.pow(1 - p, 3);
+  const io = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
   const $ = (id) => document.getElementById(id);
 
-  function hold(t, a, b) {
-    const inn = ease(seg(t, a, a + 0.5));
-    const out = 1 - ease(seg(t, b - 0.45, b));
-    return { p: inn * out, y: (1 - inn) * 14 };
+  const legs = [
+    [2.45, 3.55, 0, 1],
+    [6.35, 7.45, 1, 2],
+    [10.15, 11.25, 2, 3],
+  ];
+
+  function scrollAt(t) {
+    let s = 0;
+    for (const [a, b, from, to] of legs) {
+      if (t < a) break;
+      s = t >= b ? to : from + (to - from) * io(seg(t, a, b));
+    }
+    return s;
   }
-  function place(el, s) {
-    el.style.opacity = String(s.p);
-    el.style.transform = `translateY(${s.y}px)`;
+
+  function head(scroll, index) {
+    const d = scroll - index;
+    let p = 0;
+    if (d >= -0.62 && d <= 0.62) {
+      p = d < 0 ? ease((d + 0.62) / 0.62) : 1 - ease(d / 0.62);
+    }
+    return { p, y: (1 - p) * 10 };
+  }
+
+  function blocks(ids, scroll, index) {
+    const arrive = clamp((scroll - (index - 0.42)) / 0.42);
+    ids.forEach((id, i) => {
+      const p = index === 0 && scroll < 0.05 ? 1 : ease(clamp((arrive - i * 0.14) / 0.62));
+      const el = $(id);
+      el.style.opacity = String(p);
+      el.style.transform = `translateY(${(1 - p) * 36}px)`;
+    });
   }
 
   window.render = (t) => {
     $("bar").style.width = (t / 15) * 100 + "%";
-    $("laptop").style.transform = `rotateX(9deg) translateY(${Math.sin(t * 0.45) * 3}px)`;
+    $("laptop").style.transform = "rotateX(9deg)";
+    const s = scrollAt(t);
+    $("track").style.transform = `translateY(${-s * H}px)`;
+    const suite = $("suite");
+    if (suite) suite.style.transform = `translateY(${(s - 1) * -28}px)`;
 
-    place($("v0"), hold(t, -1, 3.35));
-    place($("v1"), hold(t, 2.85, 7.15));
-    place($("v2"), hold(t, 6.65, 10.85));
-    place($("v3"), hold(t, 10.35, 16));
-
-    place($("h0"), hold(t, -1, 3.35));
-    place($("h1"), hold(t, 2.85, 7.15));
-    place($("h2"), hold(t, 6.65, 10.85));
-    place($("h3"), hold(t, 10.35, 16));
-
-    const hi = ease(seg(t, 0.15, 2.5));
-    ["r0", "r1", "r2"].forEach((id, i) => {
-      const on = i === 0 || hi > i / 3;
-      $(id).style.opacity = on ? "1" : "0.4";
+    ["h0", "h1", "h2", "h3"].forEach((id, i) => {
+      const st = head(s, i);
+      $(id).style.opacity = String(st.p);
+      $(id).style.transform = `translateY(${st.y}px)`;
     });
 
-    const lp = seg(t, 2.9, 4.2);
-    ["s0", "s1", "s2", "i0", "i1"].forEach((id, i) => {
-      const p = ease(clamp((lp - i * 0.08) / 0.45));
-      $(id).style.opacity = String(0.25 + 0.75 * p);
-      $(id).style.transform = `translateY(${(1 - p) * 10}px)`;
-    });
+    blocks(["r0", "r1", "r2"], s, 0);
+    blocks(["s0", "s1", "s2", "i0", "i1"], s, 1);
+    blocks(["n0", "n1", "n2"], s, 2);
 
-    const draw = ease(seg(t, 6.9, 8.6));
-    $("spine").style.height = (draw * 100) + "%";
-    ["n0", "n1", "n2"].forEach((id, i) => {
-      const p = ease(clamp((draw - i * 0.22) / 0.4));
-      $(id).style.opacity = String(0.3 + 0.7 * p);
-    });
-
-    const cta = ease(seg(t, 12.6, 13.4));
+    const cta = ease(seg(t, 12.7, 13.45));
     $("cta").style.opacity = String(cta);
     $("cta").style.transform = `translateY(${(1 - cta) * 18}px)`;
-    $("foot").style.opacity = String(1 - ease(seg(t, 12.4, 13.2)));
+    $("foot").style.opacity = String(1 - ease(seg(t, 12.5, 13.3)));
   };
 
   window.__ready = true;
