@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Manrope:wght@500;600;700;800&display=swap" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #1a120e; }
+  body { font-family: Manrope, system-ui, sans-serif; color: #f3eee6; -webkit-font-smoothing: antialiased; }
+  .reel { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #1a120e; }
+  .wood {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(1200px 700px at 50% 18%, rgba(80,48,28,.45), transparent 62%),
+      radial-gradient(900px 900px at 50% 108%, #0c0806, transparent 55%),
+      linear-gradient(180deg, #2a1c14 0%, #1a120e 42%, #120c0a 100%);
+  }
+  .wood::after {
+    content: ""; position: absolute; inset: 0; opacity: .35; pointer-events: none;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,220,180,.03) 0 2px, transparent 2px 11px),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.07) 0 1px, transparent 1px 8px);
+  }
+  .bokeh {
+    position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  }
+  .dot {
+    position: absolute; border-radius: 50%; filter: blur(18px);
+    background: rgba(196,90,72,.28);
+  }
+  .grain {
+    position: absolute; inset: 0; pointer-events: none; opacity: .045; z-index: 8;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .nav {
+    position: absolute; left: 56px; right: 56px; top: 64px; z-index: 6;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .badge { width: 78px; height: 78px; border-radius: 50%; overflow: hidden; background: #111; }
+  .badge img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.18); }
+  .meta { font-size: 18px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: #e8a396; }
+  .headline {
+    position: absolute; left: 72px; right: 72px; top: 168px; z-index: 6;
+    text-align: center; opacity: 0;
+  }
+  .headline h1 {
+    font-family: Fraunces, Georgia, serif; font-weight: 500;
+    font-size: 78px; line-height: .95; letter-spacing: -.04em;
+    text-shadow: 0 18px 40px rgba(0,0,0,.45);
+  }
+  .headline h1 em {
+    font-style: italic; color: #c45a48; font-weight: 500;
+  }
+  .stage {
+    position: absolute; left: 70px; right: 70px; top: 430px; height: 1180px;
+    perspective: 1600px;
+  }
+  .laptop {
+    width: 940px; margin: 0 auto;
+    transform-origin: 50% 80%;
+    filter: drop-shadow(0 50px 70px rgba(0,0,0,.55));
+  }
+  .lid {
+    background: #2c2c2e; border-radius: 18px 18px 8px 8px;
+    padding: 14px 14px 18px; border: 1px solid #3a3a3c;
+  }
+  .bezel {
+    background: #0b0b0c; border-radius: 10px; overflow: hidden;
+    height: 590px; position: relative;
+  }
+  .cam {
+    position: absolute; top: 8px; left: 50%; width: 8px; height: 8px; margin-left: -4px;
+    border-radius: 50%; background: #1c1c1e; z-index: 3;
+  }
+  .screen { position: absolute; inset: 18px 12px 12px; overflow: hidden; background: #f4efe6; }
+  .lp { position: absolute; inset: 0; }
+  .sais { background: #f6f1e8; color: #1c1612; padding: 22px 28px 20px; }
+  .sais-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+  }
+  .sais-nav b { letter-spacing: .28em; }
+  .sais-nav span { color: rgba(28,22,18,.45); font-weight: 700; }
+  .sais-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 22px; margin-top: 28px; align-items: center; }
+  .sais h2 {
+    font-family: Fraunces, serif; font-weight: 500; font-size: 52px; line-height: .92;
+    letter-spacing: -.03em;
+  }
+  .sais h2 i { font-style: italic; color: #b4533f; }
+  .sais p { margin-top: 14px; font-size: 16px; line-height: 1.4; color: rgba(28,22,18,.58); max-width: 28ch; }
+  .sais .btn {
+    margin-top: 22px; display: inline-block; background: #c45a48; color: #fff7f2;
+    font-weight: 800; font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 12px 18px; border-radius: 999px;
+  }
+  .photo {
+    height: 340px; border-radius: 8px; overflow: hidden; position: relative;
+    background:
+      radial-gradient(circle at 50% 40%, #f3e4d2 0 28%, transparent 29%),
+      radial-gradient(circle at 50% 70%, #d9b49a 0 18%, transparent 19%),
+      linear-gradient(160deg, #e8d3bc, #c48b70 55%, #8d4e3c);
+  }
+  .photo::after {
+    content: ""; position: absolute; inset: 18% 22% 28%;
+    border: 1px solid rgba(255,247,242,.35); border-radius: 50%;
+  }
+  .app {
+    background: #f7f3ec; color: #1c1612; padding: 26px 28px; opacity: 0;
+  }
+  .app .k { font-size: 12px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: #c45a48; }
+  .app h3 { font-family: Fraunces, serif; font-size: 36px; font-weight: 500; margin-top: 8px; }
+  .slot {
+    margin-top: 16px; background: #fff; border-radius: 16px; padding: 16px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 10px 24px -18px rgba(0,0,0,.4);
+  }
+  .slot b { display: block; font-size: 18px; }
+  .slot span { font-size: 14px; color: rgba(28,22,18,.5); }
+  .ok { font-size: 13px; font-weight: 800; color: #1a7a3a; }
+  .blank {
+    position: absolute; inset: 0; background: #fff; opacity: 0;
+  }
+  .chin {
+    height: 18px; background: linear-gradient(#2c2c2e, #1f1f21);
+    border-radius: 0 0 6px 6px;
+  }
+  .base {
+    height: 22px; margin: 0 40px 0;
+    background: linear-gradient(#3a3a3c, #2a2a2c);
+    border-radius: 0 0 10px 10px;
+    clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%);
+  }
+  .foot {
+    position: absolute; left: 0; right: 0; bottom: 86px; z-index: 6;
+    text-align: center; font-size: 20px; font-weight: 700; color: rgba(243,238,230,.55);
+  }
+  .cta {
+    position: absolute; left: 72px; right: 72px; bottom: 78px; z-index: 7;
+    text-align: center; opacity: 0;
+  }
+  .cta .wa {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #25d366; color: #0b3d1f; font-weight: 800;
+    border-radius: 999px; padding: 18px 28px; font-size: 26px;
+    box-shadow: 0 18px 40px -18px rgba(0,0,0,.5);
+  }
+  .cta p { margin-top: 16px; font-size: 20px; font-weight: 700; color: rgba(243,238,230,.78); }
+  .progress {
+    position: absolute; left: 64px; right: 64px; bottom: 22px; height: 4px; z-index: 12;
+    background: rgba(196,90,72,.28); border-radius: 99px; overflow: hidden;
+  }
+  .progress i { display: block; height: 100%; width: 0; background: #c45a48; }
+</style>
+</head>
+<body>
+<div class="reel">
+  <div class="wood"></div>
+  <div class="bokeh">
+    <div class="dot" style="width:220px;height:220px;left:8%;top:8%;"></div>
+    <div class="dot" style="width:160px;height:160px;right:6%;top:14%;background:rgba(243,222,196,.18)"></div>
+    <div class="dot" style="width:280px;height:280px;left:20%;bottom:6%;background:rgba(196,90,72,.16)"></div>
+  </div>
+  <div class="grain"></div>
+  <div class="nav">
+    <span class="badge"><img class="logo" src="/public/brand/logo-marca.png" alt="Web Prumo"></span>
+    <div class="meta">webprumo.com.br</div>
+  </div>
+  <div class="headline" id="h1"><h1>A gente desenvolve.</h1></div>
+  <div class="headline" id="h2"><h1>Site, app<br><em>e integração.</em></h1></div>
+  <div class="headline" id="h3"><h1>Pronto pra<br><em>receber o pedido.</em></h1></div>
+  <div class="stage">
+    <div class="laptop" id="laptop">
+      <div class="lid">
+        <div class="bezel">
+          <div class="cam"></div>
+          <div class="screen">
+            <div class="lp sais" id="lp1">
+              <div class="sais-nav"><b>Sais</b><span>Ritual · Reserva</span></div>
+              <div class="sais-grid">
+                <div>
+                  <h2>A pele volta.<br><i>O dia também.</i></h2>
+                  <p>Spa de sal em Paraty. Ritual, agenda e WhatsApp no mesmo fluxo.</p>
+                  <div class="btn">Reservar ritual</div>
+                </div>
+                <div class="photo"></div>
+              </div>
+            </div>
+            <div class="lp app" id="lp2">
+              <div class="k">Painel · Sais</div>
+              <h3>Agenda de hoje</h3>
+              <div class="slot"><div><b>Ritual de sal · 10h</b><span>WhatsApp confirmou</span></div><div class="ok">ligado</div></div>
+              <div class="slot"><div><b>Massagem · 14h</b><span>Pagamento recebido</span></div><div class="ok">ok</div></div>
+              <div class="slot"><div><b>Novo lead · agora</b><span>Veio da landing</span></div><div class="ok">novo</div></div>
+            </div>
+            <div class="blank" id="blank"></div>
+          </div>
+        </div>
+      </div>
+      <div class="chin"></div>
+      <div class="base"></div>
+    </div>
+  </div>
+  <div class="foot" id="foot">Projeto conceito · desenvolvido pela Web Prumo</div>
+  <div class="cta" id="cta">
+    <div class="wa">Fala no WhatsApp</div>
+    <p>(11) 96633-1995 · @web.prumo</p>
+  </div>
+  <div class="progress"><i id="bar"></i></div>
+</div>
+<script>
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const ease = (p) => 1 - Math.pow(1 - p, 3);
+  const io = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+  const $ = (id) => document.getElementById(id);
+
+  function fade(el, p) {
+    const e = io(p);
+    el.style.opacity = String(e);
+    el.style.transform = `translateY(${(1 - e) * 14}px)`;
+  }
+  function band(t, a, b, c, d) {
+    if (t < a) return 0;
+    if (t < b) return seg(t, a, b);
+    if (t < c) return 1;
+    if (t < d) return 1 - seg(t, c, d);
+    return 0;
+  }
+
+  window.render = (t) => {
+    $("bar").style.width = (t / 14) * 100 + "%";
+    const drift = t * 0.9;
+    $("laptop").style.transform = `rotateX(11deg) translateY(${-drift}px)`;
+    $("lp1").style.transform = `translateY(${-t * 2.2}px)`;
+
+    const site = 1 - ease(seg(t, 6.6, 7.6));
+    const app = ease(seg(t, 6.8, 7.8)) * (1 - ease(seg(t, 9.8, 10.8)));
+    const white = ease(seg(t, 10.0, 10.9));
+    $("lp1").style.opacity = String(site);
+    $("lp2").style.opacity = String(app);
+    $("blank").style.opacity = String(white);
+
+    fade($("h1"), band(t, 2.6, 3.3, 6.0, 6.7));
+    fade($("h2"), band(t, 6.6, 7.3, 9.6, 10.3));
+    fade($("h3"), band(t, 10.2, 10.9, 13.9, 14.1));
+
+    const cta = ease(seg(t, 11.6, 12.4));
+    $("cta").style.opacity = String(cta);
+    $("cta").style.transform = `translateY(${(1 - cta) * 22}px)`;
+    $("foot").style.opacity = String(1 - ease(seg(t, 11.4, 12.1)));
+  };
+
+  window.__ready = true;
+  window.render(0);
+</script>
+</body>
+</html>
