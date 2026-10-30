@@ -88,6 +88,42 @@
   .rowline b { display: block; font-size: 18px; }
   .rowline span { display: block; margin-top: 2px; font-size: 14px; color: rgba(28,22,18,.5); }
   .pill { font-size: 13px; font-weight: 800; color: #1a7a3a; }
+  .offer { display: flex; flex-direction: column; background: #efe8dc; }
+  .offer-top { padding: 22px 22px 14px; }
+  .offer-cols { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 0 16px 16px; min-height: 0; }
+  .col {
+    background: #fff; border-radius: 22px; padding: 20px 16px 16px;
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .col .n { font-family: Fraunces, serif; font-size: 34px; color: #c45a48; line-height: 1; }
+  .col b { display: block; margin-top: 14px; font-family: Fraunces, serif; font-size: 28px; font-weight: 500; letter-spacing: -.03em; line-height: 1; }
+  .col span { display: block; margin-top: 10px; font-size: 15px; line-height: 1.35; color: rgba(28,22,18,.55); }
+  .sketch { margin-top: auto; height: 118px; border-radius: 14px; overflow: hidden; background: #f6f1e8; }
+  .bars { padding: 16px 12px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; height: 100%; }
+  .bars i { display: block; height: 10px; border-radius: 99px; background: #e4d5c6; }
+  .bars i.on { background: #c45a48; width: 72%; }
+  .chat { padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: flex-end; }
+  .bub { height: 22px; border-radius: 12px; background: #e7efe4; width: 78%; }
+  .bub.me { align-self: flex-end; background: #25d366; width: 62%; }
+  .mini-shot { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .integ { display: flex; flex-direction: column; background: #f3eee6; }
+  .integ .flow { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 6px 18px 16px; min-height: 0; }
+  .integ .card { flex: 1; align-items: center; padding: 16px 16px; }
+  .bits { display: flex; gap: 6px; margin-top: 10px; }
+  .bits i { height: 8px; border-radius: 99px; background: #eadfd2; display: block; }
+  .quote {
+    background: #1c1612; color: #f3eee6;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 36px 40px 40px;
+  }
+  .quote .kicker { color: #e8a396; }
+  .quote h2 { font-size: 64px; color: #f3eee6; max-width: 12ch; }
+  .quote p { margin-top: 16px; font-size: 22px; line-height: 1.35; color: rgba(243,238,230,.72); max-width: 28ch; }
+  .quote .num { margin-top: 28px; font-family: Fraunces, serif; font-size: 48px; letter-spacing: -.03em; }
+  .quote .qbtn {
+    margin-top: 22px; width: max-content; background: #25d366; color: #0b3d1f;
+    font-weight: 800; font-size: 18px; border-radius: 999px; padding: 14px 22px;
+  }
   .flow { padding: 28px 28px 0; display: flex; flex-direction: column; gap: 14px; }
   .card {
     display: grid; grid-template-columns: 84px 1fr auto; gap: 16px; align-items: center;
@@ -154,6 +190,7 @@
   <div class="headline" id="h1"><h1>A plataforma que o time<br><em>abre todo dia.</em></h1></div>
   <div class="headline" id="h2"><h1>A integração que liga<br><em>o que já existe.</em></h1></div>
   <div class="headline" id="h3"><h1>A landing page que<br><em>apresenta a marca.</em></h1></div>
+  <div class="headline" id="h4"><h1>Chama pra fazer<br><em>o orçamento.</em></h1></div>
   <div class="stage">
     <div class="laptop" id="laptop">
       <div class="lid">
@@ -161,15 +198,30 @@
           <div class="cam"></div>
           <div class="screen">
             <div class="track" id="track">
-              <section class="slide">
-                <div class="pad">
+              <section class="slide offer">
+                <div class="offer-top">
                   <div class="kicker">Web Prumo · desenvolvimento</div>
                   <h2>O que a gente entrega.</h2>
-                  <div class="blocks">
-                    <div class="block" id="r0"><div class="n">01</div><div><b>Plataformas</b><span>O sistema do dia a dia.</span></div></div>
-                    <div class="block" id="r1"><div class="n">02</div><div><b>Integrações</b><span>WhatsApp, pagamento, agenda.</span></div></div>
-                    <div class="block" id="r2"><div class="n">03</div><div><b>Landing pages</b><span>A página que apresenta.</span></div></div>
-                  </div>
+                </div>
+                <div class="offer-cols">
+                  <article class="col" id="r0">
+                    <div class="n">01</div>
+                    <b>Plataformas</b>
+                    <span>O sistema do dia a dia, feito sob medida.</span>
+                    <div class="sketch"><div class="bars"><i class="on"></i><i style="width:88%"></i><i style="width:54%"></i></div></div>
+                  </article>
+                  <article class="col" id="r1">
+                    <div class="n">02</div>
+                    <b>Integrações</b>
+                    <span>WhatsApp, pagamento e agenda no mesmo fluxo.</span>
+                    <div class="sketch"><div class="chat"><div class="bub"></div><div class="bub me"></div><div class="bub" style="width:48%"></div></div></div>
+                  </article>
+                  <article class="col" id="r2">
+                    <div class="n">03</div>
+                    <b>Landing pages</b>
+                    <span>A página que apresenta a marca.</span>
+                    <div class="sketch"><img class="mini-shot" src="/media/reel-laptop/hero.jpg" alt=""></div>
+                  </article>
                 </div>
               </section>
               <section class="slide">
@@ -182,15 +234,27 @@
                 <div class="rowline" id="i0"><div><b>Suíte norte · 15h</b><span>Check-in confirmado</span></div><div class="pill">no sistema</div></div>
                 <div class="rowline" id="i1"><div><b>Casa do mar · 18h</b><span>Hóspede a caminho</span></div><div class="pill">no sistema</div></div>
               </section>
-              <section class="slide">
-                <div class="pad" style="padding-bottom:0">
+              <section class="slide integ">
+                <div class="pad" style="padding-bottom:8px">
                   <div class="kicker">Integração</div>
                   <h2>Um fluxo só.</h2>
                 </div>
                 <div class="flow">
-                  <div class="card" id="n0"><div class="mark" style="background:#25d366">W</div><div><b>WhatsApp</b><span>O pedido entra por aqui.</span></div><div class="pill">ligado</div></div>
-                  <div class="card" id="n1"><div class="mark" style="background:#c45a48">P</div><div><b>Pagamento</b><span>Confirma sem planilha.</span></div><div class="pill">ligado</div></div>
-                  <div class="card" id="n2"><div class="mark" style="background:#1c1612">A</div><div><b>Agenda</b><span>O horário já fica marcado.</span></div><div class="pill">ligado</div></div>
+                  <div class="card" id="n0">
+                    <div class="mark" style="background:#25d366">W</div>
+                    <div><b>WhatsApp</b><span>O pedido entra por aqui.</span><div class="bits"><i style="width:70px"></i><i style="width:46px;background:#25d366"></i></div></div>
+                    <div class="pill">ligado</div>
+                  </div>
+                  <div class="card" id="n1">
+                    <div class="mark" style="background:#c45a48">P</div>
+                    <div><b>Pagamento</b><span>Confirma sem planilha.</span><div class="bits"><i style="width:88px"></i><i style="width:36px;background:#c45a48"></i></div></div>
+                    <div class="pill">ligado</div>
+                  </div>
+                  <div class="card" id="n2">
+                    <div class="mark" style="background:#1c1612">A</div>
+                    <div><b>Agenda</b><span>O horário já fica marcado.</span><div class="bits"><i style="width:54px"></i><i style="width:54px"></i><i style="width:28px;background:#1c1612"></i></div></div>
+                    <div class="pill">ligado</div>
+                  </div>
                 </div>
               </section>
               <section class="slide land">
@@ -202,6 +266,13 @@
                 </div>
                 <div class="shot"><img class="hero-photo" src="/media/reel-laptop/hero.jpg" alt=""></div>
               </section>
+              <section class="slide quote" id="qslide">
+                <div class="kicker">Web Prumo</div>
+                <h2>Conta o projeto.</h2>
+                <p>A gente devolve escopo, prazo e o caminho. Sem compromisso.</p>
+                <div class="num">(11) 96633-1995</div>
+                <div class="qbtn">Pedir orçamento</div>
+              </section>
             </div>
           </div>
         </div>
@@ -212,7 +283,7 @@
   </div>
   <div class="foot" id="foot">Projeto conceito · desenvolvido pela Web Prumo</div>
   <div class="cta" id="cta">
-    <div class="wa">Chama no WhatsApp</div>
+    <div class="wa">Pedir orçamento</div>
     <p>(11) 96633-1995 · @web.prumo</p>
   </div>
   <div class="progress"><i id="bar"></i></div>
@@ -226,9 +297,10 @@
   const $ = (id) => document.getElementById(id);
 
   const legs = [
-    [2.45, 3.55, 0, 1],
-    [6.35, 7.45, 1, 2],
-    [10.15, 11.25, 2, 3],
+    [2.5, 3.45, 0, 1],
+    [6.1, 7.05, 1, 2],
+    [9.7, 10.65, 2, 3],
+    [13.2, 14.15, 3, 4],
   ];
 
   function scrollAt(t) {
@@ -260,14 +332,14 @@
   }
 
   window.render = (t) => {
-    $("bar").style.width = (t / 15) * 100 + "%";
+    $("bar").style.width = (t / 18) * 100 + "%";
     $("laptop").style.transform = "rotateX(9deg)";
     const s = scrollAt(t);
     $("track").style.transform = `translateY(${-s * H}px)`;
     const suite = $("suite");
     if (suite) suite.style.transform = `translateY(${(s - 1) * -28}px)`;
 
-    ["h0", "h1", "h2", "h3"].forEach((id, i) => {
+    ["h0", "h1", "h2", "h3", "h4"].forEach((id, i) => {
       const st = head(s, i);
       $(id).style.opacity = String(st.p);
       $(id).style.transform = `translateY(${st.y}px)`;
@@ -277,10 +349,10 @@
     blocks(["s0", "s1", "s2", "i0", "i1"], s, 1);
     blocks(["n0", "n1", "n2"], s, 2);
 
-    const cta = ease(seg(t, 12.7, 13.45));
+    const cta = ease(seg(t, 14.4, 15.15));
     $("cta").style.opacity = String(cta);
     $("cta").style.transform = `translateY(${(1 - cta) * 18}px)`;
-    $("foot").style.opacity = String(1 - ease(seg(t, 12.5, 13.3)));
+    $("foot").style.opacity = String(1 - cta);
   };
 
   window.__ready = true;

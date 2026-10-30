@@ -16,7 +16,7 @@ const FFMPEG = "/home/hitss/.local/bin/ffmpeg";
 const IG = join(ROOT, "public/ig");
 const OUT = join(ROOT, "tmp/reel-laptop");
 const FPS = 30;
-const SECONDS = 15;
+const SECONDS = 18;
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".png": "image/png",
