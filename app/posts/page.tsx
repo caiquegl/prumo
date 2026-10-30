@@ -149,13 +149,28 @@ export default function PostsPage() {
             Clique no card para ver como fica no Instagram, editar legenda e hashtags, publicar ou republicar.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void onLogout()}
-          className="rounded-full border border-[color:var(--line)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
-        >
-          Sair
-        </button>
+        <div className="flex items-center gap-2">
+          {posts.some((item) => item.status === "pending" || item.status === "failed") ? (
+            <button
+              type="button"
+              onClick={() => {
+                const next = posts.find((item) => item.status === "pending" || item.status === "failed");
+                if (next) void onPublish(next.id);
+              }}
+              disabled={busy}
+              className="rounded-full bg-[color:var(--ink)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[color:var(--coral)] disabled:opacity-60"
+            >
+              {publishingId != null ? "Publicando…" : "Publicar"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void onLogout()}
+            className="rounded-full border border-[color:var(--line)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
+          >
+            Sair
+          </button>
+        </div>
       </div>
 
       <form
