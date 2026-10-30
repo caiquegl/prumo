@@ -66,44 +66,63 @@
     border-radius: 50%; background: #1c1c1e; z-index: 3;
   }
   .screen { position: absolute; inset: 16px 10px 10px; overflow: hidden; background: #f3eee6; }
-  .lp { position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; }
+  .page { position: absolute; left: 0; right: 0; top: 0; }
+  .load {
+    position: absolute; left: 0; top: 0; height: 3px; width: 0; z-index: 5;
+    background: #c45a48;
+  }
   .site-nav {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 22px 0; font-size: 13px; font-weight: 800;
+    padding: 18px 26px 0; font-size: 13px; font-weight: 800;
     letter-spacing: .16em; text-transform: uppercase; color: #1c1612;
   }
   .site-nav b { letter-spacing: .32em; }
   .site-nav span { color: rgba(28,22,18,.42); }
+  .site-nav i {
+    display: inline-block; width: 0; height: 2px; background: #c45a48;
+    margin-left: 10px; vertical-align: middle;
+  }
   .hero {
-    display: grid; grid-template-columns: .9fr 1.15fr; gap: 0;
-    min-height: 0; margin: 14px 16px 16px;
+    display: grid; grid-template-columns: .88fr 1.12fr;
+    margin: 16px 18px 0; height: 470px;
   }
   .copy {
-    background: #f6f1e8; color: #1c1612; padding: 28px 26px 24px;
+    background: #f6f1e8; color: #1c1612; padding: 32px 28px 26px;
     display: flex; flex-direction: column; justify-content: center;
   }
+  .copy .k { font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: #c45a48; }
   .copy h2 {
-    font-family: Fraunces, serif; font-weight: 500; font-size: 48px;
-    line-height: .92; letter-spacing: -.03em;
+    font-family: Fraunces, serif; font-weight: 500; font-size: 46px;
+    line-height: .92; letter-spacing: -.03em; margin-top: 10px;
   }
-  .copy h2 i { font-style: italic; color: #c45a48; }
+  .copy h2 em { font-style: italic; color: #c45a48; }
   .copy p { margin-top: 14px; font-size: 16px; line-height: 1.35; color: rgba(28,22,18,.58); max-width: 26ch; }
   .copy .btn {
-    margin-top: 20px; display: inline-flex; width: max-content;
-    background: #c45a48; color: #fff7f2; font-weight: 800; font-size: 14px;
-    letter-spacing: .06em; text-transform: uppercase; padding: 12px 18px; border-radius: 999px;
+    margin-top: 22px; display: inline-flex; width: max-content;
+    background: transparent; color: #1c1612; font-weight: 800; font-size: 13px;
+    letter-spacing: .12em; text-transform: uppercase;
+    padding: 0 0 8px; border-bottom: 2px solid #c45a48;
   }
-  .shot { overflow: hidden; border-radius: 0 4px 4px 0; }
-  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .toast {
-    position: absolute; right: 28px; bottom: 28px; z-index: 4;
-    background: #25d366; color: #0b3d1f; border-radius: 18px;
-    padding: 14px 16px; min-width: 260px;
-    box-shadow: 0 16px 32px -16px rgba(0,0,0,.5);
-    opacity: 0; transform: translateY(16px);
+  .shot { overflow: hidden; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; transform-origin: 60% 40%; }
+  .band {
+    margin: 22px 18px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
   }
-  .toast b { display: block; font-size: 16px; }
-  .toast span { display: block; font-size: 13px; font-weight: 700; opacity: .8; }
+  .cell {
+    background: #fff; padding: 22px 18px; color: #1c1612;
+  }
+  .cell .n { font-family: Fraunces, serif; font-size: 28px; color: #c45a48; }
+  .cell b { display: block; margin-top: 8px; font-size: 18px; }
+  .cell span { display: block; margin-top: 4px; font-size: 14px; color: rgba(28,22,18,.5); }
+  .suite {
+    margin: 22px 18px 28px; position: relative; height: 430px; overflow: hidden;
+  }
+  .suite img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .suite .cap {
+    position: absolute; left: 28px; bottom: 24px; color: #fff7f2;
+    font-family: Fraunces, serif; font-size: 36px; letter-spacing: -.02em;
+    text-shadow: 0 12px 28px rgba(0,0,0,.4);
+  }
   .chin {
     height: 16px; background: linear-gradient(#2c2c2e, #1f1f21);
     border-radius: 0 0 6px 6px;
@@ -149,26 +168,36 @@
     <span class="badge"><img class="logo" src="/public/brand/logo-marca.png" alt="Web Prumo"></span>
     <div class="meta">webprumo.com.br</div>
   </div>
-  <div class="headline" id="h1"><h1>A gente coloca<br><em>pra vender.</em></h1></div>
-  <div class="headline" id="h2"><h1>Site, app<br><em>e WhatsApp.</em></h1></div>
-  <div class="headline" id="h3"><h1>Do clique<br><em>ao pedido.</em></h1></div>
+  <div class="headline" id="h1"><h1>A gente<br><em>desenvolve.</em></h1></div>
+  <div class="headline" id="h2"><h1>Sites<br><em>sob medida.</em></h1></div>
+  <div class="headline" id="h3"><h1>Do layout<br><em>ao ar.</em></h1></div>
   <div class="stage">
     <div class="laptop" id="laptop">
       <div class="lid">
         <div class="bezel">
           <div class="cam"></div>
           <div class="screen">
-            <div class="lp" id="lp1">
-              <div class="site-nav"><b>Maré</b><span>Suítes · Reserva</span></div>
-              <div class="hero">
-                <div class="copy">
-                  <h2>A maré entra.<br><i>Você fica.</i></h2>
-                  <p>Pousada na costa. Site, agenda e WhatsApp no mesmo fluxo.</p>
-                  <div class="btn">Reservar estadia</div>
+            <div class="load" id="load"></div>
+            <div class="page" id="page">
+              <div class="site-nav" id="snav"><b>Maré</b><span>A casa<i id="nline"></i> Suítes</span></div>
+              <div class="hero" id="hero">
+                <div class="copy" id="copy">
+                  <div class="k">Projeto conceito</div>
+                  <h2>A casa e<br><em>o mar.</em></h2>
+                  <p>Pousada na costa. Site desenvolvido do zero — layout, código e no ar.</p>
+                  <div class="btn">Conhecer a casa</div>
                 </div>
-                <div class="shot"><img class="hero-photo" src="/media/reel-laptop/hero.jpg" alt=""></div>
+                <div class="shot"><img class="hero-photo" id="heroImg" src="/media/reel-laptop/hero.jpg" alt=""></div>
               </div>
-              <div class="toast" id="toast"><b>Nova reserva</b><span>WhatsApp · agora</span></div>
+              <div class="band" id="band">
+                <div class="cell"><div class="n">01</div><b>Layout</b><span>Página pensada no ritmo da casa.</span></div>
+                <div class="cell"><div class="n">02</div><b>Código</b><span>Leve, rápido, no celular.</span></div>
+                <div class="cell"><div class="n">03</div><b>No ar</b><span>Domínio, formulário, pronto.</span></div>
+              </div>
+              <div class="suite" id="suite">
+                <img src="/media/reel-laptop/suite.jpg" alt="">
+                <div class="cap">Cada página, um ambiente.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -203,19 +232,34 @@
     if (t < d) return 1 - seg(t, c, d);
     return 0;
   }
+  function inEl(el, p, y) {
+    const e = ease(p);
+    el.style.opacity = String(e);
+    el.style.transform = `translateY(${(1 - e) * y}px)`;
+  }
 
   window.render = (t) => {
     $("bar").style.width = (t / 14) * 100 + "%";
-    $("laptop").style.transform = `rotateX(10deg) translateY(${-t * 0.85}px)`;
-    $("lp1").style.transform = `translateY(${-t * 1.4}px)`;
+    $("laptop").style.transform = `rotateX(10deg) translateY(${-t * 0.7}px)`;
+
+    $("load").style.width = (ease(seg(t, 0, 1.1)) * 100) + "%";
+    $("load").style.opacity = String(1 - ease(seg(t, 1.0, 1.4)));
+
+    $("snav").style.opacity = "1";
+    $("hero").style.opacity = "1";
+    $("copy").style.opacity = "1";
+    $("copy").style.transform = `translateY(${(1 - ease(seg(t, 0, 1.6))) * 10}px)`;
+    $("heroImg").style.transform = `scale(${1.07 - io(seg(t, 0, 5.8)) * 0.07})`;
+    $("nline").style.width = (ease(seg(t, 0.4, 2.2)) * 36) + "px";
+
+    const sc = io(seg(t, 3.6, 10.8));
+    $("page").style.transform = `translateY(${-sc * 640}px)`;
+    $("band").style.opacity = String(0.55 + 0.45 * ease(seg(t, 4.8, 6.4)));
+    $("suite").style.opacity = "1";
 
     fade($("h1"), band(t, -1, 0, 4.2, 4.9));
-    fade($("h2"), band(t, 4.7, 5.4, 8.6, 9.3));
-    fade($("h3"), band(t, 9.1, 9.8, 13.9, 14.1));
-
-    const toast = io(seg(t, 5.2, 6.2)) * (1 - ease(seg(t, 10.6, 11.4)));
-    $("toast").style.opacity = String(toast);
-    $("toast").style.transform = `translateY(${(1 - toast) * 18}px)`;
+    fade($("h2"), band(t, 4.7, 5.4, 8.8, 9.5));
+    fade($("h3"), band(t, 9.3, 10.0, 13.9, 14.1));
 
     const cta = ease(seg(t, 11.2, 12.0));
     $("cta").style.opacity = String(cta);

@@ -98,9 +98,9 @@ try {
     { timeout: 10000 },
   );
   await page.waitForFunction(
-    () => Boolean(document.querySelector("img.hero-photo")?.naturalWidth > 80),
+    () => [...document.querySelectorAll(".screen img")].every((img) => img.naturalWidth > 80),
     null,
-    { timeout: 10000 },
+    { timeout: 12000 },
   );
   await page.evaluate(async () => {
     if (document.fonts?.ready) {
