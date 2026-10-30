@@ -97,6 +97,11 @@ try {
     null,
     { timeout: 10000 },
   );
+  await page.waitForFunction(
+    () => Boolean(document.querySelector("img.hero-photo")?.naturalWidth > 80),
+    null,
+    { timeout: 10000 },
+  );
   await page.evaluate(async () => {
     if (document.fonts?.ready) {
       await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
