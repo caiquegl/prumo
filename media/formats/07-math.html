@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset=utf-8><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/><style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{width:1080px;height:1920px;overflow:hidden;font-family:Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:#141210;color:#f3eee6}
+.stage{position:relative;width:1080px;height:1920px;padding:260px 64px}
+.k{font-size:20px;letter-spacing:.2em;text-transform:uppercase;color:#e88978;font-weight:800}
+h1{margin-top:18px;font-family:Fraunces,serif;font-size:70px;line-height:.96}
+.big{margin-top:60px;font-family:Fraunces,serif;font-size:160px;line-height:.85;color:#f0b2a6}
+.eq{margin-top:28px;font-size:34px;font-weight:700;color:rgba(243,238,230,.7)}
+.card{margin-top:56px;background:#1c1a17;border-radius:28px;padding:36px;font-size:34px;line-height:1.4;font-weight:700;opacity:0}
+.cta{position:absolute;left:64px;bottom:120px;background:#25d366;color:#0b3d1f;font-weight:800;border-radius:999px;padding:22px 32px;font-size:28px;opacity:0}
+.brand{position:absolute;top:72px;left:64px;font-weight:800;font-size:24px}
+</style></head><body><div class=stage>
+<div class=brand>Web Prumo</div>
+<div class=k>CONTA RÁPIDA</div>
+<h1>Quanto custa<br>um site por dia?</h1>
+<div class=big id=n>R$ —</div>
+<div class=eq id=e>investimento ÷ 365</div>
+<div class=card id=card>Se 1 cliente novo cobre o projeto, o resto do ano é lucro de presença.</div>
+<div class=cta id=c>Orçamento no WhatsApp</div>
+</div><script>
+const clamp=v=>Math.min(1,Math.max(0,v));const seg=(t,a,b)=>clamp((t-a)/Math.max(.001,b-a));const e=p=>1-Math.pow(1-p,3);
+window.render=t=>{const p=e(seg(t,2,4.5));const val=Math.round(1.2+p*2.4); // illustrative ~R$1,20 to R$3,60 style
+document.getElementById('n').textContent=t<2?'R$ ?':`R$ ${(1.64).toFixed(2).replace('.',',')}`;
+document.getElementById('e').textContent=t<2?'investimento ÷ 365':'ex.: projeto ÷ 365 dias';
+document.getElementById('card').style.opacity=e(seg(t,6,7.2));
+document.getElementById('c').style.opacity=e(seg(t,10,11.2));};
+window.__ready=true;window.render(0);
+</script></body></html>

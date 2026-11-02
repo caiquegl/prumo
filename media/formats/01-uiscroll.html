@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;font-family:Manrope,system-ui,sans-serif;background:#1a1512;color:#f6f1ea;-webkit-font-smoothing:antialiased}
+.stage{position:relative;width:1080px;height:1920px}
+.hook{position:absolute;left:56px;right:56px;top:280px;z-index:5;font-family:Fraunces,serif;font-size:64px;line-height:.98;letter-spacing:-.03em;text-shadow:0 10px 40px rgba(0,0,0,.65)}
+.k{position:absolute;left:56px;top:220px;z-index:5;font-size:18px;letter-spacing:.22em;text-transform:uppercase;color:#e88978;font-weight:800}
+.phone{position:absolute;left:90px;right:90px;top:520px;height:1180px;border-radius:48px;overflow:hidden;background:#0d0b0a;box-shadow:0 50px 120px -40px rgba(0,0,0,.7);outline:3px solid rgba(232,137,120,.35)}
+.notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:180px;height:28px;background:#1a1512;border-radius:20px;z-index:2}
+.port{position:absolute;inset:0;overflow:hidden}
+.strip{position:absolute;left:0;right:0;top:0;will-change:transform}
+.strip img{display:block;width:100%;height:auto}
+.brand{position:absolute;top:72px;left:56px;z-index:6;display:flex;gap:12px;align-items:center;font-weight:800;font-size:24px}
+.brand i{width:40px;height:40px;border-radius:50%;overflow:hidden;display:block;background:#222}
+.brand img{width:100%;height:100%;object-fit:cover}
+.cta{position:absolute;left:56px;right:56px;bottom:100px;z-index:6;display:flex;justify-content:space-between;align-items:center;opacity:0}
+.cta b{font-family:Fraunces,serif;font-size:34px;max-width:520px;font-weight:500}
+.btn{background:#25d366;color:#0b3d1f;font-weight:800;border-radius:999px;padding:20px 28px;font-size:26px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="brand"><i><img src="file:///home/hitss/prumo/public/ig/logo.jpg"/></i>Web Prumo</div>
+  <div class="k" id="k">SITE NO AR · SCROLL</div>
+  <div class="hook" id="h">Assim uma página<br>vende no celular.</div>
+  <div class="phone" id="ph" style="opacity:0">
+    <div class="notch"></div>
+    <div class="port">
+      <div class="strip" id="s">
+        <img src="file:///home/hitss/prumo/public/ig/sites/cacau-hero.jpg"/>
+        <img src="file:///home/hitss/prumo/public/ig/sites/cacau-grid.jpg"/>
+        <img src="file:///home/hitss/prumo/public/ig/sites/cacau-cta.jpg"/>
+        <img src="file:///home/hitss/prumo/public/ig/sites/cacau-mobile.jpg"/>
+      </div>
+    </div>
+  </div>
+  <div class="cta" id="c"><b>Projeto real · Web Prumo</b><div class="btn">WhatsApp · 96633-1995</div></div>
+</div>
+<script>
+const clamp=v=>Math.min(1,Math.max(0,v));
+const seg=(t,a,b)=>clamp((t-a)/Math.max(.001,b-a));
+const e=p=>1-Math.pow(1-p,3);
+const io=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+window.render=t=>{
+  const lift=e(seg(t,.4,1.4));
+  const ph=document.getElementById('ph');
+  ph.style.opacity=lift;
+  ph.style.transform=`translateY(${(1-lift)*80}px)`;
+  document.getElementById('s').style.transform=`translateY(${-io(seg(t,1.8,12))*2200}px)`;
+  document.getElementById('h').style.opacity=String(Math.max(0,1-e(seg(t,2.2,3.2))));
+  document.getElementById('k').style.opacity=String(Math.max(0,1-e(seg(t,2.2,3.2))));
+  document.getElementById('c').style.opacity=e(seg(t,12.2,13.2));
+};
+window.__ready=true;window.render(0);
+</script>
+</body>
+</html>
