@@ -17,6 +17,14 @@ function bearerOk(req: NextRequest): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // MP4/covers sob /ig/* precisam ser públicos (Meta Graph busca sem cookie)
+  if (
+    pathname.startsWith("/ig/") &&
+    /\.(mp4|webm|mov|jpe?g|png|webp|gif)$/i.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
+
   const needsAuth =
     pathname.startsWith("/posts") ||
     pathname.startsWith("/api/posts") ||

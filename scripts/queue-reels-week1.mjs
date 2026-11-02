@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * Enfileira os 7 Reels da semana 1 (URLs públicas do site após deploy).
+ * Sobe os 7 Reels da semana 1 no Blob e enfileira (URL pública p/ Graph).
  * Uso:
+ *   ADMIN_PASSWORD=… node scripts/queue-reels-week1.mjs
  *   PRUMO_URL=https://… QUEUE_API_SECRET=… node scripts/queue-reels-week1.mjs
  */
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 const ROOT = "/home/hitss/prumo";
 const base = (process.env.PRUMO_URL || "https://prumo-tawny.vercel.app").replace(/\/$/, "");
@@ -18,23 +19,22 @@ if (!token) {
 const manifest = JSON.parse(await readFile(join(ROOT, "public/ig/reels-week1/manifest.json"), "utf8"));
 
 for (const item of manifest) {
-  const imageUrl = `${base}${item.video}`;
-  const body = {
-    imageUrl,
-    mediaType: "video",
-    caption: item.caption,
-    tags: item.tags,
-  };
+  const filePath = join(ROOT, "public", item.video.replace(/^\//, ""));
+  const buf = await readFile(filePath);
+  const name = basename(filePath);
+  const form = new FormData();
+  form.set("file", new Blob([buf], { type: "video/mp4" }), name);
+  form.set("caption", item.caption);
+  form.set("tags", JSON.stringify(item.tags));
+  form.set("enqueue", "1");
+
   const res = await fetch(`${base}/api/upload`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
   });
-  const json = await res.json();
-  console.log(item.id, res.status, json.post?.id || json.error || json);
+  const json = await res.json().catch(() => ({}));
+  console.log(item.id, res.status, json.post?.id || json.url || json.error || json);
   if (!res.ok) process.exit(1);
 }
 
