@@ -1,0 +1,145 @@
+[
+  {
+    "id": "r01-direct-site",
+    "duration": 18,
+    "theme": "cream",
+    "chip": "SEND · PME",
+    "kicker": "PATTERN INTERRUPT",
+    "title": "Direct cheio.<br>Site mudo.",
+    "lead": "Se o lead some no Instagram, falta a página que fecha no WhatsApp.",
+    "closer": "Qual dos dois o seu negócio tem hoje?",
+    "still": "../public/ig/prumo-feed-04-cta-direct.jpg",
+    "mock": "../public/ig/prumo-feed-02-mockup-landing.jpg",
+    "phone": "../public/ig/prumo-feed-22-sp-anatomia.jpg",
+    "url": "webprumo.com.br/landing",
+    "cards": [
+      { "n": "01", "t": "Instagram atrai", "d": "alcance e conversa" },
+      { "n": "02", "t": "Site fecha", "d": "oferta + prova + WhatsApp" }
+    ],
+    "caption": "Direct cheio. Site mudo.\n\nSe o lead some no Instagram, falta a página que organiza oferta, prova e WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "criacaodesites", "landingpagebrasil", "pequenosnegocios"]
+  },
+  {
+    "id": "r02-3s",
+    "duration": 18,
+    "theme": "dark",
+    "chip": "SAVE · PERF",
+    "kicker": "NÚMERO",
+    "title": "Mais da metade<br>sai em 3s.",
+    "lead": "Site lento não é detalhe técnico. É cliente que não chama.",
+    "closer": "Manda o link do seu site no WhatsApp.",
+    "still": "../public/ig/prumo-feed-17-performance.jpg",
+    "mock": "../public/ig/prumo-feed-17-performance.jpg",
+    "phone": "../public/ig/prumo-feed-02-mockup-landing.jpg",
+    "url": "webprumo.com.br/performance",
+    "cards": [
+      { "n": "4,8s", "t": "site comum", "d": "visitante desiste" },
+      { "n": "0,9s", "t": "site enxuto", "d": "lead ainda na página" }
+    ],
+    "caption": "Mais da metade sai em 3 segundos.\n\nSite lento não é detalhe técnico. É cliente que não chama.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "seotecnico", "criacaodesites", "pequenosnegocios"]
+  },
+  {
+    "id": "r03-anatomia",
+    "duration": 20,
+    "theme": "cream",
+    "chip": "SAVE · HOW-I",
+    "kicker": "COMO EU MONTO",
+    "title": "Promessa → prova<br>→ WhatsApp.",
+    "lead": "A ordem da single page que eu uso pra PME. Salva.",
+    "closer": "Salva e usa no seu briefing.",
+    "still": "../public/ig/prumo-feed-22-sp-anatomia.jpg",
+    "mock": "../public/ig/prumo-feed-22-sp-anatomia.jpg",
+    "phone": "../public/ig/prumo-feed-24-sp-checklist.jpg",
+    "url": "webprumo.com.br/single-page",
+    "cards": [
+      { "n": "1", "t": "Promessa", "d": "entendida em 5s" },
+      { "n": "2", "t": "Prova", "d": "caso / número real" },
+      { "n": "3", "t": "WhatsApp", "d": "CTA sempre à vista" }
+    ],
+    "caption": "Como eu monto uma single page que leva pro WhatsApp.\n\nPromessa, prova, oferta, botão. Nessa ordem.\n\nSalva pra usar no briefing.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "singlepage", "landingpagebrasil", "criacaodesites", "siteparaempresa"]
+  },
+  {
+    "id": "r04-antes-depois",
+    "duration": 18,
+    "theme": "cream",
+    "chip": "FOLLOW · CASE",
+    "kicker": "ANTES / DEPOIS",
+    "title": "Template genérico<br>vs cara de marca.",
+    "lead": "Mesmo negócio. Outra página. Lead no WhatsApp.",
+    "closer": "Quer ver o seu assim? Chama no WhatsApp.",
+    "still": "../public/ig/prumo-feed-14-lex.jpg",
+    "mock": "../public/ig/prumo-feed-15-pata.jpg",
+    "phone": "../public/ig/prumo-feed-16-motriz.jpg",
+    "url": "webprumo.com.br/portfolio",
+    "cards": [
+      { "n": "A", "t": "Antes", "d": "parece o da concorrência" },
+      { "n": "B", "t": "Depois", "d": "código próprio + CTA" }
+    ],
+    "caption": "Template genérico vs página com cara de marca.\n\nO tráfego não salva posicionamento fraco.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "sitesobmedida", "criacaodesites", "landingpagebrasil", "desenvolvimentoweb"]
+  },
+  {
+    "id": "r05-trafego",
+    "duration": 18,
+    "theme": "dark",
+    "chip": "SEND · CONTRA",
+    "kicker": "CONTRARIAN",
+    "title": "Mais tráfego<br>não salva.",
+    "lead": "Se a página não tem CTA, o anúncio só paga visita.",
+    "closer": "Fecha a página. Depois escala o anúncio.",
+    "still": "../public/ig/ads-v2-c2-problem.jpg",
+    "mock": "../public/ig/ads-v2-c3-solution.jpg",
+    "phone": "../public/ig/ads-v2-c5-cta.jpg",
+    "url": "webprumo.com.br/ads",
+    "cards": [
+      { "n": "ADS", "t": "Chega gente", "d": "clique pago" },
+      { "n": "SITE", "t": "Fecha", "d": "oferta + WhatsApp" }
+    ],
+    "caption": "Mais tráfego não salva site sem CTA.\n\nAnúncio traz visita. A página fecha o WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "landingpagebrasil", "criacaodesites", "siteparaempresa", "pequenosnegocios"]
+  },
+  {
+    "id": "r06-briefing",
+    "duration": 20,
+    "theme": "cream",
+    "chip": "SAVE · FRAMEWORK",
+    "kicker": "BRIEFING",
+    "title": "4 caixas.<br>Escopo fechado.",
+    "lead": "Escopo, prazo, valor e WhatsApp — antes de escrever código.",
+    "closer": "7 a 15 dias. Sem surpresa no meio.",
+    "still": "../public/ig/prumo-feed-03-processo.jpg",
+    "mock": "../public/ig/prumo-feed-21-orcamento.jpg",
+    "phone": "../public/ig/prumo-feed-02-mockup-landing.jpg",
+    "url": "webprumo.com.br/orcamento",
+    "cards": [
+      { "n": "1", "t": "Escopo", "d": "o que entra / o que não" },
+      { "n": "2", "t": "Prazo", "d": "7 a 15 dias" },
+      { "n": "3", "t": "Valor", "d": "fechado no início" },
+      { "n": "4", "t": "WhatsApp", "d": "destino do lead" }
+    ],
+    "caption": "Briefing em 4 caixas: escopo, prazo, valor, WhatsApp.\n\n7 a 15 dias. Sem reunião infinita.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "criacaodesites", "siteparaempresa", "desenvolvimentoweb", "pequenosnegocios"]
+  },
+  {
+    "id": "r07-manda-socio",
+    "duration": 18,
+    "theme": "cream",
+    "chip": "SEND · SÓCIO",
+    "kicker": "MANDA PRA ELE",
+    "title": "Manda pro sócio<br>que só vende no IG.",
+    "lead": "Alcance sem página é conversa que some.",
+    "closer": "Encaminha. Depois chama no WhatsApp.",
+    "still": "../public/ig/prumo-feed-01-sites-convertem.jpg",
+    "mock": "../public/ig/prumo-feed-24-sp-checklist.jpg",
+    "phone": "../public/ig/prumo-feed-04-cta-direct.jpg",
+    "url": "webprumo.com.br",
+    "cards": [
+      { "n": "IG", "t": "Atrai", "d": "conversa" },
+      { "n": "SITE", "t": "Fecha", "d": "orçamento" }
+    ],
+    "caption": "Manda isso pro sócio que só vende no Instagram.\n\nAlcance sem página é lead que some no Direct.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "pequenosnegocios", "criacaodesites", "landingpagebrasil"]
+  }
+]
