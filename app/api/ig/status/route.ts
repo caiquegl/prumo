@@ -36,9 +36,8 @@ export async function GET(req: Request) {
     publications: published.slice(-10).reverse(),
     logs,
     crons: [
-      "07:00 BRT token",
-      "08:00 / 12:00 / 18:00 BRT feed (image|video|carousel)",
-      "11:00 / 17:00 BRT stories",
+      "06:00 BRT token refresh",
+      "07:00 BRT 1× Reel (media_type=video)",
     ],
     queueMode: "pending → publishing → published|failed",
     brand: "@web.prumo",

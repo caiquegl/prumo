@@ -12,11 +12,18 @@ export const CONTENT_PILLARS = {
 } as const;
 
 /** Mix semanal alvo (feed). Stories diários à parte. */
+/** Fase atual: só Reels 1×/dia 07:00 BRT. Carrossel/story reativamos depois. */
 export const WEEKLY_FEED_MIX = {
-  reels: 3,
-  carousels: 2,
-  images: 1,
+  reels: 7,
+  carousels: 0,
+  images: 0,
   promotionMax: 1,
+} as const;
+
+export const PUBLISH_CADENCE = {
+  reels: "07:00 America/Sao_Paulo · 1 video/dia",
+  stories: "pausado",
+  feedImageCarousel: "pausado",
 } as const;
 
 export type WeekSlot = {

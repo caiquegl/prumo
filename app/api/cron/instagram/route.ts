@@ -6,6 +6,11 @@ import { logEvent, publishedState } from "@/lib/ig/store";
 
 export const maxDuration = 300;
 
+/**
+ * Publicação diária: 1 Reel por dia às 07:00 BRT (10:00 UTC).
+ * Só consome media_type=video. Stories/carrosséis/fotos ficam na fila
+ * até reativarmos outros crons.
+ */
 async function run(req: Request) {
   if (!authorized(req)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,11 +20,12 @@ async function run(req: Request) {
   const force = url.searchParams.get("force") === "1";
   const idParam = Number(url.searchParams.get("id"));
   const now = new Date();
-  const slot = force || Number.isFinite(idParam)
-    ? `manual-${now.toISOString().slice(0, 16)}`
-    : slotKey(now);
+  const slot =
+    force || Number.isFinite(idParam)
+      ? `manual-${now.toISOString().slice(0, 16)}`
+      : slotKey(now);
 
-  await logEvent("info", "cron", "cron iniciado (fila)", { slot, force });
+  await logEvent("info", "cron", "cron reels 07:00 BRT iniciado", { slot, force });
 
   try {
     const refresh = await refreshStoredTokens();
@@ -36,19 +42,29 @@ async function run(req: Request) {
     return Response.json({ ok: true, skipped: true, slot, reason: "já publicado neste horário" });
   }
 
-  // Feed cron: não consome stories (há cron dedicado)
-  const claimed = Number.isFinite(idParam) && idParam > 0
-    ? await claimQueuePost(idParam)
-    : await claimNextPending({ excludeTypes: ["story"] });
+  const claimed =
+    Number.isFinite(idParam) && idParam > 0
+      ? await claimQueuePost(idParam)
+      : await claimNextPending({ mediaTypes: ["video"] });
+
   if (!claimed) {
-    const reason = Number.isFinite(idParam) && idParam > 0
-      ? `post ${idParam} não está pending/failed`
-      : "fila feed vazia";
+    const reason =
+      Number.isFinite(idParam) && idParam > 0
+        ? `post ${idParam} não está pending/failed`
+        : "fila de reels vazia";
     await logEvent("info", "cron", reason, { slot, idParam });
     return Response.json({ ok: true, skipped: true, slot, reason });
   }
 
-  await logEvent("info", "queue", "claim pending", {
+  if (claimed.media_type !== "video" && !(Number.isFinite(idParam) && idParam > 0 && force)) {
+    // Manual com id ainda pode forçar outros tipos; cron automático só reel
+    if (!(Number.isFinite(idParam) && idParam > 0)) {
+      await markQueueFailed(claimed.id, "cron 07:00 BRT só publica reels (video)");
+      return Response.json({ error: "tipo inválido para cron reels", queueId: claimed.id }, { status: 400 });
+    }
+  }
+
+  await logEvent("info", "queue", "claim reel pending", {
     id: claimed.id,
     mediaType: claimed.media_type,
     sort: claimed.sort_order,
@@ -58,18 +74,16 @@ async function run(req: Request) {
     const published = await publishClaimedQueueItem(claimed, slot);
     return Response.json(published);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "falhou ao publicar fila";
+    const message = err instanceof Error ? err.message : "falhou ao publicar reel";
     await markQueueFailed(claimed.id, message);
     await logEvent("error", "publish", message, { queueId: claimed.id });
     return Response.json({ error: message, queueId: claimed.id }, { status: 500 });
   }
 }
 
+/** Slot diário fixo 10:00 UTC = 07:00 America/Sao_Paulo. */
 function slotKey(now = new Date()) {
-  const hour = now.getUTCHours();
-  const slots = [11, 15, 21];
-  const nearest = slots.reduce((a, b) => (Math.abs(b - hour) < Math.abs(a - hour) ? b : a));
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), nearest));
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 10));
   return d.toISOString().slice(0, 13);
 }
 

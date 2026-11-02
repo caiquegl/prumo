@@ -224,6 +224,7 @@ export async function claimNextPending(opts?: {
   await reclaimStalePublishing(20);
 
   const onlyStory = opts?.mediaTypes?.length === 1 && opts.mediaTypes[0] === "story";
+  const onlyVideo = opts?.mediaTypes?.length === 1 && opts.mediaTypes[0] === "video";
   const skipStory = Boolean(opts?.excludeTypes?.includes("story")) && !opts?.mediaTypes?.length;
 
   if (onlyStory) {
@@ -233,6 +234,22 @@ export async function claimNextPending(opts?: {
       WHERE id = (
         SELECT id FROM ig_queue
         WHERE status = 'pending' AND media_type = 'story'
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING *
+    `) as QueuePost[];
+    return rows[0] ?? null;
+  }
+
+  if (onlyVideo) {
+    const rows = (await db()`
+      UPDATE ig_queue
+      SET status = 'publishing', error = null, updated_at = now()
+      WHERE id = (
+        SELECT id FROM ig_queue
+        WHERE status = 'pending' AND media_type = 'video'
         ORDER BY sort_order ASC, id ASC
         LIMIT 1
         FOR UPDATE SKIP LOCKED

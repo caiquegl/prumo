@@ -301,7 +301,7 @@ export default function PostsPage() {
               onChange={(e) => setAsStory(e.target.checked)}
               className="h-4 w-4 rounded border-[color:var(--line)]"
             />
-            Enfileirar como Story (cron 11h / 17h BRT)
+            Enfileirar como Story (cron de story pausado — só Reels às 07h BRT)
           </label>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">

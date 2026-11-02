@@ -47,9 +47,9 @@ export async function GET(req: NextRequest) {
       competitors: COMPETITOR_NOTES,
     },
     crons: {
-      token: "07:00 BRT",
-      feed: ["08:00", "12:00", "18:00 BRT"],
-      stories: ["11:00", "17:00 BRT"],
+      token: "06:00 BRT",
+      feed: ["07:00 BRT — 1 Reel/dia"],
+      stories: ["pausado"],
     },
     timezone: "America/Sao_Paulo",
   });
