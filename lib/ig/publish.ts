@@ -57,17 +57,42 @@ export async function publishImage(imageUrl: string, caption: string) {
 }
 
 /** Reel vertical (9:16) a partir de video_url público. */
-export async function publishVideo(videoUrl: string, caption: string) {
+export async function publishVideo(videoUrl: string, caption: string, coverUrl?: string) {
   const igId = igUserId();
-  const { id: container } = await call("POST", `${igId}/media`, {
+  const params: Record<string, string> = {
     media_type: "REELS",
     video_url: videoUrl,
     caption,
     share_to_feed: "true",
-  });
+  };
+  if (coverUrl && /^https?:\/\//i.test(coverUrl)) params.cover_url = coverUrl;
+  const { id: container } = await call("POST", `${igId}/media`, params);
   await waitContainer(container, 60, 4000);
   const { id } = await call("POST", `${igId}/media_publish`, { creation_id: container });
   const { permalink } = await call("GET", id, { fields: "permalink" });
+  return { id, permalink };
+}
+
+function looksLikeVideoUrl(url: string) {
+  return /\.(mp4|mov|webm)(\?|$)/i.test(url);
+}
+
+/** Story (imagem ou vídeo). Caption é ignorada pelo Instagram. */
+export async function publishStory(mediaUrl: string) {
+  const igId = igUserId();
+  const params: Record<string, string> = { media_type: "STORIES" };
+  if (looksLikeVideoUrl(mediaUrl)) params.video_url = mediaUrl;
+  else params.image_url = mediaUrl;
+  const { id: container } = await call("POST", `${igId}/media`, params);
+  await waitContainer(container, looksLikeVideoUrl(mediaUrl) ? 60 : 48, looksLikeVideoUrl(mediaUrl) ? 4000 : 3000);
+  const { id } = await call("POST", `${igId}/media_publish`, { creation_id: container });
+  let permalink = `https://www.instagram.com/stories/web.prumo/`;
+  try {
+    const meta = await call("GET", id, { fields: "permalink" });
+    if (meta.permalink) permalink = meta.permalink;
+  } catch {
+    /* stories às vezes não devolvem permalink */
+  }
   return { id, permalink };
 }
 
@@ -98,13 +123,17 @@ export async function publishCarousel(imageUrls: string[], caption: string) {
 }
 
 export async function publishQueueMedia(input: {
-  mediaType: "image" | "video" | "carousel";
+  mediaType: "image" | "video" | "carousel" | "story";
   mediaUrl: string;
   caption: string;
   children?: string[];
+  coverUrl?: string;
 }) {
+  if (input.mediaType === "story") {
+    return publishStory(input.mediaUrl);
+  }
   if (input.mediaType === "video") {
-    return publishVideo(input.mediaUrl, input.caption);
+    return publishVideo(input.mediaUrl, input.caption, input.coverUrl);
   }
   if (input.mediaType === "carousel") {
     const urls = input.children?.length ? input.children : [input.mediaUrl];

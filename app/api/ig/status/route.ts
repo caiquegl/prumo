@@ -35,8 +35,13 @@ export async function GET(req: Request) {
     last: published.at(-1) ?? null,
     publications: published.slice(-10).reverse(),
     logs,
-    crons: ["07:00 token", "08:00 / 12:00 / 18:00 fila ig_queue → Instagram"],
+    crons: [
+      "07:00 BRT token",
+      "08:00 / 12:00 / 18:00 BRT feed (image|video|carousel)",
+      "11:00 / 17:00 BRT stories",
+    ],
     queueMode: "pending → publishing → published|failed",
+    brand: "@web.prumo",
     timezone: "America/Sao_Paulo",
   });
 }

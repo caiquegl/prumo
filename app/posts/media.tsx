@@ -7,7 +7,7 @@ export type QueuePost = {
   image_url: string;
   caption: string | null;
   tags: string[] | null;
-  media_type: "image" | "video" | "carousel";
+  media_type: "image" | "video" | "carousel" | "story";
   children: string[] | null;
   status: string;
   sort_order: number;
@@ -24,7 +24,8 @@ export const STATUS_LABEL: Record<string, string> = {
 };
 
 export function mediaKindLabel(type: QueuePost["media_type"], count = 1) {
-  if (type === "video") return "vídeo";
+  if (type === "story") return "story";
+  if (type === "video") return "reel";
   if (type === "carousel") return `carrossel · ${count} fotos`;
   return "foto";
 }
@@ -53,7 +54,7 @@ export function parseTagInput(raw: string) {
     .split(/[\s,]+/)
     .map((t) => t.replace(/^#/, "").trim())
     .filter(Boolean)
-    .slice(0, 12);
+    .slice(0, 5);
 }
 
 export function QueueMedia({ post, fit = "cover" }: { post: QueuePost; fit?: "cover" | "contain" }) {

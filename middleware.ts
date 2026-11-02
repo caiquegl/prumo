@@ -19,11 +19,16 @@ export async function middleware(req: NextRequest) {
 
   const needsAuth =
     pathname.startsWith("/posts") ||
-    pathname.startsWith("/api/posts");
+    pathname.startsWith("/api/posts") ||
+    pathname.startsWith("/ig") ||
+    pathname.startsWith("/api/ig/dashboard");
 
   if (!needsAuth) return NextResponse.next();
 
-  if (pathname.startsWith("/api/posts") && bearerOk(req)) {
+  if (
+    (pathname.startsWith("/api/posts") || pathname.startsWith("/api/ig/dashboard")) &&
+    bearerOk(req)
+  ) {
     return NextResponse.next();
   }
 
@@ -41,5 +46,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/posts/:path*", "/api/posts/:path*"],
+  matcher: ["/posts/:path*", "/api/posts/:path*", "/ig", "/ig/:path*", "/api/ig/dashboard"],
 };

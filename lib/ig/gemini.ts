@@ -69,8 +69,8 @@ export async function generateAgencyBrief(input: {
   const preferred = DESIGNED_LAYOUTS.filter((l) => !input.avoidLayouts.includes(l));
   const layoutHint = preferred.length ? preferred.join("|") : DESIGNED_LAYOUTS.join("|");
 
-  const system = `Você é diretor criativo + redator comercial da Prumo Web (@web.prumo).
-OFERTA: freela de TI — single page / landing / site sob medida, código próprio, lead no WhatsApp.
+  const system = `Você é diretor criativo + redator comercial da Web Prumo (@web.prumo).
+OFERTA: freela de desenvolvimento — sites, landings, sistemas web e integrações para PME no Brasil. Lead no WhatsApp. Nunca use @prumo.web nem "Prumo Web".
 
 Gere um POST DE AGÊNCIA DESENHADO (infográfico/editorial), NÃO "foto abstrata numa moldura".
 Layouts preferidos (escolha 1 que NÃO esteja na lista de evitados): ${layoutHint}
@@ -80,11 +80,12 @@ Layouts preferidos (escolha 1 que NÃO esteja na lista de evitados): ${layoutHin
 - split / cards / compare / quote: variações tipográficas de venda
 
 Conteúdo ÚNICO a cada vez (títulos, passos, métricas, nós diferentes).
-Tom: vende o serviço com clareza. NÃO prazo numérico, NÃO emoji, NÃO boardroom.
+Tom: vende o serviço com clareza. NÃO emoji, NÃO boardroom.
+hook: frase de caption com gancho nos primeiros 125 caracteres (pergunta, número ou contradição). Sem hashtags no hook.
+tags: exatamente 3 a 5 hashtags SEM #, sized para conta pequena (ex: webprumo, siteparaempresa, landingpagebrasil, criacaodesites, pequenosnegocios). Sem tags genéricas sozinhas tipo marketing.
 title: até 2 linhas com <br>.
 sub: 1 frase explicando a oferta.
 headline: CTA (ex: "Sua single page pode começar aqui.").
-hook: frase curta pra caption.
 photoQuery: IGNORE para anatomy/perf/hub/quote/cards/compare — deixe "none".
 
 Responda SOMENTE JSON:
@@ -95,17 +96,17 @@ Responda SOMENTE JSON:
   "title": "linha1<br>linha2",
   "sub": "frase de apoio",
   "headline": "CTA",
-  "hook": "caption",
+  "hook": "caption com hook forte",
   "items": [["Hero","promessa + botão"],["Benefícios","o que o cliente ganha"]],
-  "bars": [{"label":"Site comum","value":"4,8s","pct":80},{"label":"Site Prumo","value":"0,9s","pct":18,"accent":true}],
+  "bars": [{"label":"Site comum","value":"4,8s","pct":80},{"label":"Site Web Prumo","value":"0,9s","pct":18,"accent":true}],
   "score": {"value":"100","label":"NOTA DE DESEMPENHO"},
   "checks": [{"title":"...","detail":"..."}],
   "hubCenter": "Seu site<br>ou sistema",
   "hubNodes": ["WhatsApp","APIs","CRM","Pagamentos"],
   "left": {"label":"Template","rows":["..."]},
-  "right": {"label":"Prumo","rows":["..."]},
+  "right": {"label":"Web Prumo","rows":["..."]},
   "photoQuery": "none",
-  "tags": ["singlepage","desenvolvimento"],
+  "tags": ["webprumo","siteparaempresa","criacaodesites"],
   "pillar": "slug",
   "angle": "slug-curto"
 }
@@ -115,7 +116,7 @@ Preencha só os campos do layout escolhido.`;
 Evitar títulos: ${input.avoidTitles.slice(0, 12).join(" | ") || "nenhum"}
 Evitar ângulos: ${(input.avoidAngles || []).slice(0, 12).join(", ") || "nenhum"}
 Captions recentes: ${input.recentCaptions.slice(0, 6).join(" || ").slice(0, 900) || "nenhuma"}
-Crie 1 post NOVO, útil pra vender single page / site / TI freela.`;
+Crie 1 post NOVO, útil pra vender site / landing / sistema / integração para PME.`;
 
   let text = "";
   let lastError = "Gemini indisponível";

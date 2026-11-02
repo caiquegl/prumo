@@ -1,6 +1,8 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/guard";
+import { polishCaption } from "@/lib/ig/caption";
+import { hashtagsForCaption } from "@/lib/ig/hashtags";
 import { createQueuePost, httpUrls, listQueuePosts, type MediaKind } from "@/lib/ig/queue";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]);
@@ -14,7 +16,7 @@ function parseTags(raw: FormDataEntryValue | null): string[] | null {
     if (text.startsWith("[")) {
       const arr = JSON.parse(text) as unknown;
       if (Array.isArray(arr)) {
-        return arr.map(String).map((t) => t.replace(/^#/, "").trim()).filter(Boolean).slice(0, 12);
+        return arr.map(String).map((t) => t.replace(/^#/, "").trim()).filter(Boolean).slice(0, 5);
       }
     }
   } catch {
@@ -24,7 +26,14 @@ function parseTags(raw: FormDataEntryValue | null): string[] | null {
     .split(/[\s,]+/)
     .map((t) => t.replace(/^#/, "").trim())
     .filter(Boolean)
-    .slice(0, 12);
+    .slice(0, 5);
+}
+
+function resolveTags(caption: string | null, tags: string[] | null, mediaType: MediaKind): string[] | null {
+  if (mediaType === "story") return null;
+  if (tags?.length) return tags.slice(0, 5);
+  if (!caption) return hashtagsForCaption("", mediaType);
+  return hashtagsForCaption(caption, mediaType);
 }
 
 function mediaKind(type: string): MediaKind | null {
@@ -63,22 +72,28 @@ export async function POST(req: NextRequest) {
       if (!/^https?:\/\//i.test(imageUrl)) {
         return NextResponse.json({ error: "imageUrl http(s) obrigatória" }, { status: 400 });
       }
-      const tags =
+      const rawTags =
         typeof body.tags === "string"
           ? parseTags(body.tags)
           : Array.isArray(body.tags)
-            ? body.tags.map(String).map((t) => t.replace(/^#/, "").trim()).filter(Boolean).slice(0, 12)
+            ? body.tags.map(String).map((t) => t.replace(/^#/, "").trim()).filter(Boolean).slice(0, 5)
             : null;
       const mediaType: MediaKind =
-        body.mediaType === "video"
-          ? "video"
-          : body.mediaType === "carousel" || children.length >= 2
-            ? "carousel"
-            : "image";
+        body.mediaType === "story"
+          ? "story"
+          : body.mediaType === "video"
+            ? "video"
+            : body.mediaType === "carousel" || children.length >= 2
+              ? "carousel"
+              : "image";
+      const captionRaw = body.caption?.trim() || null;
+      const caption =
+        mediaType === "story" ? captionRaw : polishCaption(captionRaw, { mediaType, tags: rawTags });
+      const tags = resolveTags(captionRaw, rawTags, mediaType);
       const post = await createQueuePost({
         imageUrl,
         blobPathname: null,
-        caption: body.caption?.trim() || null,
+        caption,
         tags,
         mediaType,
         children: mediaType === "carousel" ? children : null,
@@ -90,8 +105,9 @@ export async function POST(req: NextRequest) {
     const files = form
       .getAll("file")
       .filter((item): item is File => item instanceof File && item.size > 0);
-    const caption = String(form.get("caption") || "").trim() || null;
-    const tags = parseTags(form.get("tags"));
+    const asStory = String(form.get("asStory") || "") === "1" || String(form.get("mediaType") || "") === "story";
+    const captionRaw = String(form.get("caption") || "").trim() || null;
+    const rawTags = parseTags(form.get("tags"));
 
     if (!files.length) {
       return NextResponse.json({ error: 'Envie multipart com "file" ou JSON com imageUrl' }, { status: 400 });
@@ -119,6 +135,11 @@ export async function POST(req: NextRequest) {
         urls.push(blob.url);
         if (!firstPath) firstPath = blob.pathname;
       }
+      if (asStory) {
+        return NextResponse.json({ error: "Story aceita um único arquivo (foto ou vídeo)" }, { status: 400 });
+      }
+      const caption = polishCaption(captionRaw, { mediaType: "carousel", tags: rawTags });
+      const tags = resolveTags(captionRaw, rawTags, "carousel");
       const post = await createQueuePost({
         imageUrl: urls[0]!,
         blobPathname: firstPath,
@@ -139,6 +160,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const mediaType: MediaKind = asStory ? "story" : kind;
     const maxBytes = kind === "video" ? 80 * 1024 * 1024 : 12 * 1024 * 1024;
     if (file.size > maxBytes) {
       return NextResponse.json(
@@ -155,12 +177,15 @@ export async function POST(req: NextRequest) {
       addRandomSuffix: true,
     });
 
+    const caption =
+      mediaType === "story" ? captionRaw : polishCaption(captionRaw, { mediaType, tags: rawTags });
+    const tags = resolveTags(captionRaw, rawTags, mediaType);
     const post = await createQueuePost({
       imageUrl: blob.url,
       blobPathname: blob.pathname,
       caption,
       tags,
-      mediaType: kind,
+      mediaType,
     });
 
     return NextResponse.json({ ok: true, post }, { status: 201 });

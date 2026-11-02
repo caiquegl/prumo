@@ -9,8 +9,15 @@ import {
 } from "./queue";
 import { insertPublication, logEvent } from "./store";
 
+function layoutFor(mediaType: QueuePost["media_type"]) {
+  if (mediaType === "video") return "reel";
+  if (mediaType === "carousel") return "carousel";
+  if (mediaType === "story") return "story";
+  return "feed";
+}
+
 export async function publishClaimedQueueItem(claimed: QueuePost, slot: string) {
-  const caption = captionWithTags(claimed.caption, claimed.tags);
+  const caption = captionWithTags(claimed.caption, claimed.tags, claimed.media_type);
   const ig = await account();
   const published = await publishQueueMedia({
     mediaType: claimed.media_type,
@@ -24,16 +31,17 @@ export async function publishClaimedQueueItem(claimed: QueuePost, slot: string) 
     permalink: published.permalink,
   });
 
+  const layout = layoutFor(claimed.media_type);
   await insertPublication({
     slot,
     itemId: `queue:${claimed.id}`,
     title: `Fila #${claimed.id}`,
-    layout: claimed.media_type === "video" ? "reel" : claimed.media_type === "carousel" ? "carousel" : "feed",
-    format: claimed.media_type === "video" ? "reel" : claimed.media_type === "carousel" ? "carousel" : "post",
+    layout,
+    format: layout === "feed" ? "post" : layout,
     mediaId: published.id,
     permalink: published.permalink,
     imageUrl: claimed.image_url,
-    caption,
+    caption: claimed.media_type === "story" ? null : caption,
   });
 
   await logEvent("info", "publish", "post da fila publicado", {

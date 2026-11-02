@@ -23,10 +23,11 @@ function flag(name) {
 
 const caption = flag("caption");
 const tags = flag("tags");
+const asStory = args.includes("--story") || flag("mediaType") === "story";
 const base = process.env.PRUMO_URL || "https://prumo-tawny.vercel.app";
-const token = process.env.QUEUE_API_SECRET || process.env.ADMIN_PASSWORD;
+const token = process.env.QUEUE_API_SECRET || process.env.ADMIN_PASSWORD || process.env.UPLOAD_SECRET;
 if (!token) {
-  console.error("Defina QUEUE_API_SECRET ou ADMIN_PASSWORD");
+  console.error("Defina QUEUE_API_SECRET, ADMIN_PASSWORD ou UPLOAD_SECRET");
   process.exit(1);
 }
 
@@ -49,12 +50,27 @@ const form = new FormData();
 form.set("file", new Blob([buf], { type }), name);
 if (caption) form.set("caption", caption);
 if (tags) form.set("tags", tags);
+if (asStory) form.set("asStory", "1");
+form.set("enqueue", "1");
 
-const res = await fetch(`${base}/api/posts`, {
+// Prefer /api/upload (Blob + fila). Fallback /api/posts se upload falhar.
+let res = await fetch(`${base}/api/upload`, {
   method: "POST",
   headers: { Authorization: `Bearer ${token}` },
   body: form,
 });
+if (res.status === 404 || res.status === 405) {
+  const again = new FormData();
+  again.set("file", new Blob([buf], { type }), name);
+  if (caption) again.set("caption", caption);
+  if (tags) again.set("tags", tags);
+  if (asStory) again.set("asStory", "1");
+  res = await fetch(`${base}/api/posts`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: again,
+  });
+}
 const json = await res.json();
 console.log(JSON.stringify(json, null, 2));
 if (!res.ok) process.exit(1);

@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
+import { polishCaption } from "./caption";
 import { ensureSchema } from "./store";
 
 export type QueueStatus = "pending" | "publishing" | "published" | "failed";
 
-export type MediaKind = "image" | "video" | "carousel";
+export type MediaKind = "image" | "video" | "carousel" | "story";
 
 export type QueuePost = {
   id: number;
@@ -107,6 +108,7 @@ export function carouselUrls(post: Pick<QueuePost, "media_type" | "image_url" | 
 }
 
 function parseMediaKind(raw: unknown, childCount: number): MediaKind {
+  if (raw === "story") return "story";
   if (raw === "video") return "video";
   if (raw === "carousel" || childCount >= 2) return "carousel";
   return "image";
@@ -213,10 +215,49 @@ export async function claimQueuePost(id: number, opts?: { republish?: boolean })
   return rows[0] ?? null;
 }
 
-/** Próximo pendente na sequência (cron). */
-export async function claimNextPending(): Promise<QueuePost | null> {
+/** Próximo pendente na sequência (cron). Filtra stories vs feed. */
+export async function claimNextPending(opts?: {
+  mediaTypes?: MediaKind[];
+  excludeTypes?: MediaKind[];
+}): Promise<QueuePost | null> {
   await ensureQueueSchema();
   await reclaimStalePublishing(20);
+
+  const onlyStory = opts?.mediaTypes?.length === 1 && opts.mediaTypes[0] === "story";
+  const skipStory = Boolean(opts?.excludeTypes?.includes("story")) && !opts?.mediaTypes?.length;
+
+  if (onlyStory) {
+    const rows = (await db()`
+      UPDATE ig_queue
+      SET status = 'publishing', error = null, updated_at = now()
+      WHERE id = (
+        SELECT id FROM ig_queue
+        WHERE status = 'pending' AND media_type = 'story'
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING *
+    `) as QueuePost[];
+    return rows[0] ?? null;
+  }
+
+  if (skipStory) {
+    const rows = (await db()`
+      UPDATE ig_queue
+      SET status = 'publishing', error = null, updated_at = now()
+      WHERE id = (
+        SELECT id FROM ig_queue
+        WHERE status = 'pending' AND media_type <> 'story'
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING *
+    `) as QueuePost[];
+    return rows[0] ?? null;
+  }
+
   const rows = (await db()`
     UPDATE ig_queue
     SET status = 'publishing', error = null, updated_at = now()
@@ -230,6 +271,36 @@ export async function claimNextPending(): Promise<QueuePost | null> {
     RETURNING *
   `) as QueuePost[];
   return rows[0] ?? null;
+}
+
+export async function queueStats(): Promise<{
+  pending: number;
+  publishing: number;
+  published: number;
+  failed: number;
+  byType: Record<string, number>;
+  pendingByType: Record<string, number>;
+}> {
+  await ensureQueueSchema();
+  const statusRows = (await db()`
+    SELECT status, COUNT(*)::int AS n FROM ig_queue GROUP BY status
+  `) as Array<{ status: string; n: number }>;
+  const typeRows = (await db()`
+    SELECT media_type, COUNT(*)::int AS n FROM ig_queue GROUP BY media_type
+  `) as Array<{ media_type: string; n: number }>;
+  const pendingTypeRows = (await db()`
+    SELECT media_type, COUNT(*)::int AS n FROM ig_queue WHERE status = 'pending' GROUP BY media_type
+  `) as Array<{ media_type: string; n: number }>;
+
+  const counts = { pending: 0, publishing: 0, published: 0, failed: 0 };
+  for (const row of statusRows) {
+    if (row.status in counts) counts[row.status as keyof typeof counts] = row.n;
+  }
+  const byType: Record<string, number> = {};
+  for (const row of typeRows) byType[row.media_type] = row.n;
+  const pendingByType: Record<string, number> = {};
+  for (const row of pendingTypeRows) pendingByType[row.media_type] = row.n;
+  return { ...counts, byType, pendingByType };
 }
 
 export async function markQueuePublished(
@@ -277,16 +348,15 @@ function normalizeTags(tags: unknown): string[] {
   return [];
 }
 
-/** Monta legenda final com hashtags das tags (sem duplicar). */
-export function captionWithTags(caption: string | null | undefined, tags: unknown): string {
-  const base = (caption || "").trim();
-  const list = normalizeTags(tags)
-    .map((t) => t.replace(/^#/, "").trim())
-    .filter(Boolean);
-  if (!list.length) return base;
-  const lower = base.toLowerCase();
-  const missing = list.filter((t) => !lower.includes(`#${t.toLowerCase()}`));
-  if (!missing.length) return base;
-  const hashLine = missing.map((t) => `#${t}`).join(" ");
-  return base ? `${base}\n\n${hashLine}` : hashLine;
+/** Monta legenda final: marca @web.prumo, CTA WhatsApp, 3–5 hashtags sized. */
+export function captionWithTags(
+  caption: string | null | undefined,
+  tags: unknown,
+  mediaType?: MediaKind,
+): string {
+  return polishCaption(caption, {
+    tags: normalizeTags(tags),
+    mediaType,
+    forStory: mediaType === "story",
+  });
 }

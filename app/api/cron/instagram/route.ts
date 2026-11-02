@@ -36,13 +36,14 @@ async function run(req: Request) {
     return Response.json({ ok: true, skipped: true, slot, reason: "já publicado neste horário" });
   }
 
+  // Feed cron: não consome stories (há cron dedicado)
   const claimed = Number.isFinite(idParam) && idParam > 0
     ? await claimQueuePost(idParam)
-    : await claimNextPending();
+    : await claimNextPending({ excludeTypes: ["story"] });
   if (!claimed) {
     const reason = Number.isFinite(idParam) && idParam > 0
       ? `post ${idParam} não está pending/failed`
-      : "fila vazia";
+      : "fila feed vazia";
     await logEvent("info", "cron", reason, { slot, idParam });
     return Response.json({ ok: true, skipped: true, slot, reason });
   }

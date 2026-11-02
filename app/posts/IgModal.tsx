@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { parseTagInput, QueueMedia, tagsToInput, type QueuePost } from "./media";
+import { mediaKindLabel, parseTagInput, QueueMedia, slideUrls, tagsToInput, type QueuePost } from "./media";
 
 function timeAgo(iso: string) {
   const ms = Date.now() - new Date(iso).getTime();
@@ -37,6 +37,8 @@ export function IgModal({
   const tags = parseTagInput(tagsRaw);
   const canPublish = post.status === "pending" || post.status === "failed";
   const canRepublish = post.status === "published";
+  const isStory = post.media_type === "story";
+  const kindLabel = mediaKindLabel(post.media_type, slideUrls(post).length);
 
   useEffect(() => {
     setCaption(post.caption || "");
@@ -86,6 +88,9 @@ export function IgModal({
       >
         <div className="relative min-h-[320px] bg-black md:min-h-[640px]">
           <QueueMedia post={post} fit="contain" />
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-black">
+            {kindLabel}
+          </span>
         </div>
         <div className="flex max-h-[92vh] flex-col border-t border-white/10 md:border-l md:border-t-0">
           <header className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
@@ -97,49 +102,65 @@ export function IgModal({
             />
             <div className="min-w-0">
               <p className="text-sm font-semibold">web.prumo</p>
-              <p className="text-xs text-white/50">{timeAgo(post.created_at)}</p>
+              <p className="text-xs text-white/50">
+                #{post.sort_order} · {kindLabel} · {timeAgo(post.created_at)}
+              </p>
             </div>
           </header>
 
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">
-              <span className="font-semibold">web.prumo</span>{" "}
-              {caption || <span className="text-white/40">Sem legenda</span>}
-            </p>
-            {tags.length ? (
-              <p className="text-sm leading-relaxed text-[#e0f1ff]">
-                {tags.map((t) => `#${t}`).join(" ")}
+            {isStory ? (
+              <p className="text-sm leading-relaxed text-white/60">
+                Story não usa legenda/hashtags no Instagram. Só a mídia é publicada.
               </p>
-            ) : null}
+            ) : (
+              <>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  <span className="font-semibold">web.prumo</span>{" "}
+                  {caption || <span className="text-white/40">Sem legenda</span>}
+                </p>
+                {tags.length ? (
+                  <p className="text-sm leading-relaxed text-[#e0f1ff]">
+                    {tags.map((t) => `#${t}`).join(" ")}
+                  </p>
+                ) : null}
+              </>
+            )}
 
             <div className="border-t border-white/10 pt-4">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-white/50">
-                Legenda
-                <textarea
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  rows={6}
-                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/40"
-                />
-              </label>
-              <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-white/50">
-                Hashtags
-                <input
-                  value={tagsRaw}
-                  onChange={(e) => setTagsRaw(e.target.value)}
-                  placeholder="webprumo, ads, landingpage"
-                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/40"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => void save()}
-                disabled={saving || busy}
-                className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
-              >
-                {saving ? "Salvando…" : "Salvar descrição"}
-              </button>
-              {saveError ? <p className="mt-2 text-xs text-[#ff8f8f]">{saveError}</p> : null}
+              {!isStory ? (
+                <>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-white/50">
+                    Legenda
+                    <textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      rows={6}
+                      className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/40"
+                    />
+                  </label>
+                  <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-white/50">
+                    Hashtags (máx 5)
+                    <input
+                      value={tagsRaw}
+                      onChange={(e) => setTagsRaw(e.target.value)}
+                      placeholder="webprumo, siteparaempresa, criacaodesites"
+                      className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/40"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void save()}
+                    disabled={saving || busy}
+                    className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                  >
+                    {saving ? "Salvando…" : "Salvar descrição"}
+                  </button>
+                  {saveError ? <p className="mt-2 text-xs text-[#ff8f8f]">{saveError}</p> : null}
+                </>
+              ) : (
+                <p className="text-xs text-white/40">Status: {post.status}</p>
+              )}
             </div>
           </div>
 
