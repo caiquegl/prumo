@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --ink: #141210; --cream: #f6f1ea; --coral: #c45a48; --soft: rgba(246,241,234,.88); }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #111; }
+  body { font-family: Manrope, system-ui, sans-serif; color: var(--cream); -webkit-font-smoothing: antialiased; }
+  .stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+  .photo { position: absolute; inset: 0; }
+  .photo img {
+    width: 100%; height: 110%; object-fit: cover; object-position: center;
+    transform-origin: 50% 40%;
+  }
+  .scrim {
+    position: absolute; inset: 0;
+    /* Fundo fotográfico fica legível, mas NÃO compete com o texto */
+    background:
+      linear-gradient(180deg, rgba(8,8,8,.62) 0%, rgba(8,8,8,.48) 35%, rgba(8,8,8,.55) 62%, rgba(8,8,8,.78) 100%);
+  }
+  /* Safe zone guides (invisible): top 250 / bottom 350 */
+  .safe {
+    position: absolute; left: 72px; right: 72px; top: 280px; bottom: 380px;
+    display: flex; flex-direction: column; justify-content: center; z-index: 2;
+  }
+  .brand {
+    position: absolute; top: 72px; left: 64px; z-index: 3;
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 800; font-size: 24px; color: var(--cream);
+    text-shadow: 0 2px 12px rgba(0,0,0,.45);
+  }
+  .brand i {
+    width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #111;
+    outline: 2px solid rgba(255,255,255,.35);
+  }
+  .brand img { width: 100%; height: 100%; object-fit: cover; }
+  .beat { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; opacity: 0; }
+  .kicker {
+    font-size: 22px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase;
+    color: #f0b2a6; margin-bottom: 18px;
+  }
+  h1 {
+    font-family: Fraunces, Georgia, serif; font-weight: 500;
+    font-size: 84px; line-height: .96; letter-spacing: -.03em;
+    max-width: 920px; text-shadow: 0 8px 40px rgba(0,0,0,.35);
+  }
+  .sub {
+    margin-top: 28px; font-size: 32px; line-height: 1.35; font-weight: 700;
+    max-width: 860px; color: rgba(246,241,234,.86);
+  }
+  .point {
+    display: flex; gap: 22px; align-items: flex-start; margin-top: 8px;
+  }
+  .point .n {
+    flex: 0 0 72px; height: 72px; border-radius: 50%; background: var(--coral);
+    display: grid; place-items: center; font-family: Fraunces, serif; font-size: 36px; color: #fff;
+  }
+  .point b { display: block; font-size: 42px; letter-spacing: -.02em; margin-top: 8px; }
+  .point span { display: block; margin-top: 8px; font-size: 28px; color: rgba(246,241,234,.78); max-width: 720px; }
+  .cta-wrap { text-align: left; }
+  .cta {
+    display: inline-flex; align-items: center; margin-top: 28px;
+    background: #25d366; color: #0b3d1f; font-weight: 800;
+    border-radius: 999px; padding: 22px 34px; font-size: 28px;
+  }
+  .progress {
+    position: absolute; left: 64px; right: 64px; bottom: 48px; height: 4px; z-index: 5;
+    background: rgba(255,255,255,.18); border-radius: 99px; overflow: hidden;
+  }
+  .progress i { display: block; height: 100%; width: 0; background: var(--coral); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="photo"><img id="photo" alt=""><div class="scrim"></div></div>
+  <div class="brand"><i><img src="../public/ig/logo.jpg" alt=""></i>Web Prumo</div>
+  <div class="safe" id="safe"></div>
+  <div class="progress"><i id="bar"></i></div>
+</div>
+<script>
+const DEFAULT = {
+  duration: 16,
+  photo: "../public/ig/reels-week3/stills/desk-laptop.jpg",
+  beats: [
+    { kind: "hook", kicker: "WEB PRUMO", title: "Hook aqui", sub: "" },
+    { kind: "point", n: "1", title: "Ponto", sub: "Detalhe" },
+    { kind: "cta", title: "Chama no WhatsApp", sub: "(11) 96633-1995" },
+  ],
+};
+function parseCfg() {
+  try {
+    const raw = location.hash.slice(1);
+    if (!raw) return DEFAULT;
+    return { ...DEFAULT, ...JSON.parse(decodeURIComponent(raw)) };
+  } catch { return DEFAULT; }
+}
+const cfg = parseCfg();
+const $ = (id) => document.getElementById(id);
+$("photo").src = cfg.photo;
+const safe = $("safe");
+safe.innerHTML = (cfg.beats || []).map((b, i) => {
+  if (b.kind === "point") {
+    return `<div class="beat" data-i="${i}"><div class="point"><div class="n">${b.n || ""}</div><div><b>${b.title || ""}</b><span>${b.sub || ""}</span></div></div></div>`;
+  }
+  if (b.kind === "cta") {
+    return `<div class="beat" data-i="${i}"><div class="cta-wrap"><div class="kicker">WEB PRUMO</div><h1>${b.title || ""}</h1><p class="sub">${b.sub || ""}</p><div class="cta">WhatsApp · 96633-1995</div></div></div>`;
+  }
+  return `<div class="beat" data-i="${i}"><div class="kicker">${b.kicker || "WEB PRUMO"}</div><h1>${b.title || ""}</h1>${b.sub ? `<p class="sub">${b.sub}</p>` : ""}</div>`;
+}).join("");
+
+const clamp = (v) => Math.min(1, Math.max(0, v));
+const seg = (t, a, b) => clamp((t - a) / Math.max(0.001, b - a));
+const ease = (p) => 1 - Math.pow(1 - p, 3);
+
+window.render = (t) => {
+  const dur = cfg.duration || 16;
+  const beats = [...document.querySelectorAll(".beat")];
+  const n = Math.max(1, beats.length);
+  const slice = dur / n;
+  $("bar").style.width = `${(t / dur) * 100}%`;
+  const z = 1.02 + 0.04 * (t / dur);
+  $("photo").style.transform = `scale(${z})`;
+
+  beats.forEach((el, i) => {
+    const start = i * slice;
+    const end = (i + 1) * slice;
+    const fadeIn = ease(seg(t, start, start + 0.45));
+    const fadeOut = 1 - ease(seg(t, end - 0.35, end));
+    const on = t >= start - 0.05 && t < end;
+    const op = on ? Math.min(fadeIn, i === n - 1 ? 1 : fadeOut) : 0;
+    el.style.opacity = String(op);
+    el.style.transform = `translateY(${(1 - fadeIn) * 18}px)`;
+  });
+};
+window.__ready = true;
+window.render(0);
+</script>
+</body>
+</html>

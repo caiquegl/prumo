@@ -1,0 +1,86 @@
+[
+  {
+    "id": "w3-r01-direct",
+    "duration": 15,
+    "photo": "../public/ig/reels-week3/stills/soft-desk.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "PME · BRASIL", "title": "Direct cheio.<br>Site mudo.", "sub": "O lead some no Instagram." },
+      { "kind": "point", "n": "→", "title": "Falta a página", "sub": "Oferta, prova e WhatsApp num lugar só." },
+      { "kind": "cta", "title": "Qual dos dois<br>você tem?", "sub": "Web Prumo · orçamento no WhatsApp" }
+    ],
+    "caption": "Direct cheio. Site mudo.\n\nSe o lead some no Instagram, falta a página que fecha no WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "criacaodesites", "landingpagebrasil", "pequenosnegocios"]
+  },
+  {
+    "id": "w3-r02-3s",
+    "duration": 15,
+    "photo": "../public/ig/reels-week3/stills/soft-desk.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "PERFORMANCE", "title": "Mais da metade<br>sai em 3s.", "sub": "Site lento perde cliente." },
+      { "kind": "point", "n": "0,9s", "title": "Meta real", "sub": "Imagem certa, código enxuto, CDN." },
+      { "kind": "cta", "title": "Manda o link<br>do seu site", "sub": "A gente olha no WhatsApp" }
+    ],
+    "caption": "Mais da metade sai em 3 segundos.\n\nSite lento não é detalhe técnico. É cliente que não chama.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "seotecnico", "criacaodesites", "pequenosnegocios"]
+  },
+  {
+    "id": "w3-r03-ordem",
+    "duration": 16,
+    "photo": "../public/ig/reels-week3/stills/notebook-pen.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "COMO EU MONTO", "title": "Promessa.<br>Prova. WhatsApp.", "sub": "Nessa ordem." },
+      { "kind": "point", "n": "3", "title": "Passos só", "sub": "Sem carrossel infinito. Uma página. Uma ação." },
+      { "kind": "cta", "title": "Salva e usa<br>no briefing", "sub": "Web Prumo · WhatsApp" }
+    ],
+    "caption": "Como eu monto a single page: promessa, prova, WhatsApp.\n\nNessa ordem. Salva pra usar no briefing.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "singlepage", "landingpagebrasil", "criacaodesites", "siteparaempresa"]
+  },
+  {
+    "id": "w3-r04-marca",
+    "duration": 15,
+    "photo": "../public/ig/reels-week3/stills/minimal-mac.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "POSICIONAMENTO", "title": "Parece o site<br>da concorrência?", "sub": "O problema não é o tráfego." },
+      { "kind": "point", "n": "→", "title": "É a página", "sub": "Código próprio. CTA claro. Cara de marca." },
+      { "kind": "cta", "title": "Quer ver o seu<br>assim?", "sub": "Chama no WhatsApp" }
+    ],
+    "caption": "Se o site parece o da concorrência, o problema não é o tráfego.\n\nÉ posicionamento. Código próprio. Lead no WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "sitesobmedida", "criacaodesites", "desenvolvimentoweb", "landingpagebrasil"]
+  },
+  {
+    "id": "w3-r05-ads",
+    "duration": 15,
+    "photo": "../public/ig/reels-week3/stills/plant-desk.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "ANÚNCIO", "title": "Mais tráfego<br>não salva.", "sub": "Página sem CTA só gasta clique." },
+      { "kind": "point", "n": "1º", "title": "Fecha a página", "sub": "Depois escala o anúncio." },
+      { "kind": "cta", "title": "Landing + WhatsApp", "sub": "Prazo e valor fechados" }
+    ],
+    "caption": "Mais tráfego não salva site sem CTA.\n\nAnúncio traz visita. A página fecha o WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "landingpagebrasil", "criacaodesites", "siteparaempresa", "pequenosnegocios"]
+  },
+  {
+    "id": "w3-r06-prazo",
+    "duration": 15,
+    "photo": "../public/ig/reels-week3/stills/soft-window.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "PROCESSO", "title": "7 a 15 dias.", "sub": "Escopo, prazo e valor fechados antes." },
+      { "kind": "point", "n": "4", "title": "Caixas do briefing", "sub": "Escopo · prazo · valor · WhatsApp" },
+      { "kind": "cta", "title": "Sem surpresa<br>no meio", "sub": "Orçamento no WhatsApp" }
+    ],
+    "caption": "7 a 15 dias. Escopo, prazo e valor fechados antes de começar.\n\nSem reunião infinita.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "criacaodesites", "siteparaempresa", "desenvolvimentoweb", "pequenosnegocios"]
+  },
+  {
+    "id": "w3-r07-socio",
+    "duration": 15,
+    "photo": "../public/ig/reels-week3/stills/city-blur.jpg",
+    "beats": [
+      { "kind": "hook", "kicker": "MANDA PRA ELE", "title": "Pro sócio que<br>só vende no IG.", "sub": "Alcance sem página some no Direct." },
+      { "kind": "point", "n": "→", "title": "Site fecha", "sub": "Oferta + prova + WhatsApp." },
+      { "kind": "cta", "title": "Encaminha este<br>Reel", "sub": "Depois chama: (11) 96633-1995" }
+    ],
+    "caption": "Manda isso pro sócio que só vende no Instagram.\n\nAlcance sem página é lead que some no Direct.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "pequenosnegocios", "criacaodesites", "landingpagebrasil"]
+  }
+]
