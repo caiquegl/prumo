@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@600;700;800&display=swap" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --cream: #f3eee6; --ink: #141210; --coral: #c45a48; --soft: rgba(20,18,16,.62); }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--cream); }
+  body { font-family: Manrope, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .reel { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+  .scene {
+    position: absolute; inset: 0; padding: 110px 72px 96px;
+    display: flex; flex-direction: column; visibility: hidden;
+  }
+  .scene.on { visibility: visible; }
+  .cream { background: var(--cream); color: var(--ink); }
+  .dark { background: #12110f; color: var(--cream); }
+  .coral { background: var(--coral); color: #fff7f2; }
+  .nav { display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 16px; font-weight: 800; font-size: 28px; }
+  .brand img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: #111; }
+  .meta { font-size: 22px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--coral); }
+  .dark .meta, .coral .meta { color: #f0b2a6; }
+  .kicker { margin-top: 48px; font-size: 24px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--coral); }
+  .dark .kicker { color: #e88978; }
+  .coral .kicker { color: #fff7f2; }
+  h1 {
+    margin-top: 28px; font-family: Fraunces, Georgia, serif; font-weight: 500;
+    font-size: 92px; line-height: .94; letter-spacing: -.04em; max-width: 920px;
+  }
+  .lead { margin-top: 28px; font-size: 34px; line-height: 1.35; max-width: 900px; color: var(--soft); font-weight: 600; }
+  .dark .lead { color: rgba(243,238,230,.7); }
+  .coral .lead { color: rgba(255,247,242,.82); }
+  .fill { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; min-height: 0; }
+  .card {
+    background: #fff; border-radius: 28px; padding: 28px 32px;
+    box-shadow: 0 24px 50px -30px rgba(0,0,0,.35);
+    display: grid; grid-template-columns: 84px 1fr; gap: 8px; align-items: center;
+  }
+  .dark .card { background: #1c1a17; color: var(--cream); }
+  .card .n { font-family: Fraunces, serif; font-size: 48px; color: var(--coral); line-height: 1; }
+  .card b { display: block; font-size: 34px; letter-spacing: -.02em; }
+  .card span { display: block; margin-top: 4px; font-size: 24px; color: var(--soft); }
+  .dark .card span { color: rgba(243,238,230,.55); }
+  .stat {
+    background: linear-gradient(180deg, #2a2521, #181614); color: var(--cream);
+    border-radius: 32px; padding: 40px 36px; min-height: 220px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .stat .v { font-family: Fraunces, serif; font-size: 96px; line-height: .85; color: #f0b2a6; }
+  .stat .l { font-size: 28px; font-weight: 700; color: rgba(243,238,230,.75); }
+  .cta {
+    margin-top: 18px; display: inline-flex; align-items: center; align-self: flex-start;
+    background: #25d366; color: #0b3d1f; font-weight: 800; border-radius: 999px;
+    padding: 22px 34px; font-size: 28px;
+  }
+  .foot { margin-top: 28px; display: flex; justify-content: space-between; font-size: 24px; font-weight: 700; opacity: .7; }
+  .progress {
+    position: absolute; left: 72px; right: 72px; bottom: 36px; height: 5px;
+    background: rgba(196,90,72,.25); border-radius: 99px; overflow: hidden; z-index: 5;
+  }
+  .progress i { display: block; height: 100%; width: 0; background: var(--coral); }
+</style>
+</head>
+<body>
+<div class="reel" id="reel">
+  <div class="progress"><i id="bar"></i></div>
+</div>
+<script>
+const DEFAULT = {
+  id: "demo",
+  duration: 18,
+  scenes: [
+    { theme: "cream", kicker: "WEB PRUMO", title: "Hook aqui", lead: "Apoio", cards: [] },
+  ],
+};
+
+function parseCfg() {
+  try {
+    const raw = location.hash.slice(1);
+    if (!raw) return DEFAULT;
+    return { ...DEFAULT, ...JSON.parse(decodeURIComponent(raw)) };
+  } catch {
+    return DEFAULT;
+  }
+}
+
+const cfg = parseCfg();
+const root = document.getElementById("reel");
+const bar = document.getElementById("bar");
+
+function sceneHtml(s, i) {
+  const cards = (s.cards || [])
+    .map(
+      (c) => `<div class="card"><div class="n">${c.n || ""}</div><div><b>${c.t || ""}</b><span>${c.d || ""}</span></div></div>`,
+    )
+    .join("");
+  const stats = (s.stats || [])
+    .map((st) => `<div class="stat"><div class="v">${st.v}</div><div class="l">${st.l}</div></div>`)
+    .join("");
+  const cta = s.cta ? `<div class="cta">${s.cta}</div>` : "";
+  return `<section class="scene ${s.theme || "cream"}" data-i="${i}">
+    <div class="nav">
+      <div class="brand"><img src="/public/brand/logo-marca.png" alt="" /><span>Web Prumo</span></div>
+      <div class="meta">@web.prumo</div>
+    </div>
+    <div class="kicker">${s.kicker || ""}</div>
+    <h1 style="font-size:${s.titleSize || 92}px">${s.title || ""}</h1>
+    ${s.lead ? `<p class="lead">${s.lead}</p>` : ""}
+    <div class="fill">${cards}${stats ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">${stats}</div>` : ""}${cta}</div>
+    <div class="foot"><span>${s.footLeft || "webprumo.com.br"}</span><span>${s.footRight || "(11) 96633-1995"}</span></div>
+  </section>`;
+}
+
+root.insertAdjacentHTML("afterbegin", cfg.scenes.map(sceneHtml).join(""));
+const scenes = [...root.querySelectorAll(".scene")];
+
+function pickScene(t) {
+  const n = Math.max(1, scenes.length);
+  const slot = cfg.duration / n;
+  const idx = Math.min(n - 1, Math.floor(t / slot));
+  return idx;
+}
+
+window.render = function render(t) {
+  const dur = cfg.duration || 18;
+  const idx = pickScene(t);
+  scenes.forEach((el, i) => el.classList.toggle("on", i === idx));
+  bar.style.width = `${Math.min(100, (t / dur) * 100)}%`;
+};
+
+window.__ready = true;
+window.render(0);
+</script>
+</body>
+</html>

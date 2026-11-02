@@ -1,0 +1,103 @@
+[
+  {
+    "id": "r01-ig-atrai",
+    "duration": 18,
+    "caption": "Instagram atrai. O site fecha.\n\nSe o lead some no Direct, falta a página que organiza oferta, prova e WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "criacaodesites", "landingpagebrasil", "pequenosnegocios"],
+    "cover": "public/ig/reels-week1/reel-cover-r01-ig-atrai.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "PME BRASIL", "title": "Instagram atrai.", "lead": "Likes não pagam boleto.", "titleSize": 100 },
+      { "theme": "coral", "kicker": "CONVERSÃO", "title": "O site fecha.", "lead": "Oferta, prova e WhatsApp na mesma página.", "titleSize": 110 },
+      { "theme": "dark", "kicker": "PERGUNTA", "title": "Qual dos dois você tem?", "lead": "Perfil cheio · página fraca = lead perdido.", "cta": "Orçamento no WhatsApp", "titleSize": 84 }
+    ]
+  },
+  {
+    "id": "r02-3s",
+    "duration": 18,
+    "caption": "Mais da metade desiste de uma página que passa de 3 segundos.\n\nSite lento não é detalhe técnico. É cliente que não chama.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "siteparaempresa", "seotecnico", "criacaodesites", "pequenosnegocios"],
+    "cover": "public/ig/reels-week1/reel-cover-r02-3s.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "PERFORMANCE", "title": "Mais da metade desiste em 3s.", "lead": "Demora = abandono.", "titleSize": 78 },
+      { "theme": "dark", "kicker": "ANTES / DEPOIS", "title": "4,8s → 0,9s", "lead": "Imagem certa · código enxuto · CDN.", "stats": [{ "v": "4,8s", "l": "site comum" }, { "v": "0,9s", "l": "site Web Prumo" }], "titleSize": 96 },
+      { "theme": "coral", "kicker": "CTA", "title": "Manda o link do seu site.", "cta": "WhatsApp (11) 96633-1995", "titleSize": 84 }
+    ]
+  },
+  {
+    "id": "r03-anatomia",
+    "duration": 24,
+    "caption": "Como eu monto uma single page que leva pro WhatsApp.\n\nPromessa, prova, oferta, botão. Nessa ordem.\n\nSalva pra usar no seu briefing.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "singlepage", "landingpagebrasil", "criacaodesites", "siteparaempresa"],
+    "cover": "public/ig/reels-week1/reel-cover-r03-anatomia.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "HOW-I", "title": "Como eu monto uma single page que vende", "titleSize": 72 },
+      { "theme": "dark", "kicker": "ESTRUTURA", "title": "6 blocos. Um objetivo.", "cards": [
+        { "n": "01", "t": "Hero", "d": "promessa + botão" },
+        { "n": "02", "t": "Benefícios", "d": "o que o cliente ganha" },
+        { "n": "03", "t": "Prova", "d": "depoimento / número" }
+      ], "titleSize": 78 },
+      { "theme": "coral", "kicker": "FECHA", "title": "FAQ → CTA WhatsApp", "lead": "Objeção resolvida antes do contato.", "cta": "Salva este roteiro", "titleSize": 84 }
+    ]
+  },
+  {
+    "id": "r04-prazo",
+    "duration": 18,
+    "caption": "7 a 15 dias. Escopo, prazo e valor fechados antes de começar.\n\nSem reunião infinita. Sem surpresa no meio.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "criacaodesites", "siteparaempresa", "desenvolvimentoweb", "pequenosnegocios"],
+    "cover": "public/ig/reels-week1/reel-cover-r04-prazo.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "PRAZO", "title": "7 a 15 dias.", "lead": "Escopo fechado antes de começar.", "titleSize": 110 },
+      { "theme": "dark", "kicker": "PROCESSO", "title": "Briefing → prévia → código → no ar", "cards": [
+        { "n": "01", "t": "Dia 1", "d": "briefing rápido" },
+        { "n": "02", "t": "Dia 2–3", "d": "você aprova a prévia" },
+        { "n": "03", "t": "Dia 13–15", "d": "domínio, HTTPS, publish" }
+      ], "titleSize": 70 },
+      { "theme": "coral", "kicker": "ORÇAMENTO", "title": "Valor fechado. Sem surpresa.", "cta": "Chama no WhatsApp", "titleSize": 84 }
+    ]
+  },
+  {
+    "id": "r05-lead",
+    "duration": 18,
+    "caption": "O lead preencheu. E aí?\n\nSe ninguém responde em segundos, ele chama o concorrente.\n\nIntegração: formulário → WhatsApp → CRM.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "integracaoapi", "whatsappbusiness", "sistemasweb", "automacao"],
+    "cover": "public/ig/reels-week1/reel-cover-r05-lead.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "AUTOMAÇÃO", "title": "O lead preencheu. E aí?", "titleSize": 88 },
+      { "theme": "dark", "kicker": "FLUXO", "title": "Form → WhatsApp → CRM", "cards": [
+        { "n": "1", "t": "Formulário", "d": "no site" },
+        { "n": "2", "t": "WhatsApp", "d": "aviso na hora" },
+        { "n": "3", "t": "CRM", "d": "lead registrado" }
+      ], "titleSize": 78 },
+      { "theme": "coral", "kicker": "CTA", "title": "Quero isso no meu site", "cta": "Orçamento agora", "titleSize": 84 }
+    ]
+  },
+  {
+    "id": "r06-posicionamento",
+    "duration": 18,
+    "caption": "Se o site parece o da concorrência, o problema não é o tráfego.\n\nÉ posicionamento.\n\nCódigo próprio. Lead no WhatsApp.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "sitesobmedida", "criacaodesites", "desenvolvimentoweb", "empreendedorismo"],
+    "cover": "public/ig/reels-week1/reel-cover-r06-posicionamento.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "CONTRÁRIO", "title": "Se o site parece o da concorrência…", "titleSize": 78 },
+      { "theme": "dark", "kicker": "VERDADE", "title": "O problema não é o tráfego.", "lead": "É posicionamento.", "titleSize": 84 },
+      { "theme": "coral", "kicker": "WEB PRUMO", "title": "Código próprio. Lead no WhatsApp.", "cta": "Peça orçamento", "titleSize": 78 }
+    ]
+  },
+  {
+    "id": "r07-checklist",
+    "duration": 22,
+    "caption": "Sua landing tem os 6?\n\nPromessa. Botão. Prova. WhatsApp. Velocidade. Métrica.\n\nSalva e confere a sua página.\n\nWeb Prumo · @web.prumo\nWhatsApp (11) 96633-1995",
+    "tags": ["webprumo", "landingpagebrasil", "siteparaempresa", "criacaodesites", "pequenosnegocios"],
+    "cover": "public/ig/reels-week1/reel-cover-r07-checklist.jpg",
+    "scenes": [
+      { "theme": "cream", "kicker": "CHECKLIST", "title": "Sua landing tem os 6?", "titleSize": 92 },
+      { "theme": "dark", "kicker": "LISTA", "title": "Confere um a um", "cards": [
+        { "n": "01", "t": "Promessa", "d": "clara em 5s" },
+        { "n": "02", "t": "Botão", "d": "acima da dobra" },
+        { "n": "03", "t": "Prova", "d": "social real" },
+        { "n": "04", "t": "WhatsApp", "d": "sempre à vista" }
+      ], "titleSize": 84 },
+      { "theme": "coral", "kicker": "SALVA", "title": "05 Velocidade · 06 Métrica", "lead": "Manda pra quem cuida do site.", "cta": "Salva este post", "titleSize": 72 }
+    ]
+  }
+]
