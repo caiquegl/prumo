@@ -42,3 +42,7 @@ next-env.d.ts
 
 # QR de pareamento do WhatsApp (scripts/whatsapp.mts qr)
 tmp/whatsapp-qr.png
+
+# Proposta comercial (privada, não versionar)
+proposta-comercial.html
+proposta-comercial-web-prumo.pdf
