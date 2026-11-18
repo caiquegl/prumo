@@ -4,7 +4,7 @@
  *   npx tsx --env-file=.env.local scripts/whatsapp.mts status            # conexão da instância
  *   npx tsx --env-file=.env.local scripts/whatsapp.mts qr                # cria/conecta instância e salva QR em tmp/whatsapp-qr.png
  *   npx tsx --env-file=.env.local scripts/whatsapp.mts draft <leadId> [--name "Nome curto"]  # rascunho (não envia)
- *   npx tsx --env-file=.env.local scripts/whatsapp.mts send <leadId> --text-file msg.txt --approved
+ *   npx tsx --env-file=.env.local scripts/whatsapp.mts send <leadId> --text-file msg.txt --approved   # balões separados por linha "---"
  *
  * `send` só funciona com --approved (o Caique aprovou ESTE texto para ESTE lead), lead com demo publicada,
  * número com WhatsApp e ainda não abordado. Nunca rodar em loop/lote.
@@ -74,12 +74,21 @@ if (cmd === "status") {
     if ((await connectionState()) !== "open") throw new Error("WhatsApp não está conectado (rode: whatsapp.mts qr)");
     if (!(await hasWhatsApp(lead.whatsapp))) throw new Error(`+${lead.whatsapp} não tem WhatsApp`);
 
-    const r = await sendText(lead.whatsapp, text);
+    // Várias mensagens curtas: separe os balões no arquivo com uma linha só com "---".
+    // Enviadas em sequência, com pausa de "digitação" entre elas (todas fazem parte do MESMO texto aprovado).
+    const parts = text.split(/^\s*---\s*$/m).map((p) => p.trim()).filter(Boolean);
+    const ids: string[] = [];
+    for (const [i, part] of parts.entries()) {
+      if (i) await new Promise((res) => setTimeout(res, 2500 + Math.min(part.length * 25, 4000)));
+      const r = await sendText(lead.whatsapp, part);
+      ids.push(r.key?.id ?? "?");
+    }
+    const flat = parts.join(" ¶ ");
     await updateLead(lead.id, {
       status: "abordado",
-      event_note: `WhatsApp enviado (Evolution, id ${r.key?.id ?? "?"}): ${text.slice(0, 180)}${text.length > 180 ? "…" : ""}`,
+      event_note: `WhatsApp enviado (Evolution, ${parts.length} msg, ids ${ids.join(",")}): ${flat.slice(0, 180)}${flat.length > 180 ? "…" : ""}`,
     });
-    console.log(`enviado para ${lead.name} (+${lead.whatsapp}) · lead #${lead.id} → abordado`);
+    console.log(`enviado para ${lead.name} (+${lead.whatsapp}) · ${parts.length} mensagem(ns) · lead #${lead.id} → abordado`);
   }
 } else {
   console.error("uso: whatsapp.mts status | qr | draft <leadId> | send <leadId> --text-file f --approved");
