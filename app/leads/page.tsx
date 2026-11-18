@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DEFAULT_AREAS, NICHE_BY_ID, NICHES } from "@/lib/leads/niches";
 import {
   LEAD_STATUSES,
   LEAD_STATUS_LABEL,
@@ -68,8 +69,10 @@ export default function LeadsPage() {
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
   const [q, setQ] = useState("");
-  const [niche, setNiche] = useState("barbearia");
-  const [city, setCity] = useState("Mooca, São Paulo");
+  const [niche, setNiche] = useState(NICHES[0]!.queries[0]!);
+  const [city, setCity] = useState(DEFAULT_AREAS[0]!);
+  const [nicheFilter, setNicheFilter] = useState<string>("all");
+  const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
   const [max, setMax] = useState(20);
   const [collecting, setCollecting] = useState(false);
   const [openId, setOpenId] = useState<number | null>(null);
@@ -105,13 +108,19 @@ export default function LeadsPage() {
       router.replace("/login?next=/leads");
       return;
     }
-    const json = (await res.json()) as { leads?: Lead[]; counts?: Record<string, number>; error?: string };
+    const json = (await res.json()) as {
+      leads?: Lead[];
+      counts?: Record<string, number>;
+      niches?: Record<string, number>;
+      error?: string;
+    };
     if (!res.ok) {
       setError(json.error || "Falha ao listar");
       return;
     }
     setLeads(json.leads || []);
     setCounts(json.counts || {});
+    setNicheCounts(json.niches || {});
     setLoading(false);
   }, [router]);
 
@@ -138,10 +147,12 @@ export default function LeadsPage() {
     const term = q.trim().toLowerCase();
     return leads.filter((l) => {
       if (filter !== "all" && l.status !== filter) return false;
+      if (nicheFilter === "outros" && l.niche) return false;
+      if (nicheFilter !== "all" && nicheFilter !== "outros" && l.niche !== nicheFilter) return false;
       if (!term) return true;
       return [l.name, l.neighborhood, l.category, l.city].some((v) => v?.toLowerCase().includes(term));
     });
-  }, [leads, filter, q]);
+  }, [leads, filter, q, nicheFilter]);
 
   async function onCollect(e: FormEvent) {
     e.preventDefault();
@@ -304,12 +315,52 @@ export default function LeadsPage() {
         className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-[color:var(--line)] bg-white/50 p-4"
       >
         <label className="flex flex-col gap-1 text-xs font-semibold">
-          Nicho
-          <input value={niche} onChange={(e) => setNiche(e.target.value)} className={input} required />
+          Nicho prioritário
+          <select
+            className={input}
+            value={NICHES.find((n) => n.queries.includes(niche))?.id ?? ""}
+            onChange={(e) => {
+              const n = NICHE_BY_ID[e.target.value];
+              if (n) setNiche(n.queries[0]!);
+            }}
+          >
+            {NICHES.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.rank}. {n.label}
+              </option>
+            ))}
+            <option value="">Outro (digite ao lado)</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold">
+          Termo de busca
+          <input
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            list="niche-queries"
+            className={`${input} min-w-48`}
+            required
+          />
+          <datalist id="niche-queries">
+            {NICHES.flatMap((n) => n.queries).map((qq) => (
+              <option key={qq} value={qq} />
+            ))}
+          </datalist>
         </label>
         <label className="flex flex-col gap-1 text-xs font-semibold">
           Bairro / cidade
-          <input value={city} onChange={(e) => setCity(e.target.value)} className={`${input} min-w-56`} required />
+          <input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            list="areas"
+            className={`${input} min-w-56`}
+            required
+          />
+          <datalist id="areas">
+            {DEFAULT_AREAS.map((a) => (
+              <option key={a} value={a} />
+            ))}
+          </datalist>
         </label>
         <label className="flex flex-col gap-1 text-xs font-semibold">
           Máx.
@@ -334,8 +385,33 @@ export default function LeadsPage() {
       {error ? <p className="mt-4 rounded-xl bg-rose-100 px-4 py-2 text-sm text-rose-900">{error}</p> : null}
       {notice ? <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-2 text-sm text-emerald-900">{notice}</p> : null}
 
-      {/* Filtros */}
+      {/* Nichos */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
+        {[
+          { id: "all", label: "Todos os nichos" },
+          ...NICHES.map((n) => ({ id: n.id, label: `${n.rank}. ${n.label}` })),
+          { id: "outros", label: "Fora da prioridade" },
+        ].map((n) => {
+          const total = n.id === "all" ? Object.values(nicheCounts).reduce((a, b) => a + b, 0) : nicheCounts[n.id] || 0;
+          return (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => setNicheFilter(n.id)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
+                nicheFilter === n.id
+                  ? "bg-[color:var(--ink)] text-white"
+                  : `border border-[color:var(--line)] text-[color:var(--ink-soft)] ${total ? "" : "opacity-50"}`
+              }`}
+            >
+              {n.label} ({total})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filtros */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {(["all", ...LEAD_STATUSES] as const).map((s) => (
           <button
             key={s}
@@ -388,6 +464,11 @@ export default function LeadsPage() {
                     </span>
                   ) : null}
                   <p className="text-xs text-[color:var(--ink-soft)]">
+                    {lead.niche && NICHE_BY_ID[lead.niche] ? (
+                      <span className="mr-1 rounded-full bg-[color:var(--ink)] px-2 py-0.5 font-semibold text-white">
+                        {NICHE_BY_ID[lead.niche]!.rank}. {NICHE_BY_ID[lead.niche]!.label}
+                      </span>
+                    ) : null}
                     #{lead.id} · {lead.category} · {lead.neighborhood || lead.city}
                     {lead.website_raw && !lead.instagram ? " · só link de agendamento/rede" : ""}
                   </p>

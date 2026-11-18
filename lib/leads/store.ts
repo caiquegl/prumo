@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { classifyNiche } from "./niches";
 import { isLeadStatus, type Lead, type LeadEvent, type LeadStatus } from "./types";
 
 let ready = false;
@@ -39,6 +40,8 @@ export async function ensureLeadsSchema() {
     )`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS logo_url TEXT`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'google'`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS niche TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS niche_rank INTEGER`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS brand_colors JSONB`;
   await sql`CREATE INDEX IF NOT EXISTS leads_status_score_idx ON leads (status, score DESC)`;
   await sql`
@@ -63,19 +66,25 @@ function normalize(row: Record<string, unknown>): Lead {
   };
 }
 
-export async function listLeads(opts?: { status?: LeadStatus | "all"; q?: string }): Promise<Lead[]> {
+export async function listLeads(opts?: {
+  status?: LeadStatus | "all";
+  q?: string;
+  niche?: string | null;
+}): Promise<Lead[]> {
   await ensureLeadsSchema();
   const status = opts?.status && opts.status !== "all" ? opts.status : null;
   const q = opts?.q?.trim() ? `%${opts.q.trim()}%` : null;
+  const niche = opts?.niche && opts.niche !== "all" ? opts.niche : null;
   const rows = (await db()`
-    SELECT id, place_id, source, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
+    SELECT id, place_id, source, niche, niche_rank, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
            rating, reviews_count, maps_url, opening_hours, instagram, website_raw, logo_url, brand_colors,
            score, status, demo_slug, demo_url, price_quoted, notes, search_query, contacted_at, created_at, updated_at
     FROM leads
     WHERE (${status}::text IS NULL OR status = ${status})
-      AND (${q}::text IS NULL OR name ILIKE ${q} OR neighborhood ILIKE ${q} OR category ILIKE ${q})
-    ORDER BY score DESC, id DESC
-    LIMIT 500
+      AND (${q}::text IS NULL OR name ILIKE ${q} OR neighborhood ILIKE ${q} OR category ILIKE ${q} OR city ILIKE ${q})
+      AND (${niche}::text IS NULL OR (${niche} = 'outros' AND niche IS NULL) OR niche = ${niche})
+    ORDER BY niche_rank ASC NULLS LAST, score DESC, id DESC
+    LIMIT 1000
   `) as Record<string, unknown>[];
   return rows.map(normalize);
 }
@@ -87,6 +96,29 @@ export async function leadCounts(): Promise<Record<string, number>> {
     n: number;
   }>;
   return Object.fromEntries(rows.map((r) => [r.status, r.n]));
+}
+
+export async function nicheCounts(): Promise<Record<string, number>> {
+  await ensureLeadsSchema();
+  const rows = (await db()`
+    SELECT COALESCE(niche, 'outros') AS niche, COUNT(*)::int AS n FROM leads GROUP BY 1
+  `) as Array<{ niche: string; n: number }>;
+  return Object.fromEntries(rows.map((r) => [r.niche, r.n]));
+}
+
+/** Reclassifica todos os leads (rodar após mudar a lista de nichos). */
+export async function reclassifyNiches(): Promise<number> {
+  await ensureLeadsSchema();
+  const rows = (await db()`SELECT id, category, search_query FROM leads`) as Array<{
+    id: number;
+    category: string | null;
+    search_query: string | null;
+  }>;
+  for (const r of rows) {
+    const n = classifyNiche(r.category, r.search_query);
+    await db()`UPDATE leads SET niche = ${n?.id ?? null}, niche_rank = ${n?.rank ?? null} WHERE id = ${r.id}`;
+  }
+  return rows.length;
 }
 
 export async function getLead(id: number): Promise<Lead | null> {
@@ -116,6 +148,8 @@ export type LeadInput = Omit<
   | "contacted_at"
   | "logo_url"
   | "brand_colors"
+  | "niche"
+  | "niche_rank"
   | "created_at"
   | "updated_at"
 > & { raw?: unknown };
@@ -123,17 +157,19 @@ export type LeadInput = Omit<
 /** Insere se for novo; se já existe, só atualiza dados do Google (não mexe em status/notas). */
 export async function upsertLead(input: LeadInput): Promise<{ inserted: boolean; id: number }> {
   await ensureLeadsSchema();
+  const niche = classifyNiche(input.category, input.search_query);
   const rows = (await db()`
     INSERT INTO leads (
       place_id, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
-      rating, reviews_count, maps_url, opening_hours, instagram, website_raw, score, search_query, raw, source
+      rating, reviews_count, maps_url, opening_hours, instagram, website_raw, score, search_query, raw, source, niche, niche_rank
     ) VALUES (
       ${input.place_id}, ${input.name}, ${input.category}, ${input.phone}, ${input.whatsapp},
       ${input.address}, ${input.neighborhood}, ${input.city}, ${input.lat}, ${input.lng},
       ${input.rating}, ${input.reviews_count}, ${input.maps_url},
       ${input.opening_hours ? JSON.stringify(input.opening_hours) : null}::jsonb,
       ${input.instagram}, ${input.website_raw}, ${input.score}, ${input.search_query},
-      ${input.raw ? JSON.stringify(input.raw) : null}::jsonb, ${input.source}
+      ${input.raw ? JSON.stringify(input.raw) : null}::jsonb, ${input.source},
+      ${niche?.id ?? null}, ${niche?.rank ?? null}
     )
     ON CONFLICT (place_id) DO UPDATE SET
       name = EXCLUDED.name,
@@ -149,6 +185,8 @@ export async function upsertLead(input: LeadInput): Promise<{ inserted: boolean;
       website_raw = EXCLUDED.website_raw,
       score = EXCLUDED.score,
       raw = EXCLUDED.raw,
+      niche = EXCLUDED.niche,
+      niche_rank = EXCLUDED.niche_rank,
       updated_at = now()
     RETURNING id, (xmax = 0) AS inserted
   `) as Array<{ id: number; inserted: boolean }>;

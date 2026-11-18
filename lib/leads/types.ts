@@ -35,6 +35,10 @@ export type Lead = {
   place_id: string;
   /** De onde veio: Places API, Apify (Google Maps Scraper) ou cadastro manual */
   source: LeadSource;
+  /** id do nicho prioritário (lib/leads/niches.ts) ou null = fora da prioridade */
+  niche: string | null;
+  /** 1 = maior prioridade; null = fora da lista */
+  niche_rank: number | null;
   name: string;
   category: string | null;
   phone: string | null;
