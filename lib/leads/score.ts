@@ -1,4 +1,7 @@
-/** Hosts que contam como "não tem site próprio". */
+/**
+ * Hosts que contam como "não tem site próprio": redes sociais, agregadores de link,
+ * plataformas de agendamento/delivery e encurtadores (a empresa usa a página de terceiros).
+ */
 const SOCIAL_HOSTS = [
   "instagram.com",
   "facebook.com",
@@ -16,6 +19,37 @@ const SOCIAL_HOSTS = [
   "goo.gl",
   "g.page",
   "business.site",
+  // encurtadores / links genéricos
+  "bit.ly",
+  "tiny.cc",
+  "tinyurl.com",
+  "jim.com",
+  "linktree.com",
+  "msha.ke",
+  "carrd.co",
+  // agendamento / marketplace (beleza, saúde, serviços)
+  "appbarber.com.br",
+  "barberhub.online",
+  "booksy.com",
+  "trinks.com",
+  "avec.app",
+  "simplesagenda.com.br",
+  "agendaedu.com",
+  "beautydate.com.br",
+  "salaovip.com.br",
+  "doctoralia.com.br",
+  "boaconsulta.com",
+  "agendarconsulta.com",
+  "calendly.com",
+  "getninjas.com.br",
+  "anota.ai",
+  "aiqfome.com",
+  "rappi.com.br",
+  "goomer.app",
+  "cardapioweb.com",
+  "menudino.com",
+  "olaclick.com",
+  "wa.link",
 ];
 
 function hostOf(url: string): string {

@@ -135,6 +135,7 @@ export async function collectLeads(input: { query: string; city: string; max?: n
         website_raw: p.websiteUri ?? null,
         score: scoreLead({ rating: p.rating, reviews: p.userRatingCount, whatsapp, phone, instagram }),
         search_query: query,
+        source: "google",
         raw: p,
       });
       if (saved.inserted) result.inserted++;

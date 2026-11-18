@@ -38,6 +38,7 @@ export async function ensureLeadsSchema() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS logo_url TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'google'`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS brand_colors JSONB`;
   await sql`CREATE INDEX IF NOT EXISTS leads_status_score_idx ON leads (status, score DESC)`;
   await sql`
@@ -67,7 +68,7 @@ export async function listLeads(opts?: { status?: LeadStatus | "all"; q?: string
   const status = opts?.status && opts.status !== "all" ? opts.status : null;
   const q = opts?.q?.trim() ? `%${opts.q.trim()}%` : null;
   const rows = (await db()`
-    SELECT id, place_id, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
+    SELECT id, place_id, source, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
            rating, reviews_count, maps_url, opening_hours, instagram, website_raw, logo_url, brand_colors,
            score, status, demo_slug, demo_url, price_quoted, notes, search_query, contacted_at, created_at, updated_at
     FROM leads
@@ -125,14 +126,14 @@ export async function upsertLead(input: LeadInput): Promise<{ inserted: boolean;
   const rows = (await db()`
     INSERT INTO leads (
       place_id, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
-      rating, reviews_count, maps_url, opening_hours, instagram, website_raw, score, search_query, raw
+      rating, reviews_count, maps_url, opening_hours, instagram, website_raw, score, search_query, raw, source
     ) VALUES (
       ${input.place_id}, ${input.name}, ${input.category}, ${input.phone}, ${input.whatsapp},
       ${input.address}, ${input.neighborhood}, ${input.city}, ${input.lat}, ${input.lng},
       ${input.rating}, ${input.reviews_count}, ${input.maps_url},
       ${input.opening_hours ? JSON.stringify(input.opening_hours) : null}::jsonb,
       ${input.instagram}, ${input.website_raw}, ${input.score}, ${input.search_query},
-      ${input.raw ? JSON.stringify(input.raw) : null}::jsonb
+      ${input.raw ? JSON.stringify(input.raw) : null}::jsonb, ${input.source}
     )
     ON CONFLICT (place_id) DO UPDATE SET
       name = EXCLUDED.name,

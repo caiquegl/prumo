@@ -28,9 +28,13 @@ export function isLeadStatus(raw: unknown): raw is LeadStatus {
   return typeof raw === "string" && (LEAD_STATUSES as readonly string[]).includes(raw);
 }
 
+export type LeadSource = "google" | "apify" | "manual";
+
 export type Lead = {
   id: number;
   place_id: string;
+  /** De onde veio: Places API, Apify (Google Maps Scraper) ou cadastro manual */
+  source: LeadSource;
   name: string;
   category: string | null;
   phone: string | null;

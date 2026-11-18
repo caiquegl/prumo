@@ -327,7 +327,7 @@ export default function LeadsPage() {
           disabled={collecting}
           className="rounded-full bg-[color:var(--ink)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[color:var(--coral)] disabled:opacity-60"
         >
-          {collecting ? "Buscando no Google…" : "Coletar"}
+          {collecting ? "Buscando no Google Maps (até 2 min)…" : "Coletar"}
         </button>
       </form>
 
@@ -389,6 +389,7 @@ export default function LeadsPage() {
                   ) : null}
                   <p className="text-xs text-[color:var(--ink-soft)]">
                     #{lead.id} · {lead.category} · {lead.neighborhood || lead.city}
+                    {lead.website_raw && !lead.instagram ? " · só link de agendamento/rede" : ""}
                   </p>
                   <p className="text-lg font-bold">{lead.name}</p>
                   <p className="text-sm text-[color:var(--ink-soft)]">
