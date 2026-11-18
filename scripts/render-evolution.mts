@@ -2,7 +2,7 @@
  * Cria o container da Evolution API (WhatsApp) na Render via REST API.
  * (O MCP da Render não cria serviço a partir de imagem Docker; o MCP serve para logs/deploys/envs depois.)
  *
- *   RENDER_API_KEY=... npx tsx --env-file=.env.local scripts/render-evolution.mts [--dry-run]
+ *   RENDER_API_KEY=... npx tsx --env-file=.env.local scripts/render-evolution.mts [--free] [--dry-run]
  *
  * - Imagem fixa: evoapicloud/evolution-api:v2.3.7 (não segue o main)
  * - Plano starter (sempre ligado: a sessão do WhatsApp não pode dormir) + disco 1 GB p/ chaves da sessão
@@ -13,6 +13,8 @@ const API = "https://api.render.com/v1";
 const key = process.env.RENDER_API_KEY?.trim();
 if (!key) throw new Error("RENDER_API_KEY ausente (dashboard.render.com → Account Settings → API Keys)");
 const dry = process.argv.includes("--dry-run");
+// --free: plano gratuito (sem disco; dorme após 15 min sem uso e acorda em ~1 min no próximo envio)
+const free = process.argv.includes("--free");
 const NAME = process.env.EVOLUTION_SERVICE_NAME || "prumo-whatsapp";
 const IMAGE = "docker.io/evoapicloud/evolution-api:v2.3.7";
 
@@ -85,11 +87,11 @@ const body = {
   autoDeployTrigger: "off",
   serviceDetails: {
     runtime: "image",
-    plan: "starter",
+    plan: free ? "free" : "starter",
     region: "virginia",
     numInstances: 1,
     healthCheckPath: "/",
-    disk: { name: "evolution-instances", mountPath: "/evolution/instances", sizeGB: 1 },
+    ...(free ? {} : { disk: { name: "evolution-instances", mountPath: "/evolution/instances", sizeGB: 1 } }),
   },
 };
 

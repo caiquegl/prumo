@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QR de pareamento do WhatsApp (scripts/whatsapp.mts qr)
+tmp/whatsapp-qr.png
