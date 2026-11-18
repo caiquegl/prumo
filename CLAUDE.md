@@ -120,6 +120,7 @@ Scripts run by `tsx` must be `.mts` (the package is CJS; top-level `await` fails
 - Lead **#77 Studio Amarante** (Jardim Japão, pós-op/lipedema): bespoke demo at `https://prumo-demos.vercel.app/studio-amarante-jardim-japao`, first contact sent 2026-11-18 as **3 short messages** (new format), status `abordado`.
 - Lead **#166 Clínica Chazak** (Vila Maria Baixa, pilates/fisio): demo at `https://prumo-demos.vercel.app/clinica-chazak-vila-maria`, 3 short messages sent 2026-11-18, status `abordado`.
 - Lead **#167 Restore Clínica de Especialidades** (Parque Capuava, Santo André, fisio): demo at `https://prumo-demos.vercel.app/restore-clinica-parque-capuava`, 3 short messages sent 2026-11-18, status `abordado`. Leads #49 (Dra. Ana Lúcia — not enough material) and #85 (Patricia Bertolle — Instagram gone) set `descartado` by the user.
+- Lead **#176 Colégio Maria Neri** (Vila Maria, escola infantil): demo at `https://prumo-demos.vercel.app/colegio-maria-neri-vila-maria`, 3 short messages sent 2026-11-18 with a softer close ("Se gostarem da ideia, vou adorar conversar com calma sobre ela." — no price question, no "se não for o momento"), status `abordado`.
 - Pending (user side): `APIFY_TOKEN` (and optionally `GOOGLE_PLACES_API_KEY`) in Vercel env; rotate the Apify token (it was pasted in chat); point `demos.webprumo.com.br` to the demos project; Next 16.4.3 has a moderate advisory fixed in 16.4.6 (`next upgrade`), not applied yet; Render MCP was added by the user but wasn't visible in this session — check `claude mcp list`.
 
 ### Skills and MCPs
