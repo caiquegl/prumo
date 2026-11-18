@@ -3,7 +3,7 @@
  *
  *   npx tsx --env-file=.env.local scripts/whatsapp.mts status            # conexão da instância
  *   npx tsx --env-file=.env.local scripts/whatsapp.mts qr                # cria/conecta instância e salva QR em tmp/whatsapp-qr.png
- *   npx tsx --env-file=.env.local scripts/whatsapp.mts draft <leadId>    # rascunho da 1ª mensagem (não envia)
+ *   npx tsx --env-file=.env.local scripts/whatsapp.mts draft <leadId> [--name "Nome curto"]  # rascunho (não envia)
  *   npx tsx --env-file=.env.local scripts/whatsapp.mts send <leadId> --text-file msg.txt --approved
  *
  * `send` só funciona com --approved (o Caique aprovou ESTE texto para ESTE lead), lead com demo publicada,
@@ -20,13 +20,18 @@ const flag = (n: string) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 
+/**
+ * Tom de conversa, sem cara de anúncio. SEMPRE deixa claro que o link é só uma demonstração
+ * (não é o site oficial, não está no Google, feita com informações públicas, sai do ar se pedirem)
+ * para não gerar problema com a marca do cliente. Use o nome curto da empresa (`--name`).
+ */
 function firstMessage(name: string, rating: number | null, demoUrl: string) {
-  const nota = rating ? ` com ${rating.toFixed(1).replace(".", ",")} estrelas` : "";
+  const nota = rating ? ` (${rating.toFixed(1).replace(".", ",")} estrelas, parabéns pelas avaliações!)` : "";
   return [
-    `Olá, tudo bem? Aqui é o Caique, da Web Prumo. Encontrei a ${name} no Google${nota} e vi que vocês ainda não têm um site próprio.`,
-    `Montei uma página de demonstração para vocês, sem compromisso: ${demoUrl}`,
-    `Se gostarem, deixo no ar com o domínio de vocês. Posso te passar os valores?`,
-    `(Se não tiver interesse, é só me avisar que não envio mais mensagens.)`,
+    `Oi, tudo bem? Meu nome é Caique, sou desenvolvedor web aqui em São Paulo (Web Prumo). Vi a ${name} no Google${nota} e não encontrei um site de vocês.`,
+    `Por isso preparei um modelo de página, como proposta, pra vocês verem como poderia ficar: ${demoUrl}`,
+    `É só uma demonstração: não é o site oficial, não aparece no Google e foi feita só com as informações públicas de vocês. Se preferirem, tiro do ar na hora.`,
+    `Se fizer sentido, te passo os valores e detalhes, sem compromisso. Obrigado!`,
   ].join("\n\n");
 }
 
@@ -57,7 +62,7 @@ if (cmd === "status") {
   if (!lead.whatsapp) throw new Error("lead sem número de celular/WhatsApp");
 
   if (cmd === "draft") {
-    console.log(`Para: ${lead.name} · +${lead.whatsapp}\n\n${firstMessage(lead.name, lead.rating, lead.demo_url)}`);
+    console.log(`Para: ${lead.name} · +${lead.whatsapp}\n\n${firstMessage(flag("name") ?? lead.name, lead.rating, lead.demo_url)}`);
   } else {
     if (!args.includes("--approved")) throw new Error("envio exige --approved (texto aprovado pelo Caique)");
     const file = flag("text-file");
