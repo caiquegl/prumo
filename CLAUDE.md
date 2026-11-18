@@ -37,7 +37,7 @@ curl -sS "https://prumo-tawny.vercel.app/api/cron/instagram?secret=$CRON_SECRET&
 curl -sS "https://prumo-tawny.vercel.app/api/cron/instagram?secret=$CRON_SECRET&id=42&force=1"  # specific queue id
 ```
 
-Env vars are documented in `env.example` (Neon `DATABASE_URL`, Meta app creds, `CRON_SECRET`, `ADMIN_PASSWORD`, `QUEUE_API_SECRET`, Vercel Blob, and optional AI/image provider keys).
+Env vars are documented in `env.example` (Neon `DATABASE_URL`, Meta app creds, `CRON_SECRET`, `ADMIN_PASSWORD`, `QUEUE_API_SECRET`, Vercel Blob, `APIFY_TOKEN`, `GOOGLE_PLACES_API_KEY`, `EVOLUTION_*`, `RENDER_API_KEY`, and optional AI/image provider keys). Never print secret values from `.env.local`; grep with masking.
 
 ## What this is
 
@@ -45,7 +45,7 @@ One Next.js app serving three things for the "Web Prumo" brand (freelance web de
 
 1. **Marketing site** — `app/page.tsx` plus SEO service pages (`app/criacao-de-sites`, `app/landing-pages`, …). Service pages share `app/components/ServicePage.tsx` and their copy/metadata lives in `lib/seo-pages.ts` (`SEO_PAGES`), which also feeds `app/sitemap.ts`. Adding a service page = add an entry there + a route folder.
 2. **Instagram automation for @web.prumo** — queue, admin panel, crons, and Meta Graph publishing. This is most of the code (`lib/ig/`, `app/api/`).
-3. **Lead prospecting (`/leads`)** — finds businesses in Greater São Paulo with no website, tracks them through a sales funnel and links each one to a demo landing page built in the sibling repo `../demos`. See "Leads / prospecting" below.
+3. **Lead prospecting (`/leads`)** — finds businesses in Greater São Paulo with no own website (Apify Google Maps scraper), tracks them through a sales funnel, links each one to a demo landing page in the sibling repo `../demos`, and sends the user-approved first WhatsApp message through Evolution API. See "Leads / prospecting" below.
 
 `middleware.ts` is the deprecated name in Next 16 (now `proxy.ts`), but it is kept on purpose: it uses the edge runtime (`lib/admin/session-edge.ts`), which `proxy` does not support.
 
@@ -65,35 +65,60 @@ One Next.js app serving three things for the "Web Prumo" brand (freelance web de
 
 ## Leads / prospecting
 
-Business model: collect local businesses without a site → build a personalised single-page demo → approach the owner manually on WhatsApp with the link → sell the landing page (+ monthly hosting/maintenance plan).
+Business model: collect local businesses without an own website → the user picks one lead → build a personalised demo landing page (`../demos`) → user approves the layout → publish → user approves the first WhatsApp message → Claude sends it (one lead) → user negotiates on the phone → sell the landing page (+ hosting/maintenance).
 
-- **Data**: `lib/leads/store.ts` creates `leads` and `lead_events` lazily (`ensureLeadsSchema()`, same pattern as `ig_queue`). `leads.place_id` is UNIQUE: collection upserts by it and only refreshes Google data, never status/notes. Types and status labels in `lib/leads/types.ts` (safe to import from client components).
-- **Status flow**: `sem_site → criando → publicado → abordado → respondeu → aceitou | recusou | sem_resposta | descartado`. Every change goes through `updateLead()` (`PATCH /api/leads/[id]`), which writes a `lead_events` row; `contacted_at` is set the first time a lead becomes `abordado`. Don't update `leads.status` with raw SQL elsewhere.
-- **Collection sources**: default is **Apify** (`lib/leads/apify.ts`, actor `compass/crawler-google-places`, env `APIFY_TOKEN`, ~1–2 min per run via `run-sync-get-dataset-items`); Places API is the fallback (`source: "google"` or no Apify token). `leads.source` records which. Booking/link-shortener hosts (appbarber, booksy, trinks, tiny.cc…) also count as "no own site".
-- **Priority niches** (user-defined order) live in `lib/leads/niches.ts`: 1 dental clinics, 2 aesthetics/dermatology, 3 solar energy, 4 car detailing, 5 event venues/buffets, 6 pools & renovations, 7 physiotherapy, 8 private schools/courses, 9 architects. `upsertLead()` sets `leads.niche`/`niche_rank` via `classifyNiche()` (Google category first, then the search term; regex order matters, e.g. car detailing before aesthetics). The list sorts by `niche_rank` (nulls = "fora da prioridade" last), then score. After editing the niche list run `scripts/collect-leads.mts --reclassify`.
-- **CLI collection** (no Vercel needed, writes straight to Neon): `npx tsx --env-file=.env.local scripts/collect-leads.mts --priority --areas "Tatuapé, São Paulo;Santo André, SP" [--only odonto,solar] --max 20` (all priority niches × areas), explicit `"nicho|local"` pairs, or `--reclassify`. Scripts run by `tsx` must be `.mts` (the package is CJS, so top-level `await` fails in `.ts`). Apify costs ~US$4 per 1,000 places (free plan: US$5/month). Collection never creates demos.
-- **Places API**: `lib/leads/places.ts` calls Google **Places API (New)** `places:searchText` (env `GOOGLE_PLACES_API_KEY`). The `X-Goog-FieldMask` header is mandatory; `websiteUri`/phone fields are billed at the Enterprise SKU, so don't add fields casually. Max 60 results per query (3 pages). A business counts as "no site" when `websiteUri` is missing **or** points to a social/link-aggregator host (`isSocialOnly()` in `lib/leads/score.ts`); closed businesses are skipped. `scoreLead()` ranks by rating, review count, mobile phone (→ WhatsApp E.164 via `whatsappFrom()`) and Instagram.
-- **Details for the study**: `fetchLeadDetails()` / `GET /api/leads/[id]/details?photos=N` — Place Details with `reviews`, `editorialSummary`, `photos` (resolved via `media?skipHttpRedirect=true`, so the key is never exposed). Costs more (Atmosphere SKU + photo media); call it once per lead that gets a demo, never in bulk.
-- **Brand**: `leads.logo_url` and `leads.brand_colors` (JSONB array of `#rrggbb`) are filled by `/landing-demo` and shown in the panel.
-- **API**: `GET /api/leads?status=&q=`, `POST /api/leads/collect {query, city, max}`, `GET|PATCH|DELETE /api/leads/[id]`, `GET /api/leads/[id]/details`. All use `requireAdmin()` (session cookie or Bearer `QUEUE_API_SECRET`/`ADMIN_PASSWORD`/`CRON_SECRET`) and are listed in `middleware.ts` (`needsAuth`, Bearer bypass and `matcher`). The `../demos` skills call these with Bearer `QUEUE_API_SECRET`.
-- **Panel** `app/leads/page.tsx`: funnel cards, collect form, status filters, demo link, WhatsApp button (`wa.me` with the approach message; the template is editable and kept in the viewer's localStorage), "copy `/landing-demo <id>`", event timeline, and a warning when a `recusou` lead still has a demo online after 7 days.
+### Day-to-day commands (run in `prumo/`, Node 22, all write straight to Neon — no Vercel env needed)
 
-### Rules (business/legal, not just code)
-- **Outreach is one lead at a time, only after the user approves that exact message.** Either the user sends it from the panel (`wa.me` link) or Claude sends it through Evolution with `scripts/whatsapp.mts send <id> --text-file f --approved` (refuses leads without demo, already contacted, `recusou`/`descartado`, or numbers without WhatsApp; marks `abordado` with the text in `lead_events`). Never loop, batch, schedule or auto-send. The first message includes an opt-out; on opt-out set `descartado` and note it.
-- **WhatsApp infra**: Evolution API v2.3.7 container `prumo-whatsapp` on Render (created by `scripts/render-evolution.mts` via Render REST API — the Render MCP can't create image-backed services; use the MCP for logs/deploys/env). currently on Render's **free plan** (`--free`: no disk, sleeps after 15 min idle and wakes in ~1 min on the next request — fine for one approved message at a time; if the session drops, re-pair with `scripts/whatsapp.mts qr`); `starter` + 1 GB disk at `/evolution/instances` is the paid option (needs a card on Render); DB = this Neon, direct host, schema `evolution_api`, storing only instance data. Client in `lib/whatsapp/evolution.ts`; env `EVOLUTION_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`. Pair the number with `scripts/whatsapp.mts qr`. Evolution uses the unofficial WhatsApp Web protocol (Baileys): low volume, personalised, approved messages only.
-- **Demos are never created automatically**: collection only fills `/leads`; the user picks leads one by one, asks for each demo, and approves its layout before it is published.
-- **Every demo is studied individually** (what the business does, audience, identity) and uses **the business's own identity**: its logo and a palette extracted from it, never Web Prumo's palette.
-- **Demos must never pass as the business's official site**: "Demonstração Web Prumo — não oficial" banner and `noindex` (meta + `X-Robots-Tag` + `robots.txt Disallow`). No invented testimonials, prices, awards or "X years in business"; only real Google rating/reviews (verbatim, attributed).
-- Demo of a lead in `recusou` must be removed within 7 days (`/remove-demo <id>` in `../demos`).
+```bash
+npx tsx --env-file=.env.local scripts/collect-leads.mts --priority --areas "Tatuapé, São Paulo;Santo André, SP" [--only odonto,solar] --max 20
+npx tsx --env-file=.env.local scripts/collect-leads.mts "barbearia|Mooca, São Paulo" --max 20   # explicit pairs
+npx tsx --env-file=.env.local scripts/collect-leads.mts --reclassify                            # after editing niches
+npx tsx --env-file=.env.local scripts/lead.mts get <id>                                         # lead + events
+npx tsx --env-file=.env.local scripts/lead.mts details <id> [photos]                            # study data (Apify: reviews, photos)
+npx tsx --env-file=.env.local scripts/lead.mts patch <id> '{"status":"criando","event_note":"..."}'
+npx tsx --env-file=.env.local scripts/whatsapp.mts status | qr | draft <id>
+npx tsx --env-file=.env.local scripts/whatsapp.mts send <id> --text-file msg.txt --approved     # ONLY after the user approved that text
+```
+
+Scripts run by `tsx` must be `.mts` (the package is CJS; top-level `await` fails in `.ts`).
+
+### Code
+- **Data**: `lib/leads/store.ts` creates `leads` and `lead_events` lazily (`ensureLeadsSchema()`, same pattern as `ig_queue`). `leads.place_id` is UNIQUE: collection upserts by it and only refreshes Google data, never status/notes. Types/labels in `lib/leads/types.ts` (client-safe). Columns worth knowing: `source` (apify|google|manual), `niche`/`niche_rank`, `whatsapp` (E.164 when mobile), `demo_slug`/`demo_url`, `logo_url`, `brand_colors`, `contacted_at`.
+- **Status flow**: `sem_site → criando → publicado → abordado → respondeu → aceitou | recusou | sem_resposta | descartado`. Every change goes through `updateLead()` (PATCH route or `scripts/lead.mts patch`), which writes a `lead_events` row; `contacted_at` is set the first time a lead becomes `abordado`. Never update `leads.status` with raw SQL.
+- **Collection**: default source is **Apify** (`lib/leads/apify.ts`, actor `compass/crawler-google-places`, env `APIFY_TOKEN`, ~15–40 s per 20 places, ~US$4 per 1,000; free plan US$5/month — check usage at `api.apify.com/v2/users/me/limits`). Places API (`lib/leads/places.ts`, env `GOOGLE_PLACES_API_KEY`, FieldMask mandatory, Enterprise SKU) is the fallback and is **not configured**. "No own site" = no website, or a social/link-aggregator/booking host (`isSocialOnly()` in `lib/leads/score.ts`: instagram, linktree, appbarber, booksy, trinks, tiny.cc…). `scoreLead()` ranks by rating, reviews, mobile phone and Instagram.
+- **Priority niches** (user's order) in `lib/leads/niches.ts`: 1 dental clinics, 2 aesthetics/dermatology, 3 solar energy, 4 car detailing, 5 event venues/buffets, 6 pools & renovations, 7 physiotherapy, 8 private schools/courses, 9 architects. `classifyNiche()` (Google category first, then search term; regex order matters) sets `niche`/`niche_rank`; lists sort by `niche_rank` (null = "fora da prioridade") then score. Collected so far: Mooca/Tatuapé/Vila Mariana/Ipiranga/Santana (first test niches) + the 9 priority niches in Tatuapé and Santo André (~200 leads). Pools, schools and architects in Tatuapé mostly already have sites — try other areas.
+- **Study details**: `fetchLeadDetailsApify()` (default) / `fetchLeadDetails()` (Places) → reviews, photos, categories, review tags. Route `GET /api/leads/[id]/details`. Once per lead that gets a demo, never in bulk.
+- **API** (`requireAdmin()`: session cookie or Bearer `QUEUE_API_SECRET`/`ADMIN_PASSWORD`/`CRON_SECRET`; all listed in `middleware.ts` `needsAuth` + Bearer bypass + `matcher`): `GET /api/leads?status=&q=&niche=`, `POST /api/leads/collect {query, city, max, source?}`, `GET|PATCH|DELETE /api/leads/[id]`, `GET /api/leads/[id]/details`. Production `/api/leads/collect` and `/details` need `APIFY_TOKEN` in Vercel env (**not set yet** — use the CLI scripts meanwhile).
+- **Panel** `app/leads/page.tsx`: niche chips + status filters, funnel cards, collect form (niche selector + suggested areas), logo/brand colors, demo link, `wa.me` button with an editable template (viewer's localStorage), "copy `/landing-demo <id>`", event timeline, warning when a `recusou` lead still has a demo after 7 days.
+
+### WhatsApp (Evolution API)
+- Container `prumo-whatsapp` on **Render free plan** (`https://prumo-whatsapp.onrender.com`, service `srv-dbuqgpgjo6nc73asangg`), image `evoapicloud/evolution-api:v2.3.7`, created by `scripts/render-evolution.mts --free` through the Render REST API (the Render MCP can't create image-backed services; it is only for logs/deploys/env). Free plan: no disk, sleeps after 15 min and wakes in ~1 min — fine for one approved message at a time. Paid alternative (`starter` + 1 GB disk) needs a card on Render.
+- DB = this Neon, direct (non-pooler) host, schema `evolution_api`, instance data only (no message history). Manager: `https://prumo-whatsapp.onrender.com/manager` with the global key `EVOLUTION_API_KEY` (in `.env.local`; never print or paste it in chat).
+- Instance `webprumo` is paired with the user's WhatsApp Business. If `whatsapp.mts status` isn't `open`, run `whatsapp.mts qr` and send the user `tmp/whatsapp-qr.png` (gitignored; expires in ~1 min).
+- Client: `lib/whatsapp/evolution.ts` (env `EVOLUTION_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE=webprumo`). Evolution uses the unofficial WhatsApp Web protocol (Baileys): low volume, personalised, approved messages only.
+
+### Rules (business/legal)
+- **Demos are never created automatically**: collection only fills `/leads`; the user names each lead, and approves its layout before publishing (see `../demos/CLAUDE.md`).
+- **Outreach: one lead at a time, only the exact text the user approved**, sent once. Show the text first (`whatsapp.mts draft <id>` is a starting point), wait for "aprovado", then `send --approved`. Never loop, batch, schedule, follow up or reply on the user's behalf — the user handles the conversation on the phone. Use the short business name (e.g. "O+ Odontologia", not the Google listing title).
+- **Approved message pattern** (user-approved for lead #55): who Caique is (web developer in São Paulo, Web Prumo) → a true compliment (Google rating) → "não encontrei um site de vocês" → "preparei um modelo de página como proposta comercial" + link → it is only a demonstration/template, not the official site, not on Google, built only from public info, removed immediately on request → offer values/details, no commitment → "Obrigado!". The user removed the opt-out line; if a business asks not to be contacted, set `descartado` and note it.
+- **Demos never pass as the official site**: banner, `noindex` (meta + `X-Robots-Tag` + `robots.txt`), no invented testimonials/prices/awards/FAQs, only real Google rating/reviews. Remove a demo within 7 days when the lead is `recusou` (`/remove-demo <id>` in `../demos`), or immediately on request.
 - Store only public business data needed for the approach.
 
-### Demos repo (`../demos`)
-Separate Next.js app, Vercel project `prumo-demos`, served at `demos.webprumo.com.br/<slug>`. Each demo = `briefs/<slug>.md` (study) + `public/brands/<slug>/` (logo) + `content/<slug>.ts` (`DemoContent`) + `app/<slug>/page.tsx`. Created with the skill `/landing-demo <leadId>`, removed with `/remove-demo <leadId>` (both in `demos/.claude/skills/`). See `../demos/CLAUDE.md`.
+### Pricing (commercial proposal)
+- Private proposal PDF at `prumo/proposta-comercial-web-prumo.pdf`, generated from `prumo/proposta-comercial.html` (both **gitignored — never commit, push or send**; regenerate with Playwright `page.pdf` A4, fonts from `lib/ig/fonts`, logo `public/logo.png`). Cover leaves client/date/demo link blank.
+- Landing page **R$ 400 à vista (Pix) or 4x R$ 100 sem juros** (1st installment on acceptance). Included: 2 adjustment rounds before publishing + 3 small changes in the 30 days after; domain setup once; hosting 12 months; HTTPS; basic SEO.
+- Changes after that: simple R$ 40 · medium (new section/layout) R$ 120 · extra pre-publish round R$ 60 · big changes on quote. Hosting after 12 months R$ 20/month or R$ 200/year. Maintenance optional, value agreed per client (reference: Essencial from R$ 59/month, Completo from R$ 119/month). Domain bought/renewed in the client's account; Web Prumo configures DNS (domain change later R$ 60). Optional extras: contact form R$ 80, Analytics/Pixel R$ 60, Google Business Profile R$ 100, professional e-mail setup R$ 80, extra page R$ 200. Delivery ≤ 7 business days after payment + materials. Proposal valid 15 days.
+- Advice given: card installments' fees come out of the R$ 400 (prefer Pix); push maintenance plans for recurring revenue; consider R$ 500–600 after 3–5 clients; host client sites somewhere that allows commercial use (Cloudflare Pages free) — Vercel Hobby forbids it.
+
+### Current state (2026-11-18)
+- Lead **#55 O+ Odontologia** (Parque Novo Mundo, dental): demo published at `https://prumo-demos.vercel.app/o-mais-odontologia-parque-novo-mundo`, first WhatsApp sent 2026-11-18 13:42, status `abordado`. Waiting for the clinic's reply (user updates via chat/panel).
+- Pending (user side): `APIFY_TOKEN` (and optionally `GOOGLE_PLACES_API_KEY`) in Vercel env; rotate the Apify token (it was pasted in chat); point `demos.webprumo.com.br` to the demos project; Next 16.4.3 has a moderate advisory fixed in 16.4.6 (`next upgrade`), not applied yet; Render MCP was added by the user but wasn't visible in this session — check `claude mcp list`.
 
 ### Skills and MCPs
-- Design skills live in the **Windows** profile (`C:\Users\Hitss\.claude\skills`), which WSL Claude Code doesn't read. They are symlinked into `demos/.claude/skills/`: `design-taste-frontend` (direction/page plan) → build → `impeccable` (audit/polish, mode *Persuade*) → `web-design-guidelines` (final review); `frontend-design` for palette/type choices.
-- The Windows `.claude.json` has MCP entries `google-leads` and `maps-harvest`, but their URL is empty (broken). Don't rely on them; lead collection goes through `/api/leads/collect`. Playwright (for screenshots) uses `worker/node_modules/playwright`; Chromium is installed under `~/.cache/ms-playwright`.
-- Vercel: the `vercel` CLI is in WSL under nvm (node v20/v24). Vercel Hobby forbids commercial use, so demos need a Pro team (or another host).
+- Design skills live in the **Windows** profile (`C:\Users\Hitss\.claude\skills`) and are symlinked into `demos/.claude/skills/` (`design-taste-frontend`, `impeccable`, `frontend-design`, `web-design-guidelines`).
+- The Windows `.claude.json` MCP entries `google-leads` and `maps-harvest` have empty URLs (broken) — don't use them.
+- Playwright for screenshots/PDF: `worker/node_modules/playwright` (Chromium in `~/.cache/ms-playwright`). Docker is available in WSL if a local service is ever needed.
+- `vercel` CLI under nvm v20/v24. Both repos auto-deploy from GitHub pushes.
 
 ## Reels / media production (local, outside Next)
 
