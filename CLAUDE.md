@@ -113,6 +113,7 @@ Scripts run by `tsx` must be `.mts` (the package is CJS; top-level `await` fails
 ### Current state (2026-11-18)
 - Lead **#55 O+ Odontologia** (Parque Novo Mundo, dental): demo published at `https://prumo-demos.vercel.app/o-mais-odontologia-parque-novo-mundo`, first WhatsApp sent 2026-11-18 13:42, status `abordado`. Waiting for the clinic's reply (user updates via chat/panel).
 - Lead **#84 Constance Saúde e Estética** (Campestre, Santo André, aesthetics): bespoke 3D demo at `https://prumo-demos.vercel.app/clinica-constance-campestre`, first WhatsApp sent 2026-11-18 (text written by the user), status `abordado`. Waiting for reply.
+- Lead **#132 Buffet Espaço K** (Mooca/Cambuci, kids party venue): bespoke 3D demo at `https://prumo-demos.vercel.app/buffet-espaco-k-mooca`, first WhatsApp sent 2026-11-18 to **(11) 92155-3968** (number from their Instagram posts, set as the lead's `whatsapp`; Google lists 93940-5025 — a re-collection may overwrite it), status `abordado`. Waiting for reply.
 - Pending (user side): `APIFY_TOKEN` (and optionally `GOOGLE_PLACES_API_KEY`) in Vercel env; rotate the Apify token (it was pasted in chat); point `demos.webprumo.com.br` to the demos project; Next 16.4.3 has a moderate advisory fixed in 16.4.6 (`next upgrade`), not applied yet; Render MCP was added by the user but wasn't visible in this session — check `claude mcp list`.
 
 ### Skills and MCPs
