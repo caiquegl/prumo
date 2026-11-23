@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/guard";
 import { getLead, updateLead } from "@/lib/leads/store";
 import { coldMessage, draftReply } from "@/lib/outreach/messages";
+import { estimateEta } from "@/lib/outreach/schedule";
 import { ensureOpen, sendItem, StopAll } from "@/lib/outreach/send";
 import {
   addDraft,
@@ -30,7 +31,11 @@ export async function GET(req: NextRequest) {
     listInbox(60),
     queueCounts(),
   ]);
-  return NextResponse.json({ drafts, approved, done: done.reverse(), inbox, counts });
+  const eta = estimateEta(
+    approved.filter((a) => a.kind === "cold"),
+    { sentToday: counts.sent_today ?? 0, dailyCap: Number(process.env.OUTREACH_DAILY_CAP || 64) },
+  );
+  return NextResponse.json({ drafts, approved, done: done.reverse(), inbox, counts, eta });
 }
 
 type Body =
@@ -38,7 +43,8 @@ type Body =
   | { action: "approve" | "cancel"; ids: number[] }
   | { action: "edit"; id: number; text: string }
   | { action: "redraft"; leadId: number }
-  | { action: "send"; id: number; text?: string };
+  | { action: "send"; id: number; text?: string }
+  | { action: "sendNow"; id: number };
 
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin(req))) return unauthorized();
@@ -79,6 +85,8 @@ export async function POST(req: NextRequest) {
       const text = await draftReply({ lead, history: await conversation(lead.id) });
       return NextResponse.json({ id: await addDraft(lead.id, "reply", text) });
     }
+    case "sendNow":
+      return sendNow(body.id);
     case "send": {
       // Resposta a um lead: o clique em "Enviar" é a aprovação (com o texto que estiver na tela).
       const item = await getItem(body.id);
@@ -96,4 +104,19 @@ export async function POST(req: NextRequest) {
     }
   }
   return NextResponse.json({ error: "ação desconhecida" }, { status: 400 });
+}
+
+/** "Enviar agora": dispara um item já aprovado da fila na hora, fora da rodada de hora em hora. */
+async function sendNow(id: number) {
+  const item = await getItem(id);
+  if (!item || item.status !== "approved") return NextResponse.json({ error: "item não está na fila de aprovados" }, { status: 404 });
+  try {
+    await ensureOpen();
+    await sendItem(item);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: e instanceof StopAll ? 503 : 500 });
+  }
+  const after = await getItem(id);
+  if (after?.status !== "sent") return NextResponse.json({ error: after?.error ?? "não enviado" }, { status: 502 });
+  return NextResponse.json({ ok: true, item: after });
 }

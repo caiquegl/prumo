@@ -15,7 +15,13 @@ type Data = {
   done: OutreachItem[];
   inbox: InboxItem[];
   counts: Record<string, number>;
+  eta: Record<number, string>;
 };
+
+const fmtEta = (iso?: string) =>
+  iso
+    ? new Date(iso).toLocaleString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })
+    : "—";
 
 const pill =
   "rounded-full border border-[color:var(--line)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:opacity-40";
@@ -104,7 +110,7 @@ export default function DisparosPage() {
           <p className="text-sm font-semibold tracking-[0.2em] text-[color:var(--ink-soft)]">PROSPECÇÃO</p>
           <h1 className="display mt-2 text-4xl md:text-5xl">Disparos</h1>
           <p className="mt-2 max-w-xl text-[color:var(--ink-soft)]">
-            Nada sai sem a sua aprovação. Aprovados são enviados até 8 por hora, no horário comercial, com intervalos aleatórios.
+            Nada sai sem a sua aprovação. Aprovados saem até 8 por hora no horário comercial, 1 min entre cada lead e 30 s entre os balões.
           </p>
         </div>
         <a href="/leads" className={pill}>
@@ -267,13 +273,27 @@ export default function DisparosPage() {
           <h2 className="display text-2xl">Na fila ({data?.approved.length ?? 0})</h2>
           <ul className="mt-3 grid gap-2 text-sm">
             {data?.approved.map((d) => (
-              <li key={d.id} className={`${card} flex items-center justify-between gap-2`}>
-                <span>
-                  {d.lead_name} <span className="text-[color:var(--ink-soft)]">· {d.kind === "cold" ? "1º contato" : "resposta"}</span>
+              <li key={d.id} className={`${card} flex flex-wrap items-center justify-between gap-2`}>
+                <span className="min-w-0">
+                  {d.lead_name}
+                  <span className="block text-xs text-[color:var(--ink-soft)]">
+                    {d.kind === "cold" ? "1º contato" : "resposta"} · previsto: {fmtEta(data?.eta[d.id])}
+                  </span>
                 </span>
-                <button className="text-xs font-semibold text-rose-700" disabled={!!busy} onClick={() => void run("cancel", () => api({ action: "cancel", ids: [d.id] }))}>
-                  tirar da fila
-                </button>
+                <span className="flex items-center gap-3">
+                  <button
+                    className="text-xs font-semibold text-emerald-800 disabled:opacity-40"
+                    disabled={!!busy}
+                    onClick={() => {
+                      if (confirm(`Enviar agora para ${d.lead_name}?`)) void run(`now-${d.id}`, () => api({ action: "sendNow", id: d.id }));
+                    }}
+                  >
+                    {busy === `now-${d.id}` ? "enviando…" : "enviar agora"}
+                  </button>
+                  <button className="text-xs font-semibold text-rose-700 disabled:opacity-40" disabled={!!busy} onClick={() => void run("cancel", () => api({ action: "cancel", ids: [d.id] }))}>
+                    tirar da fila
+                  </button>
+                </span>
               </li>
             ))}
           </ul>

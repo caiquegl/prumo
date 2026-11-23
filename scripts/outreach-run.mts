@@ -1,14 +1,16 @@
 /**
  * Disparo de hora em hora (GitHub Actions `.github/workflows/outreach.yml`, ou manual):
- * envia até N primeiros contatos JÁ APROVADOS no painel /leads/disparos, espalhados ao longo da janela.
+ * envia até N primeiros contatos JÁ APROVADOS no painel /leads/disparos.
  *
- *   npx tsx --env-file=.env.local scripts/outreach-run.mts [--max 8] [--window 50] [--force] [--dry]
+ *   npx tsx --env-file=.env.local scripts/outreach-run.mts [--max 8] [--force] [--dry]
+ *
+ * Ritmo (pedido do Caique): 1 min entre um lead e o próximo, 30 s entre os balões de cada mensagem.
  *
  * Travas: só horário comercial (America/Sao_Paulo: seg–sex 9h–18h, sáb 9h–12h) salvo --force; teto diário
  * OUTREACH_DAILY_CAP (padrão 64); para o lote inteiro se o WhatsApp não estiver "open" ou cair no meio.
  * Nunca envia rascunho: só itens com status "approved".
  */
-import { ensureOpen, sendItem, StopAll } from "@/lib/outreach/send";
+import { ensureOpen, LEAD_GAP_MS, sendItem, StopAll } from "@/lib/outreach/send";
 import { nextApproved, queueCounts } from "@/lib/outreach/store";
 
 const args = process.argv.slice(2);
@@ -17,7 +19,6 @@ const flag = (n: string, d: number) => {
   return i >= 0 ? Number(args[i + 1]) : d;
 };
 const MAX = flag("max", 8);
-const WINDOW_MIN = flag("window", 50);
 const FORCE = args.includes("--force");
 const DRY = args.includes("--dry");
 const CAP = Number(process.env.OUTREACH_DAILY_CAP || 64);
@@ -66,9 +67,8 @@ async function main() {
 
   await wakeEvolution();
   await ensureOpen();
-  const gapMs = (WINDOW_MIN * 60_000) / items.length;
   for (const [i, it] of items.entries()) {
-    if (i) await sleep(gapMs * (0.6 + Math.random() * 0.8)); // intervalo aleatório (±40%)
+    if (i) await sleep(LEAD_GAP_MS);
     try {
       await ensureOpen();
       await sendItem(it);

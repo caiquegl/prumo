@@ -2,6 +2,11 @@ import { updateLead } from "@/lib/leads/store";
 import { connectionState, hasWhatsApp, sendText } from "@/lib/whatsapp/evolution";
 import { markFailed, markInboxHandled, markSent, type OutreachItem } from "./store";
 
+/** Pausa entre os balões de uma mesma mensagem (pedido do Caique: 30 s). */
+export const BUBBLE_GAP_MS = 30_000;
+/** Pausa entre um lead e o próximo no lote de hora em hora (pedido do Caique: 1 min). */
+export const LEAD_GAP_MS = 60_000;
+
 /** Erro que deve parar o lote inteiro (WhatsApp desconectado / deslogado). */
 export class StopAll extends Error {}
 
@@ -29,7 +34,7 @@ export async function sendItem(item: OutreachItem): Promise<void> {
   const ids: string[] = [];
   try {
     for (const [i, part] of parts.entries()) {
-      if (i) await new Promise((r) => setTimeout(r, 2500 + Math.min(part.length * 25, 4000)));
+      if (i) await new Promise((r) => setTimeout(r, BUBBLE_GAP_MS));
       const r = await sendText(number, part);
       ids.push(r.key?.id ?? "?");
     }
