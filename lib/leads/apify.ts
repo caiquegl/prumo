@@ -41,23 +41,49 @@ type ApifyPlace = {
   }>;
 };
 
-function token() {
-  const t = process.env.APIFY_TOKEN?.trim();
-  if (!t) throw new Error("APIFY_TOKEN ausente (console.apify.com → Settings → API & Integrations)");
-  return t;
+/**
+ * Tokens da Apify em rodízio (pedido do Caique, 2026-11-23): APIFY_TOKEN e APIFY_TOKEN_2.
+ * Quando o crédito do mês de um acaba, passa para o outro; quando esse acabar, volta para o primeiro
+ * (que pode ter renovado o ciclo). O token "atual" fica em memória durante a execução.
+ */
+function tokens(): string[] {
+  const list = [process.env.APIFY_TOKEN, process.env.APIFY_TOKEN_2].map((t) => t?.trim()).filter(Boolean) as string[];
+  if (!list.length) throw new Error("APIFY_TOKEN ausente (console.apify.com → Settings → API & Integrations)");
+  return list;
+}
+let current = 0;
+
+function isQuotaError(status: number, msg: string) {
+  return status === 402 || /usage|limit|billing|upgrad|credit|insufficient|isn't enough/i.test(msg);
+}
+
+/** Chama a Apify com o token atual; em erro de crédito, tenta os outros tokens em sequência. */
+async function apifyFetch(url: string, init: RequestInit): Promise<{ res: Response; json: unknown }> {
+  const list = tokens();
+  let last: { res: Response; json: unknown } | null = null;
+  for (let tries = 0; tries < list.length; tries++) {
+    const idx = (current + tries) % list.length;
+    const res = await fetch(url, { ...init, headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${list[idx]}` } });
+    const json = (await res.json().catch(() => null)) as unknown;
+    const msg = (json as { error?: { message?: string } } | null)?.error?.message ?? "";
+    if (!res.ok && isQuotaError(res.status, msg) && tries < list.length - 1) {
+      console.warn(`Apify: crédito esgotado no token ${idx + 1}; trocando para o token ${((idx + 1) % list.length) + 1}`);
+      last = { res, json };
+      continue;
+    }
+    current = idx;
+    return { res, json };
+  }
+  return last!;
 }
 
 async function runActor(input: Record<string, unknown>, timeoutSecs = 240): Promise<ApifyPlace[]> {
-  const res = await fetch(
-    `https://api.apify.com/v2/acts/${ACTOR}/run-sync-get-dataset-items?timeout=${timeoutSecs}&clean=true`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token()}`, "content-type": "application/json" },
-      body: JSON.stringify(input),
-      signal: AbortSignal.timeout((timeoutSecs + 20) * 1000),
-    },
-  );
-  const json = (await res.json().catch(() => null)) as unknown;
+  const { res, json } = await apifyFetch(`https://api.apify.com/v2/acts/${ACTOR}/run-sync-get-dataset-items?timeout=${timeoutSecs}&clean=true`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+    signal: AbortSignal.timeout((timeoutSecs + 20) * 1000),
+  });
   if (!res.ok || !Array.isArray(json)) {
     const msg = (json as { error?: { message?: string } } | null)?.error?.message ?? `HTTP ${res.status}`;
     throw new Error(`Apify: ${msg}`);
