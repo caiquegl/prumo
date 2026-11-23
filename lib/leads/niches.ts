@@ -68,6 +68,25 @@ const LIST: Array<Omit<Niche, "rank">> = [
     queries: ["escritório de arquitetura", "arquiteto", "design de interiores"],
     match: /arquitet|design(er)? de interiores|interiores|paisagis/i,
   },
+  // Urgência e obras (2026-11-23): cliente pesquisa no Google na hora da necessidade e compara orçamento.
+  {
+    id: "desentupidora",
+    label: "Desentupidoras",
+    queries: ["desentupidora"],
+    match: /desentup|hidrojat|limpa.?fossa|esgoto|encanador/i,
+  },
+  {
+    id: "vidracaria",
+    label: "Vidraçarias",
+    queries: ["vidraçaria"],
+    match: /vidra[cç]|vidro|box para banheiro|espelho/i,
+  },
+  {
+    id: "marmoraria",
+    label: "Marmorarias",
+    queries: ["marmoraria"],
+    match: /marmor|m[aá]rmore|granito|quartzo/i,
+  },
 ];
 
 export const NICHES: Niche[] = LIST.map((n, i) => ({ ...n, rank: i + 1 }));
@@ -75,7 +94,7 @@ export const NICHES: Niche[] = LIST.map((n, i) => ({ ...n, rank: i + 1 }));
 export const NICHE_BY_ID: Record<string, Niche> = Object.fromEntries(NICHES.map((n) => [n.id, n]));
 
 /** Ordem de teste: automotiva antes de estética (as duas casam "estética"). */
-const MATCH_ORDER = ["auto", "odonto", "fisio", "estetica", "solar", "eventos", "piscinas", "escolas", "arquitetura"];
+const MATCH_ORDER = ["auto", "odonto", "fisio", "estetica", "solar", "eventos", "desentupidora", "vidracaria", "marmoraria", "piscinas", "escolas", "arquitetura"];
 
 /** Classifica pela categoria do Google; se não casar, pelo termo usado na busca. */
 export function classifyNiche(category?: string | null, searchQuery?: string | null): Niche | null {
