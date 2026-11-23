@@ -50,6 +50,8 @@ export type CollectResult = {
   updated: number;
   skippedWithSite: number;
   skippedClosed: number;
+  /** Sem celular (só fixo): não entra, porque a abordagem é pelo WhatsApp. */
+  skippedNoMobile?: number;
   pages: number;
 };
 

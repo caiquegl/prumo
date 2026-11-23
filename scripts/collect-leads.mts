@@ -53,7 +53,7 @@ for (const [query, city] of pairs) {
     const r = useApify ? await collectLeadsApify({ query, city, max }) : await collectLeads({ query, city, max });
     inserted += r.inserted;
     console.log(
-      `${r.query}: ${r.found} encontrados · ${r.inserted} novos · ${r.updated} já existiam · ${r.skippedWithSite} com site · ${r.skippedClosed} fechados (${Math.round((Date.now() - t) / 1000)}s)`,
+      `${r.query}: ${r.found} encontrados · ${r.inserted} novos · ${r.updated} já existiam · ${r.skippedWithSite} com site · ${r.skippedClosed} fechados · ${r.skippedNoMobile ?? 0} só fixo (${Math.round((Date.now() - t) / 1000)}s)`,
     );
   } catch (err) {
     console.error(`${query} em ${city}: ERRO ${err instanceof Error ? err.message : err}`);

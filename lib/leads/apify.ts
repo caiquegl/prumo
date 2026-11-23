@@ -91,6 +91,7 @@ export async function collectLeadsApify(input: { query: string; city: string; ma
     updated: 0,
     skippedWithSite: 0,
     skippedClosed: 0,
+    skippedNoMobile: 0,
     pages: 1,
   };
 
@@ -106,7 +107,14 @@ export async function collectLeadsApify(input: { query: string; city: string; ma
       continue;
     }
     const phone = p.phone ?? null;
-    const whatsapp = whatsappFrom(p.phoneUnformatted ?? phone);
+    // celular do Google ou, se o "site" for um link wa.me, o número dele
+    const waLink = p.website?.match(/wa\.me\/(?:message\/)?(\d{12,13})|phone=(\d{12,13})/);
+    const whatsapp = whatsappFrom(p.phoneUnformatted ?? phone) ?? (waLink ? (waLink[1] ?? waLink[2]) : null);
+    if (!whatsapp) {
+      // só telefone fixo: não dá para abordar pelo WhatsApp (decisão do Caique, 2026-11-23)
+      result.skippedNoMobile = (result.skippedNoMobile ?? 0) + 1;
+      continue;
+    }
     const instagram = instagramFrom(p.website);
     const saved = await upsertLead({
       place_id: p.placeId,
