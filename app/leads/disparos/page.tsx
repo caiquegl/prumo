@@ -154,7 +154,7 @@ export default function DisparosPage() {
         <div className="mt-4 grid gap-4">
           {threads.map(([leadId, msgs]) => {
             const draft = replyDrafts.get(leadId);
-            const pending = msgs.some((m) => !m.handled);
+            const pending = msgs.some((m) => !m.handled && !m.auto);
             return (
               <div key={leadId} className={`${card} ${pending ? "ring-2 ring-violet-300" : ""}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -164,7 +164,8 @@ export default function DisparosPage() {
                 <ul className="mt-3 grid gap-1 text-sm">
                   {[...msgs].reverse().map((m) => (
                     <li key={m.id} className="rounded-xl bg-violet-50 px-3 py-2">
-                      “{m.text}” <span className="text-xs text-[color:var(--ink-soft)]">{new Date(m.received_at).toLocaleString("pt-BR")}</span>
+                      {m.auto && <span className="mr-1 rounded bg-stone-200 px-1 text-xs font-semibold text-stone-700">automática</span>}“{m.text}”{" "}
+                      <span className="text-xs text-[color:var(--ink-soft)]">{new Date(m.received_at).toLocaleString("pt-BR")}</span>
                     </li>
                   ))}
                 </ul>
