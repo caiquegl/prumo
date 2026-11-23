@@ -1,4 +1,5 @@
 # Mantém a Evolution (Render free) acordada: o plano grátis dorme após 15 min sem tráfego.
+# (agendamento re-registrado 2026-11-23)
 # 750 h/mês do plano cobrem um serviço 24/7. Também é o que permite receber as respostas dos leads a qualquer hora.
 name: whatsapp-keepalive
 on:

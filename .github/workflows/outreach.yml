@@ -1,5 +1,6 @@
 # Disparo de WhatsApp de hora em hora: envia até 8 primeiros contatos JÁ APROVADOS no painel /leads/disparos.
 # Horário comercial de São Paulo (seg–sex 9h–17h, sáb 9h–11h; o script confere de novo o fuso).
+# (agendamento re-registrado 2026-11-23: o GitHub não estava disparando o cron)
 name: outreach-whatsapp
 on:
   schedule:
