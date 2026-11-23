@@ -31,5 +31,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci --no-audit --no-fund --ignore-scripts
+          cache: yarn
+      - run: yarn install --frozen-lockfile --ignore-scripts --non-interactive
       - run: npx tsx scripts/outreach-run.mts --max "${{ inputs.max || 8 }}" ${{ inputs.force == 'true' && '--force' || '' }}
