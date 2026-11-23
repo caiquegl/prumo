@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       if (body.text?.trim()) await editDraft(item.id, body.text.trim());
       await approve([item.id]);
       try {
-        await ensureOpen();
+        await ensureOpen(15_000);
         await sendItem((await getItem(item.id))!);
       } catch (e) {
         const status = e instanceof StopAll ? 503 : 500;
@@ -140,7 +140,7 @@ async function sendNow(id: number) {
   const item = await getItem(id);
   if (!item || item.status !== "approved") return NextResponse.json({ error: "item não está na fila de aprovados" }, { status: 404 });
   try {
-    await ensureOpen();
+    await ensureOpen(15_000);
     await sendItem(item);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: e instanceof StopAll ? 503 : 500 });

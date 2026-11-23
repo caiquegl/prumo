@@ -10,9 +10,20 @@ export const LEAD_GAP_MS = 60_000;
 /** Erro que deve parar o lote inteiro (WhatsApp desconectado / deslogado). */
 export class StopAll extends Error {}
 
-export async function ensureOpen() {
-  const s = await connectionState();
-  if (s !== "open") throw new StopAll(`WhatsApp não está conectado (estado: ${s})`);
+/**
+ * Garante WhatsApp "open". Logo após o Render acordar a instância passa alguns segundos em "connecting":
+ * espera até `waitMs` (padrão 2 min, checando a cada 10 s) antes de parar o lote.
+ */
+export async function ensureOpen(waitMs = 120_000) {
+  const until = Date.now() + waitMs;
+  let s = "";
+  for (;;) {
+    s = await connectionState().catch((e) => `erro: ${(e as Error).message}`);
+    if (s === "open") return;
+    if (Date.now() >= until) break;
+    await new Promise((r) => setTimeout(r, 10_000));
+  }
+  throw new StopAll(`WhatsApp não está conectado (estado: ${s})`);
 }
 
 /**
