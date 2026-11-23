@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateLead } from "@/lib/leads/store";
 import { shortName } from "@/lib/outreach/messages";
 import { cancelFollowups, findLeadByNumber, insertInbound, lastSentAt } from "@/lib/outreach/store";
-import { ownerNumber, sendText } from "@/lib/whatsapp/evolution";
+import { notifyNumber, sendText } from "@/lib/whatsapp/evolution";
 
 export const maxDuration = 60;
-
-/** WhatsApp pessoal do Caique que recebe o aviso "lead respondeu" (com notificação). Troca: env OWNER_NOTIFY_NUMBER. */
-const NOTIFY_DEFAULT = "5511966331995";
 
 type Upsert = {
   key?: { remoteJid?: string; remoteJidAlt?: string; senderPn?: string; fromMe?: boolean; id?: string };
@@ -91,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const owner = process.env.OWNER_NOTIFY_NUMBER?.replace(/\D/g, "") || NOTIFY_DEFAULT || (await ownerNumber());
+      const owner = notifyNumber();
       if (owner) {
         await sendText(
           owner,

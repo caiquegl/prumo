@@ -14,6 +14,8 @@
 import { ensureOpen, LEAD_GAP_MS, sendItem, StopAll } from "@/lib/outreach/send";
 import { enqueueDueFollowups } from "@/lib/outreach/followups";
 import { nextApprovedOutbound, queueCounts } from "@/lib/outreach/store";
+import { notifyNumber, sendText } from "@/lib/whatsapp/evolution";
+import { shortName } from "@/lib/outreach/messages";
 
 const args = process.argv.slice(2);
 const flag = (n: string, d: number) => {
@@ -69,22 +71,65 @@ async function main() {
     return;
   }
 
-  await wakeEvolution();
-  await ensureOpen();
-  for (const [i, it] of items.entries()) {
-    if (i) await sleep(LEAD_GAP_MS);
-    try {
-      await ensureOpen();
-      const sent = await sendItem(it);
-      console.log(sent ? `enviado #${it.id} → ${it.lead_name}` : `pulado #${it.id} (${it.lead_name}): não está mais aprovado ou sem WhatsApp`);
-    } catch (e) {
-      console.error(`falhou #${it.id} (${it.lead_name}): ${(e as Error).message}`);
-      if (e instanceof StopAll) {
-        console.error("PARANDO o lote: WhatsApp desconectado/deslogado. Reparear (whatsapp.mts qr) antes de continuar.");
-        process.exitCode = 1;
-        return;
+  const results: Result[] = [];
+  try {
+    await wakeEvolution();
+    await ensureOpen();
+    for (const [i, it] of items.entries()) {
+      if (i) await sleep(LEAD_GAP_MS);
+      try {
+        await ensureOpen();
+        const sent = await sendItem(it);
+        results.push({ it, status: sent ? "ok" : "pulado", why: sent ? undefined : "não está mais aprovado ou sem WhatsApp" });
+        console.log(sent ? `enviado #${it.id} → ${it.lead_name}` : `pulado #${it.id} (${it.lead_name}): não está mais aprovado ou sem WhatsApp`);
+      } catch (e) {
+        results.push({ it, status: "erro", why: (e as Error).message });
+        console.error(`falhou #${it.id} (${it.lead_name}): ${(e as Error).message}`);
+        if (e instanceof StopAll) throw e;
       }
     }
+  } catch (e) {
+    if (!(e instanceof StopAll)) throw e;
+    console.error("PARANDO o lote: WhatsApp desconectado/deslogado. Reparear (whatsapp.mts qr) antes de continuar.");
+    process.exitCode = 1;
+    const done = new Set(results.map((r) => r.it.id));
+    for (const it of items) if (!done.has(it.id)) results.push({ it, status: "nao_enviado", why: "lote parado" });
+    await notifySummary(results, `⚠️ Lote parado: ${(e as Error).message}`);
+    return;
+  }
+  await notifySummary(results);
+}
+
+type Item = Awaited<ReturnType<typeof nextApprovedOutbound>>[number];
+type Result = { it: Item; status: "ok" | "pulado" | "erro" | "nao_enviado"; why?: string };
+
+const KIND: Record<string, string> = { cold: "1º contato", followup1: "lembrete", followup2: "encerramento", reply: "resposta" };
+const ICON = { ok: "✅", pulado: "⏭️", erro: "❌", nao_enviado: "⏸️" };
+
+/** Resumo do lote no WhatsApp pessoal do Caique. Se o próprio WhatsApp caiu, a mensagem não sai (fica só no log). */
+async function notifySummary(results: Result[], header?: string) {
+  if (!results.length) return;
+  const ok = results.filter((r) => r.status === "ok").length;
+  const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }).format(new Date());
+  const lines = results.map(
+    (r) => `${ICON[r.status]} ${shortName(r.it.lead_name)} (${KIND[r.it.kind] ?? r.it.kind})${r.why ? ` — ${r.why}` : ""}`,
+  );
+  const fails = results.length - ok;
+  const text = [
+    header,
+    `📤 Lote das ${hora}: ${ok} de ${results.length} enviados${fails ? `, ${fails} com problema` : ""}.`,
+    "",
+    ...lines,
+    "",
+    "Painel: https://prumo-tawny.vercel.app/leads/disparos",
+  ]
+    .filter((l) => l !== undefined)
+    .join("\n");
+  try {
+    await sendText(notifyNumber(), text);
+    console.log("resumo enviado ao WhatsApp do Caique");
+  } catch (e) {
+    console.error(`não consegui mandar o resumo: ${(e as Error).message}`);
   }
 }
 

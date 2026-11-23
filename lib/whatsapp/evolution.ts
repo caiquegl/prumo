@@ -78,6 +78,11 @@ export async function sendText(number: string, text: string) {
   });
 }
 
+/** WhatsApp pessoal do Caique que recebe avisos (lead respondeu, resumo do lote). Troca: env OWNER_NOTIFY_NUMBER. */
+export function notifyNumber(): string {
+  return process.env.OWNER_NOTIFY_NUMBER?.replace(/\D/g, "") || "5511966331995";
+}
+
 /** Número do WhatsApp pareado (o próprio Caique), para avisos de "lead respondeu". */
 export async function ownerNumber(): Promise<string | null> {
   const { instance } = cfg();
