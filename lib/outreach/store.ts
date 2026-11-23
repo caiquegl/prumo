@@ -12,7 +12,7 @@ import { ensureLeadsSchema } from "@/lib/leads/store";
  * Tabelas criadas sob demanda, no mesmo padrão de `leads` (sem arquivos de migração).
  */
 
-export type OutreachKind = "cold" | "reply";
+export type OutreachKind = "cold" | "followup1" | "followup2" | "reply";
 export type OutreachStatus = "draft" | "approved" | "sending" | "sent" | "failed" | "cancelled";
 
 export type OutreachItem = {
@@ -63,6 +63,12 @@ export async function ensureOutreachSchema() {
     )`;
   await sql`CREATE INDEX IF NOT EXISTS outreach_queue_status_idx ON outreach_queue (status, approved_at)`;
   await sql`
+    CREATE TABLE IF NOT EXISTS outreach_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+  await sql`
     CREATE TABLE IF NOT EXISTS wa_inbox (
       id SERIAL PRIMARY KEY,
       lead_id INTEGER REFERENCES leads(id) ON DELETE SET NULL,
@@ -96,7 +102,7 @@ export async function queueCounts(): Promise<Record<string, number>> {
     SELECT status, COUNT(*)::int AS n FROM outreach_queue GROUP BY status`) as Array<{ status: string; n: number }>;
   const today = (await db()`
     SELECT COUNT(*)::int AS n FROM outreach_queue
-    WHERE status = 'sent' AND kind = 'cold' AND sent_at >= date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo'`) as Array<{ n: number }>;
+    WHERE status = 'sent' AND kind <> 'reply' AND sent_at >= date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo'`) as Array<{ n: number }>;
   return { ...Object.fromEntries(rows.map((r) => [r.status, r.n])), sent_today: today[0]?.n ?? 0 };
 }
 
@@ -140,6 +146,76 @@ export async function cancel(ids: number[]) {
     UPDATE outreach_queue SET status = 'cancelled'
     WHERE id = ANY(${ids}) AND status IN ('draft', 'approved') RETURNING id`) as Array<{ id: number }>;
   return r.length;
+}
+
+/** Fila de saída do runner: follow-ups primeiro (lead já conhece o Caique), depois primeiros contatos; respostas ficam fora. */
+export async function nextApprovedOutbound(limit: number): Promise<OutreachItem[]> {
+  await ensureOutreachSchema();
+  const sql = db();
+  return (await sql`
+    SELECT ${ITEM_COLS(sql)}
+    FROM outreach_queue q JOIN leads l ON l.id = q.lead_id
+    WHERE q.status = 'approved' AND q.kind <> 'reply'
+    ORDER BY CASE q.kind WHEN 'followup2' THEN 0 WHEN 'followup1' THEN 1 ELSE 2 END, q.approved_at ASC, q.id ASC
+    LIMIT ${limit}`) as OutreachItem[];
+}
+
+// ---- configurações (mensagens padrão, follow-up) ----
+
+export async function getSettings(): Promise<Record<string, string>> {
+  await ensureOutreachSchema();
+  const rows = (await db()`SELECT key, value FROM outreach_settings`) as Array<{ key: string; value: string }>;
+  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+}
+
+export async function saveSettings(values: Record<string, string>) {
+  await ensureOutreachSchema();
+  for (const [key, value] of Object.entries(values)) {
+    await db()`
+      INSERT INTO outreach_settings (key, value) VALUES (${key}, ${value})
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`;
+  }
+}
+
+/**
+ * Leads que receberam o 1º contato pela automação e não responderam:
+ * - followup1: 1º contato enviado há ≥ 3 dias;
+ * - followup2: lembrete enviado há ≥ 4 dias (≈ 7 dias do 1º contato).
+ * Ignora quem já tem o item (em qualquer status exceto cancelado), quem respondeu depois do 1º contato
+ * e quem não está mais "abordado".
+ */
+export async function dueFollowups(kind: "followup1" | "followup2", limit = 200): Promise<Array<{ lead_id: number }>> {
+  await ensureOutreachSchema();
+  const prev = kind === "followup1" ? "cold" : "followup1";
+  const days = kind === "followup1" ? 3 : 4;
+  return (await db()`
+    SELECT DISTINCT p.lead_id
+    FROM outreach_queue p JOIN leads l ON l.id = p.lead_id
+    WHERE p.kind = ${prev} AND p.status = 'sent' AND p.sent_at <= now() - make_interval(days => ${days})
+      AND l.status = 'abordado'
+      AND NOT EXISTS (SELECT 1 FROM outreach_queue f WHERE f.lead_id = p.lead_id AND f.kind = ${kind} AND f.status <> 'cancelled')
+      AND NOT EXISTS (
+        SELECT 1 FROM wa_inbox i
+        WHERE i.lead_id = p.lead_id
+          AND i.received_at > (SELECT MIN(c.sent_at) FROM outreach_queue c WHERE c.lead_id = p.lead_id AND c.kind = 'cold' AND c.status = 'sent')
+      )
+    LIMIT ${limit}`) as Array<{ lead_id: number }>;
+}
+
+/** Item já aprovado (o modelo de follow-up foi aprovado pelo Caique ao ligar a automação). */
+export async function addApproved(leadId: number, kind: OutreachKind, text: string): Promise<number> {
+  await ensureOutreachSchema();
+  const r = (await db()`
+    INSERT INTO outreach_queue (lead_id, kind, text, status, approved_at)
+    VALUES (${leadId}, ${kind}, ${text}, 'approved', now()) RETURNING id`) as Array<{ id: number }>;
+  return r[0].id;
+}
+
+/** Cancela follow-ups pendentes de um lead (ele respondeu). */
+export async function cancelFollowups(leadId: number) {
+  await db()`
+    UPDATE outreach_queue SET status = 'cancelled'
+    WHERE lead_id = ${leadId} AND kind IN ('followup1', 'followup2') AND status IN ('draft', 'approved')`;
 }
 
 /** Próximos itens aprovados do tipo pedido, na ordem de aprovação (o runner trava cada um ao enviar). */

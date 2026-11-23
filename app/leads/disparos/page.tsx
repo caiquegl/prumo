@@ -16,7 +16,18 @@ type Data = {
   inbox: InboxItem[];
   counts: Record<string, number>;
   eta: Record<number, string>;
+  templates: Record<TplKey, string> & { followups_enabled: boolean };
+  defaults: Record<TplKey, string>;
+  fields: Record<string, string>;
 };
+
+type TplKey = "tpl_cold" | "tpl_followup1" | "tpl_followup2";
+const TPL_LABEL: Record<TplKey, string> = {
+  tpl_cold: "1º contato",
+  tpl_followup1: "Lembrete (3 dias sem resposta)",
+  tpl_followup2: "Encerramento (7 dias sem resposta)",
+};
+const KIND_LABEL: Record<string, string> = { cold: "1º contato", followup1: "lembrete 3º dia", followup2: "encerramento 7º dia", reply: "resposta" };
 
 const fmtEta = (iso?: string) =>
   iso
@@ -42,6 +53,8 @@ export default function DisparosPage() {
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const [count, setCount] = useState(8);
+  const [tpl, setTpl] = useState<Partial<Record<TplKey, string>>>({});
+  const tplOf = (k: TplKey) => tpl[k] ?? data?.templates[k] ?? "";
 
   const load = useCallback(async () => {
     const r = await fetch("/api/leads/outreach", { cache: "no-store" });
@@ -192,6 +205,68 @@ export default function DisparosPage() {
         </div>
       </section>
 
+      {/* Mensagens padrão */}
+      <section className="mt-12">
+        <h2 className="display text-2xl">Mensagens padrão</h2>
+        <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+          Usadas nos rascunhos e nos follow-ups. Balões separados por uma linha “---”. Campos preenchidos sozinhos:{" "}
+          {Object.entries(data?.fields ?? {}).map(([k, v]) => (
+            <span key={k} className="mr-2 inline-block">
+              <code className="rounded bg-white/80 px-1">{k}</code> {v}
+            </span>
+          ))}
+        </p>
+        <div className="mt-4 grid gap-4">
+          {(Object.keys(TPL_LABEL) as TplKey[]).map((k) => (
+            <div key={k} className={card}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold">{TPL_LABEL[k]}</p>
+                <button className="text-xs font-semibold text-[color:var(--ink-soft)]" onClick={() => setTpl((t) => ({ ...t, [k]: data?.defaults[k] ?? "" }))}>
+                  restaurar padrão
+                </button>
+              </div>
+              <textarea
+                className="mt-2 w-full rounded-xl border border-[color:var(--line)] bg-white p-3 text-sm"
+                rows={k === "tpl_cold" ? 5 : 3}
+                value={tplOf(k)}
+                onChange={(e) => setTpl((t) => ({ ...t, [k]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            className={solid}
+            disabled={!!busy || !Object.keys(tpl).length}
+            onClick={() =>
+              void run("tpl", async () => {
+                await api({ action: "saveTemplates", templates: tpl });
+                setTpl({});
+              })
+            }
+          >
+            Salvar mensagens
+          </button>
+          <button className={pill} disabled={!!busy} onClick={() => void run("apply", () => api({ action: "applyTemplate" }))}>
+            Aplicar 1º contato aos rascunhos
+          </button>
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={!!data?.templates.followups_enabled}
+              disabled={!!busy}
+              onChange={(e) => {
+                const on = e.target.checked;
+                if (on && !confirm("Ligar o follow-up automático? Quem não responder recebe o lembrete no 3º dia e o encerramento no 7º, com os textos acima.")) return;
+                void run("fu", () => api({ action: "saveTemplates", templates: tpl, followups_enabled: on }));
+              }}
+            />
+            Follow-up automático {data?.templates.followups_enabled ? "ligado" : "desligado"}
+          </label>
+        </div>
+      </section>
+
       {/* Rascunhos de primeiro contato */}
       <section className="mt-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -277,7 +352,7 @@ export default function DisparosPage() {
                 <span className="min-w-0">
                   {d.lead_name}
                   <span className="block text-xs text-[color:var(--ink-soft)]">
-                    {d.kind === "cold" ? "1º contato" : "resposta"} · previsto: {fmtEta(data?.eta[d.id])}
+                    {KIND_LABEL[d.kind] ?? d.kind} · previsto: {fmtEta(data?.eta[d.id])}
                   </span>
                 </span>
                 <span className="flex items-center gap-3">

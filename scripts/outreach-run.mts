@@ -1,6 +1,7 @@
 /**
  * Disparo de hora em hora (GitHub Actions `.github/workflows/outreach.yml`, ou manual):
- * envia até N primeiros contatos JÁ APROVADOS no painel /leads/disparos.
+ * coloca na fila os follow-ups vencidos (se ligados no painel) e envia até N itens JÁ APROVADOS (follow-ups primeiro,
+ * depois primeiros contatos).
  *
  *   npx tsx --env-file=.env.local scripts/outreach-run.mts [--max 8] [--force] [--dry]
  *
@@ -11,7 +12,8 @@
  * Nunca envia rascunho: só itens com status "approved".
  */
 import { ensureOpen, LEAD_GAP_MS, sendItem, StopAll } from "@/lib/outreach/send";
-import { nextApproved, queueCounts } from "@/lib/outreach/store";
+import { enqueueDueFollowups } from "@/lib/outreach/followups";
+import { nextApprovedOutbound, queueCounts } from "@/lib/outreach/store";
 
 const args = process.argv.slice(2);
 const flag = (n: string, d: number) => {
@@ -55,9 +57,11 @@ async function main() {
     console.log("fora do horário comercial — nada a fazer", spNow());
     return;
   }
+  const fu = await enqueueDueFollowups();
+  if (fu.enabled) console.log(`follow-ups colocados na fila: ${fu.followup1} lembretes (3º dia), ${fu.followup2} encerramentos (7º dia)`);
   const counts = await queueCounts();
   const room = Math.max(0, CAP - (counts.sent_today ?? 0));
-  const items = await nextApproved("cold", Math.min(MAX, room));
+  const items = await nextApprovedOutbound(Math.min(MAX, room));
   console.log(`aprovados na fila: ${counts.approved ?? 0} · enviados hoje: ${counts.sent_today ?? 0}/${CAP} · neste lote: ${items.length}`);
   if (!items.length) return;
   if (DRY) {

@@ -53,6 +53,10 @@ export async function sendItem(item: OutreachItem): Promise<boolean> {
       status: "abordado",
       event_note: `WhatsApp (automação aprovada, ${parts.length} msg): ${flat.slice(0, 180)}${flat.length > 180 ? "…" : ""}`,
     });
+  } else if (item.kind === "followup1") {
+    await updateLead(item.lead_id, { event_note: `Follow-up (3º dia): ${flat.slice(0, 180)}` });
+  } else if (item.kind === "followup2") {
+    await updateLead(item.lead_id, { status: "sem_resposta", event_note: `Mensagem de encerramento (7º dia): ${flat.slice(0, 160)}` });
   } else {
     await markInboxHandled(item.lead_id);
     await updateLead(item.lead_id, { event_note: `Resposta enviada (aprovada no painel): ${flat.slice(0, 180)}` });

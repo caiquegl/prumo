@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLead, updateLead } from "@/lib/leads/store";
 import { shortName, draftReply } from "@/lib/outreach/messages";
-import { addDraft, cancel, conversation, findLeadByNumber, insertInbound, listQueue } from "@/lib/outreach/store";
+import { addDraft, cancel, cancelFollowups, conversation, findLeadByNumber, insertInbound, listQueue } from "@/lib/outreach/store";
 import { ownerNumber, sendText } from "@/lib/whatsapp/evolution";
 
 export const maxDuration = 60;
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     const isNew = await insertInbound(found.id, number, text, m.key?.id ?? null);
     if (!isNew) continue;
     handled.push(found.id);
+    await cancelFollowups(found.id);
 
     if (found.status === "abordado" || found.status === "sem_resposta") {
       await updateLead(found.id, { status: "respondeu", event_note: `Respondeu no WhatsApp: ${text.slice(0, 160)}` });

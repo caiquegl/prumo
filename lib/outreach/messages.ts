@@ -68,22 +68,51 @@ function searchTerm(lead: Pick<Lead, "niche" | "category">): string {
   return (lead.category ?? "").toLowerCase().replace(/^serviço de /, "") || "empresa";
 }
 
-/**
- * Primeiro contato (versão do Caique, 2026-11-23): a busca que o cliente deles faria no Google + nota real,
- * sem criticar, oferta clara e gratuita, pergunta "Topa?". Sem link e sem afirmar que a demo já existe.
- */
-export function coldMessage(lead: Pick<Lead, "name" | "rating" | "niche" | "category" | "neighborhood" | "city">): string {
-  const name = shortName(lead.name);
+/** Campos que o Caique pode usar nos modelos editáveis do painel. */
+export const TEMPLATE_FIELDS: Record<string, string> = {
+  "{nome}": "nome curto da empresa",
+  "{busca}": "o que o cliente pesquisa + bairro (ex.: dentista na Penha)",
+  "{nota}": "\" com nota 5,0 👏\" quando a nota é 4,5 ou mais; vazio se não",
+  "{acao}": "o que o cliente faz depois (agendar, pedir um orçamento, fechar a festa…)",
+  "{bairro}": "bairro ou cidade",
+};
+
+/** Modelos padrão (o painel /leads/disparos sobrescreve; balões separados por uma linha "---"). */
+export const DEFAULT_TEMPLATES = {
+  tpl_cold:
+    "Oi, tudo bem? Pesquisei “{busca}” no Google e a {nome} apareceu{nota}, mas sem um site pra quem quer conhecer melhor vocês antes de {acao}.\n---\nSou o Caique, da Web Prumo. Posso montar, sem compromisso, uma ideia de como ficaria a página de vocês e te mostrar por aqui. Topa?",
+  tpl_followup1:
+    "Oi! Passando só pra saber se viu minha mensagem 🙂 Se quiser, monto a página da {nome} e você só dá uma olhada, sem compromisso.",
+  tpl_followup2:
+    "Vou encerrar por aqui pra não incomodar. Se um dia quiser ver como ficaria a página da {nome}, é só me chamar. Sucesso! 🙂",
+} as const;
+export type TemplateKey = keyof typeof DEFAULT_TEMPLATES;
+
+type TplLead = Pick<Lead, "name" | "rating" | "niche" | "category" | "neighborhood" | "city">;
+
+function placeOf(lead: TplLead): string {
   const city = (lead.city ?? "").split(",")[0].trim();
   let place = lead.neighborhood || city;
   if (/^centro$/i.test(place) && city) place = `Centro de ${city}`;
-  const busca = place ? `${searchTerm(lead)} ${withPreposition(place)}` : searchTerm(lead);
-  const nota = lead.rating && lead.rating >= 4.5 ? ` com nota ${lead.rating.toFixed(1).replace(".", ",")} 👏` : "";
-  const acao = (lead.niche && NEXT_STEP[lead.niche]) || "entrar em contato";
-  return [
-    `Oi, tudo bem? Pesquisei “${busca}” no Google e a ${name} apareceu${nota}, mas sem um site pra quem quer conhecer melhor vocês antes de ${acao}.`,
-    `Sou o Caique, da Web Prumo. Posso montar, sem compromisso, uma ideia de como ficaria a página de vocês e te mostrar por aqui. Topa?`,
-  ].join("\n---\n");
+  return fixAccents(place);
+}
+
+/** Preenche {nome}, {busca}, {nota}, {acao}, {bairro}. */
+export function renderTemplate(tpl: string, lead: TplLead): string {
+  const place = placeOf(lead);
+  const fields: Record<string, string> = {
+    "{nome}": shortName(lead.name),
+    "{busca}": place ? `${searchTerm(lead)} ${withPreposition(place)}` : searchTerm(lead),
+    "{nota}": lead.rating && lead.rating >= 4.5 ? ` com nota ${lead.rating.toFixed(1).replace(".", ",")} 👏` : "",
+    "{acao}": (lead.niche && NEXT_STEP[lead.niche]) || "entrar em contato",
+    "{bairro}": place,
+  };
+  return tpl.replace(/\{(nome|busca|nota|acao|bairro)\}/g, (m) => fields[m] ?? m).trim();
+}
+
+/** Primeiro contato com o modelo padrão (o runner/painel usam o modelo salvo em outreach_settings). */
+export function coldMessage(lead: TplLead, tpl: string = DEFAULT_TEMPLATES.tpl_cold): string {
+  return renderTemplate(tpl, lead);
 }
 
 const MODELS = [process.env.GEMINI_MODEL, "gemini-flash-latest", "gemini-flash-lite-latest"].filter(Boolean) as string[];
