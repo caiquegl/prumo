@@ -1,10 +1,8 @@
 # Mantém a Evolution (Render free) acordada: o plano grátis dorme após 15 min sem tráfego.
-# (agendamento re-registrado 2026-11-23)
+# O ping a cada 10 min é feito pelo cron-job.org (o schedule do GitHub não disparava, 2026-11-23); aqui fica só o manual.
 # 750 h/mês do plano cobrem um serviço 24/7. Também é o que permite receber as respostas dos leads a qualquer hora.
 name: whatsapp-keepalive
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 jobs:
   ping:
