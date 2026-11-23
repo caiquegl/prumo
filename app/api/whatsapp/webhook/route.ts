@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLead, updateLead } from "@/lib/leads/store";
-import { shortName, draftReply } from "@/lib/outreach/messages";
-import { addDraft, cancel, cancelFollowups, conversation, findLeadByNumber, insertInbound, listQueue } from "@/lib/outreach/store";
+import { updateLead } from "@/lib/leads/store";
+import { shortName } from "@/lib/outreach/messages";
+import { cancelFollowups, findLeadByNumber, insertInbound } from "@/lib/outreach/store";
 import { ownerNumber, sendText } from "@/lib/whatsapp/evolution";
 
 export const maxDuration = 60;
 
-const PANEL = "https://prumo-tawny.vercel.app/leads/disparos";
 /** WhatsApp pessoal do Caique que recebe o aviso "lead respondeu" (com notificação). Troca: env OWNER_NOTIFY_NUMBER. */
 const NOTIFY_DEFAULT = "5511966331995";
 
@@ -29,7 +28,8 @@ function textOf(m: Upsert): string | null {
 /**
  * Webhook da Evolution (evento MESSAGES_UPSERT). Protegido por ?secret=CRON_SECRET.
  * Só processa mensagens recebidas de números que são leads: grava na caixa de entrada, marca o lead como
- * "respondeu", gera um RASCUNHO de resposta (não envia) e avisa o Caique no próprio WhatsApp.
+ * "respondeu", cancela os follow-ups e avisa o Caique no WhatsApp pessoal com o link da conversa.
+ * O Caique assume a conversa pelo celular (decisão dele, 2026-11-23): nenhum rascunho é gerado.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET?.trim();
@@ -58,25 +58,12 @@ export async function POST(req: NextRequest) {
       await updateLead(found.id, { status: "respondeu", event_note: `Respondeu no WhatsApp: ${text.slice(0, 160)}` });
     }
 
-    let draft = "";
-    try {
-      const lead = await getLead(found.id);
-      if (lead) {
-        const pending = (await listQueue(["draft"])).filter((q) => q.lead_id === lead.id && q.kind === "reply");
-        await cancel(pending.map((q) => q.id));
-        draft = await draftReply({ lead, history: await conversation(lead.id) });
-        await addDraft(lead.id, "reply", draft);
-      }
-    } catch (e) {
-      draft = `(não consegui gerar rascunho: ${(e as Error).message.slice(0, 80)})`;
-    }
-
     try {
       const owner = process.env.OWNER_NOTIFY_NUMBER?.replace(/\D/g, "") || NOTIFY_DEFAULT || (await ownerNumber());
       if (owner) {
         await sendText(
           owner,
-          `📩 ${shortName(found.name)} respondeu:\n“${text.slice(0, 400)}”\n\n✍️ Rascunho:\n“${draft.slice(0, 500)}”\n\nAprovar/editar: ${PANEL}`,
+          `📩 ${shortName(found.name)} respondeu:\n“${text.slice(0, 500)}”\n\nAbrir conversa: https://wa.me/${number}`,
         );
       }
     } catch {
