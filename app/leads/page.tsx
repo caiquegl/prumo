@@ -268,6 +268,9 @@ export default function LeadsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <a href="/leads/disparos" className={pill}>
+            Disparos
+          </a>
           <a href="/posts" className={pill}>
             Fila IG
           </a>

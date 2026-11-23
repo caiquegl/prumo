@@ -1,0 +1,35 @@
+# Disparo de WhatsApp de hora em hora: envia até 8 primeiros contatos JÁ APROVADOS no painel /leads/disparos.
+# Horário comercial de São Paulo (seg–sex 9h–17h, sáb 9h–11h; o script confere de novo o fuso).
+name: outreach-whatsapp
+on:
+  schedule:
+    - cron: "2 12-20 * * 1-5"
+    - cron: "2 12-14 * * 6"
+  workflow_dispatch:
+    inputs:
+      max:
+        description: "máximo neste lote"
+        default: "8"
+      force:
+        description: "ignorar horário comercial (true/false)"
+        default: "false"
+concurrency:
+  group: outreach-whatsapp
+  cancel-in-progress: false
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      EVOLUTION_URL: ${{ secrets.EVOLUTION_URL }}
+      EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
+      EVOLUTION_INSTANCE: ${{ secrets.EVOLUTION_INSTANCE }}
+      OUTREACH_DAILY_CAP: ${{ vars.OUTREACH_DAILY_CAP }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund --ignore-scripts
+      - run: npx tsx scripts/outreach-run.mts --max "${{ inputs.max || 8 }}" --window 50 ${{ inputs.force == 'true' && '--force' || '' }}

@@ -77,3 +77,19 @@ export async function sendText(number: string, text: string) {
     linkPreview: true,
   });
 }
+
+/** Número do WhatsApp pareado (o próprio Caique), para avisos de "lead respondeu". */
+export async function ownerNumber(): Promise<string | null> {
+  const { instance } = cfg();
+  const r = await call<Array<{ ownerJid?: string }>>("GET", `/instance/fetchInstances?instanceName=${instance}`);
+  const jid = (Array.isArray(r) ? r[0] : (r as { ownerJid?: string }))?.ownerJid;
+  return jid ? jid.split("@")[0].split(":")[0] : null;
+}
+
+/** Aponta o webhook de mensagens recebidas da instância para o painel (MESSAGES_UPSERT). */
+export async function setWebhook(webhookUrl: string) {
+  const { instance } = cfg();
+  return call("POST", `/webhook/set/${instance}`, {
+    webhook: { enabled: true, url: webhookUrl, byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] },
+  });
+}
