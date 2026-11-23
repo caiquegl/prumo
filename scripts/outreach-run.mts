@@ -71,8 +71,8 @@ async function main() {
     if (i) await sleep(LEAD_GAP_MS);
     try {
       await ensureOpen();
-      await sendItem(it);
-      console.log(`enviado #${it.id} → ${it.lead_name}`);
+      const sent = await sendItem(it);
+      console.log(sent ? `enviado #${it.id} → ${it.lead_name}` : `pulado #${it.id} (${it.lead_name}): não está mais aprovado ou sem WhatsApp`);
     } catch (e) {
       console.error(`falhou #${it.id} (${it.lead_name}): ${(e as Error).message}`);
       if (e instanceof StopAll) {

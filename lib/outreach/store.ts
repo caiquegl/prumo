@@ -13,7 +13,7 @@ import { ensureLeadsSchema } from "@/lib/leads/store";
  */
 
 export type OutreachKind = "cold" | "reply";
-export type OutreachStatus = "draft" | "approved" | "sent" | "failed" | "cancelled";
+export type OutreachStatus = "draft" | "approved" | "sending" | "sent" | "failed" | "cancelled";
 
 export type OutreachItem = {
   id: number;
@@ -160,6 +160,22 @@ export async function getItem(id: number): Promise<OutreachItem | null> {
   const r = (await sql`
     SELECT ${ITEM_COLS(sql)} FROM outreach_queue q JOIN leads l ON l.id = q.lead_id WHERE q.id = ${id}`) as OutreachItem[];
   return r[0] ?? null;
+}
+
+/** Reserva um item aprovado para envio (atômico). false = já não está aprovado (voltou a rascunho, cancelado ou outro envio pegou). */
+export async function claim(id: number): Promise<boolean> {
+  const r = (await db()`UPDATE outreach_queue SET status = 'sending' WHERE id = ${id} AND status = 'approved' RETURNING id`) as Array<{ id: number }>;
+  return r.length > 0;
+}
+
+/** Volta itens aprovados (ainda não enviados) para rascunho. */
+export async function backToDraft(ids: number[]) {
+  await ensureOutreachSchema();
+  if (!ids.length) return 0;
+  const r = (await db()`
+    UPDATE outreach_queue SET status = 'draft', approved_at = NULL
+    WHERE id = ANY(${ids}) AND status = 'approved' RETURNING id`) as Array<{ id: number }>;
+  return r.length;
 }
 
 export async function markSent(id: number, waIds: string[]) {

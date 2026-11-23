@@ -1,6 +1,6 @@
 import { updateLead } from "@/lib/leads/store";
 import { connectionState, hasWhatsApp, sendText } from "@/lib/whatsapp/evolution";
-import { markFailed, markInboxHandled, markSent, type OutreachItem } from "./store";
+import { claim, markFailed, markInboxHandled, markSent, type OutreachItem } from "./store";
 
 /** Pausa entre os balões de uma mesma mensagem (pedido do Caique: 30 s). */
 export const BUBBLE_GAP_MS = 30_000;
@@ -19,16 +19,18 @@ export async function ensureOpen() {
  * Envia um item APROVADO da fila: balões separados por linha "---", pausa de digitação entre eles.
  * Cold → lead vira "abordado". Reply → marca a caixa de entrada do lead como respondida.
  */
-export async function sendItem(item: OutreachItem): Promise<void> {
+export async function sendItem(item: OutreachItem): Promise<boolean> {
   if (item.status !== "approved") throw new Error(`item #${item.id} não está aprovado`);
+  // reserva no banco: se o Caique voltou o item para rascunho/cancelou no meio da rodada, não envia
+  if (!(await claim(item.id))) return false;
   const number = item.lead_whatsapp;
   if (!number) {
     await markFailed(item.id, "lead sem WhatsApp");
-    return;
+    return false;
   }
   if (item.kind === "cold" && !(await hasWhatsApp(number))) {
     await markFailed(item.id, "número sem WhatsApp");
-    return;
+    return false;
   }
   const parts = item.text.split(/^\s*---\s*$/m).map((p) => p.trim()).filter(Boolean);
   const ids: string[] = [];
@@ -42,7 +44,7 @@ export async function sendItem(item: OutreachItem): Promise<void> {
     const msg = (e as Error).message;
     await markFailed(item.id, msg);
     if (/401|403|close|not connected|Connection Closed/i.test(msg)) throw new StopAll(msg);
-    return;
+    return false;
   }
   await markSent(item.id, ids);
   const flat = parts.join(" ¶ ");
@@ -55,4 +57,5 @@ export async function sendItem(item: OutreachItem): Promise<void> {
     await markInboxHandled(item.lead_id);
     await updateLead(item.lead_id, { event_note: `Resposta enviada (aprovada no painel): ${flat.slice(0, 180)}` });
   }
+  return true;
 }
