@@ -38,6 +38,7 @@ export type InboxItem = {
   text: string;
   received_at: string;
   handled: boolean;
+  auto: boolean;
   lead_name: string | null;
   lead_status: string | null;
 };
@@ -78,6 +79,7 @@ export async function ensureOutreachSchema() {
       handled BOOLEAN NOT NULL DEFAULT false,
       received_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
+  await sql`ALTER TABLE wa_inbox ADD COLUMN IF NOT EXISTS auto BOOLEAN NOT NULL DEFAULT false`;
   ready = true;
 }
 
@@ -196,7 +198,7 @@ export async function dueFollowups(kind: "followup1" | "followup2", limit = 200)
       AND NOT EXISTS (SELECT 1 FROM outreach_queue f WHERE f.lead_id = p.lead_id AND f.kind = ${kind} AND f.status <> 'cancelled')
       AND NOT EXISTS (
         SELECT 1 FROM wa_inbox i
-        WHERE i.lead_id = p.lead_id
+        WHERE i.lead_id = p.lead_id AND NOT i.auto
           AND i.received_at > (SELECT MIN(c.sent_at) FROM outreach_queue c WHERE c.lead_id = p.lead_id AND c.kind = 'cold' AND c.status = 'sent')
       )
     LIMIT ${limit}`) as Array<{ lead_id: number }>;
@@ -240,7 +242,7 @@ export async function getItem(id: number): Promise<OutreachItem | null> {
 
 /** Reserva um item aprovado para envio (atômico). false = já não está aprovado (voltou a rascunho, cancelado ou outro envio pegou). */
 export async function claim(id: number): Promise<boolean> {
-  const r = (await db()`UPDATE outreach_queue SET status = 'sending' WHERE id = ${id} AND status = 'approved' RETURNING id`) as Array<{ id: number }>;
+  const r = (await db()`UPDATE outreach_queue SET status = 'sending', sent_at = now() WHERE id = ${id} AND status = 'approved' RETURNING id`) as Array<{ id: number }>;
   return r.length > 0;
 }
 
@@ -275,10 +277,10 @@ export async function findLeadByNumber(number: string): Promise<{ id: number; st
 }
 
 /** Grava a mensagem recebida; devolve false se for duplicada (webhooks podem repetir). */
-export async function insertInbound(leadId: number | null, number: string, text: string, waMessageId: string | null): Promise<boolean> {
+export async function insertInbound(leadId: number | null, number: string, text: string, waMessageId: string | null, auto = false): Promise<boolean> {
   await ensureOutreachSchema();
   const r = (await db()`
-    INSERT INTO wa_inbox (lead_id, number, text, wa_message_id) VALUES (${leadId}, ${number}, ${text}, ${waMessageId})
+    INSERT INTO wa_inbox (lead_id, number, text, wa_message_id, auto) VALUES (${leadId}, ${number}, ${text}, ${waMessageId}, ${auto})
     ON CONFLICT (wa_message_id) DO NOTHING RETURNING id`) as Array<{ id: number }>;
   return r.length > 0;
 }
@@ -286,7 +288,7 @@ export async function insertInbound(leadId: number | null, number: string, text:
 export async function listInbox(limit = 100): Promise<InboxItem[]> {
   await ensureOutreachSchema();
   return (await db()`
-    SELECT i.id, i.lead_id, i.number, i.text, i.received_at, i.handled, l.name AS lead_name, l.status AS lead_status
+    SELECT i.id, i.lead_id, i.number, i.text, i.received_at, i.handled, i.auto, l.name AS lead_name, l.status AS lead_status
     FROM wa_inbox i LEFT JOIN leads l ON l.id = i.lead_id
     WHERE i.lead_id IS NOT NULL
     ORDER BY i.received_at DESC LIMIT ${limit}`) as InboxItem[];
@@ -300,6 +302,14 @@ export async function conversation(leadId: number): Promise<Array<{ from: "lead"
     SELECT 'caique' AS "from", text, sent_at AS at FROM outreach_queue WHERE lead_id = ${leadId} AND status = 'sent'
     ORDER BY at ASC`) as Array<{ from: "lead" | "caique"; text: string; at: string }>;
   return rows;
+}
+
+/** Momento do último envio nosso para o lead (para detectar resposta automática instantânea). */
+export async function lastSentAt(leadId: number): Promise<Date | null> {
+  const r = (await db()`
+    SELECT MAX(sent_at) AS t FROM outreach_queue
+    WHERE lead_id = ${leadId} AND status IN ('sent', 'sending')`) as Array<{ t: string | null }>;
+  return r[0]?.t ? new Date(r[0].t) : null;
 }
 
 export async function markInboxHandled(leadId: number) {
