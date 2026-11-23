@@ -7,6 +7,8 @@ import { ownerNumber, sendText } from "@/lib/whatsapp/evolution";
 export const maxDuration = 60;
 
 const PANEL = "https://prumo-tawny.vercel.app/leads/disparos";
+/** WhatsApp pessoal do Caique que recebe o aviso "lead respondeu" (com notificação). Troca: env OWNER_NOTIFY_NUMBER. */
+const NOTIFY_DEFAULT = "5511966331995";
 
 type Upsert = {
   key?: { remoteJid?: string; fromMe?: boolean; id?: string };
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const owner = await ownerNumber();
+      const owner = process.env.OWNER_NOTIFY_NUMBER?.replace(/\D/g, "") || NOTIFY_DEFAULT || (await ownerNumber());
       if (owner) {
         await sendText(
           owner,
