@@ -12,7 +12,7 @@ Base: `brand-profile.md` (tom direto, sem jargão; CTA "comenta SITE"; demos com
 - **Exportação:** 1080×1920, 30 fps, **sem o encerramento/marca d'água do CapCut** (Configurações → desativar "Adicionar final padrão"). Vídeo com marca d'água perde alcance.
 - **Rótulo de IA:** na publicação, ligue *Configurações avançadas → "Rótulo de IA"*, porque a narração é sintética.
 - **Música:** escolha no próprio Instagram, em volume baixo por baixo da voz (biblioteca nativa). Sugestão: algo leve, tipo lo-fi ou pop instrumental.
-- **Telas:** eu gravo e entrego em `prumo/media/reels-faceless/` (demos com nome, logo e telefone trocados, e busca sem expor nenhum negócio real).
+- **Telas:** prontas em `prumo/media/reels-faceless/out/reel-N-mudo.mp4` (render de `reel.html` com `render.mjs`; demos anonimizadas como "Studio Brilho" e "Doce Festa" por `capture-demos.mjs`; busca e perfil simulados sem marca do Google/Instagram, com fotos genéricas do Unsplash). Narração para o CapCut, com os tempos: `media/reels-faceless/NARRACAO.md`.
 
 ---
 
@@ -52,7 +52,7 @@ Base: `brand-profile.md` (tom direto, sem jargão; CTA "comenta SITE"; demos com
 | 0:06–0:09 | Rolagem infinita de posts, sem preço nem serviços à vista | o cliente precisa caçar a informação | o cliente tem que caçar preço, horário e serviço. |
 | 0:09–0:12 | Toque em outra ficha → "Site" não existe | se não tiver nada… | E se não tem botão nenhum… |
 | 0:12–0:15 | Ficha do concorrente com "Site" → página bonita abrindo | …ele clica no concorrente | ele clica no concorrente que tem. |
-| 0:15–0:20 | Demo Violeta anonimizada: "Monte o cardápio" → comanda preenchendo | **uma página resolve. comenta SITE** | Uma página resolve isso. Comenta SITE que eu te mostro como ficaria a sua. |
+| 0:15–0:20 | Demo LK anonimizada ("Studio Brilho"): "Do que o seu carro precisa?" | **uma página resolve. comenta SITE** | Uma página resolve isso. Comenta SITE que eu te mostro como ficaria a sua. |
 
 **Busca no Instagram:** "google meu negócio", "site no google".
 **Legenda (1ª frase):** "Google Meu Negócio sem site: o botão 'Site' da sua ficha está levando o cliente pra onde?"
