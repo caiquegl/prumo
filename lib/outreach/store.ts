@@ -80,6 +80,8 @@ export async function ensureOutreachSchema() {
       received_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
   await sql`ALTER TABLE wa_inbox ADD COLUMN IF NOT EXISTS auto BOOLEAN NOT NULL DEFAULT false`;
+  // última mensagem que o Caique mandou ao lead (automação ou celular), vista pelo webhook como fromMe
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS last_wa_out_at TIMESTAMPTZ`;
   ready = true;
 }
 
@@ -307,9 +309,24 @@ export async function conversation(leadId: number): Promise<Array<{ from: "lead"
 /** Momento do último envio nosso para o lead (para detectar resposta automática instantânea). */
 export async function lastSentAt(leadId: number): Promise<Date | null> {
   const r = (await db()`
-    SELECT MAX(sent_at) AS t FROM outreach_queue
-    WHERE lead_id = ${leadId} AND status IN ('sent', 'sending')`) as Array<{ t: string | null }>;
+    SELECT GREATEST(
+      (SELECT MAX(sent_at) FROM outreach_queue WHERE lead_id = ${leadId} AND status IN ('sent', 'sending')),
+      (SELECT last_wa_out_at FROM leads WHERE id = ${leadId})
+    ) AS t`) as Array<{ t: string | null }>;
   return r[0]?.t ? new Date(r[0].t) : null;
+}
+
+/** Mensagem enviada pelo Caique ao lead (o celular sincroniza com a Evolution e o webhook recebe como fromMe). */
+export async function markOutbound(leadId: number) {
+  await ensureOutreachSchema();
+  await db()`UPDATE leads SET last_wa_out_at = now() WHERE id = ${leadId}`;
+}
+
+/** Última mensagem recebida do lead (para detectar rajadas de chatbot). */
+export async function lastInbound(leadId: number): Promise<{ at: Date; auto: boolean } | null> {
+  const r = (await db()`
+    SELECT received_at, auto FROM wa_inbox WHERE lead_id = ${leadId} ORDER BY received_at DESC LIMIT 1`) as Array<{ received_at: string; auto: boolean }>;
+  return r[0] ? { at: new Date(r[0].received_at), auto: r[0].auto } : null;
 }
 
 export async function markInboxHandled(leadId: number) {
