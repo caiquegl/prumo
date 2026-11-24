@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
     if (auto) continue;
     await cancelFollowups(found.id);
 
-    if (found.status === "abordado" || found.status === "sem_resposta") {
+    // abordagem manual pelo celular: o lead pode responder antes de ser marcado como "abordado" no painel
+    if (["sem_site", "criando", "publicado", "abordado", "sem_resposta"].includes(found.status)) {
       await updateLead(found.id, { status: "respondeu", event_note: `Respondeu no WhatsApp: ${text.slice(0, 160)}` });
     }
 
