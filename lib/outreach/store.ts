@@ -344,3 +344,13 @@ export async function leadMessages(leadId: number): Promise<LeadMessage[]> {
     ...inbox.map((m) => ({ id: `i${m.id}`, dir: "in" as const, text: m.text, at: m.at, status: m.auto ? "auto" : "recebida", kind: "inbox" })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 }
+
+/** Tira leads da fila automática (rascunhos e aprovados ainda não enviados). */
+export async function cancelQueuedForLeads(leadIds: number[]): Promise<number> {
+  await ensureOutreachSchema();
+  if (!leadIds.length) return 0;
+  const r = (await db()`
+    UPDATE outreach_queue SET status = 'cancelled'
+    WHERE lead_id = ANY(${leadIds}) AND status IN ('draft', 'approved') RETURNING id`) as Array<{ id: number }>;
+  return r.length;
+}

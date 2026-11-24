@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { NICHE_BY_ID, NICHES } from "@/lib/leads/niches";
 import { LEAD_STATUSES, LEAD_STATUS_LABEL, type Lead, type LeadEvent, type LeadInterest, type LeadStatus } from "@/lib/leads/types";
@@ -16,7 +17,7 @@ import {
   type History,
   type Patch,
 } from "./_components/modals";
-import { ago, btnDark, btnGhost, daysSince, input, InterestBadge, isToday, StatusBadge } from "./_components/ui";
+import { ago, btnDark, btnGhost, daysSince, input, InterestBadge, isToday, StatusBadge, waLink } from "./_components/ui";
 
 /** Atalhos do mini dashboard: cada cartão é um filtro pronto. */
 type View = "todos" | "abordar" | "aguardando" | "interesse" | "sem_interesse" | "fechados" | "hoje";
@@ -66,7 +67,149 @@ type ModalState =
   | { kind: "coletar" }
   | null;
 
-const PAGE = 50;
+const thDiv = "relative before:absolute before:left-0 before:top-1/2 before:h-5 before:-translate-y-1/2 before:w-px before:bg-[color:var(--line)]";
+const bulkBtn = "rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold hover:bg-white hover:text-[color:var(--ink)] disabled:opacity-50";
+const pageBtn = (active: boolean) =>
+  `grid h-8 min-w-8 place-items-center rounded-lg px-2 text-sm font-semibold disabled:opacity-30 ${
+    active ? "border border-[color:var(--ink)] bg-white" : "hover:bg-white"
+  }`;
+
+/** 1 … 4 5 [6] 7 8 … 20  (0 = reticências). */
+function pageList(current: number, total: number): number[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const set = new Set([1, total, current - 1, current, current + 1].filter((p) => p >= 1 && p <= total));
+  const sorted = [...set].sort((x, y) => x - y);
+  const out: number[] = [];
+  sorted.forEach((p, i) => {
+    if (i && p - sorted[i - 1]! > 1) out.push(0);
+    out.push(p);
+  });
+  return out;
+}
+
+/** "5511971820189" → "+55 (11) 97182-0189"; cai para o telefone do Google. */
+function displayNumber(lead: Lead): string | null {
+  const d = (lead.whatsapp || "").replace(/\D/g, "");
+  if (d.length === 13 && d.startsWith("55")) return `+55 (${d.slice(2, 4)}) ${d.slice(4, 9)}-${d.slice(9)}`;
+  if (d.length === 12 && d.startsWith("55")) return `+55 (${d.slice(2, 4)}) ${d.slice(4, 8)}-${d.slice(8)}`;
+  return lead.phone || (d ? `+${d}` : null);
+}
+
+type MenuItem = { label: string; hint?: string; tone?: "green" | "amber"; onClick?: () => unknown; href?: string } | null;
+
+/** Botão "Ações ▾" com menu flutuante (position: fixed para não ser cortado pela rolagem da tabela). */
+function RowMenu({ items, label }: { items: MenuItem[]; label: string }) {
+  const [pos, setPos] = useState<{ top: number; right: number; up: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!pos) return;
+    const close = () => setPos(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [pos]);
+
+  const list = items.filter((it, i, arr) => it || (i > 0 && arr[i - 1] && i < arr.length - 1));
+  const itemCls = (tone?: "green" | "amber") =>
+    `block w-full px-3.5 py-2 text-left text-sm hover:bg-[color:var(--bg)] ${
+      tone === "green" ? "font-semibold text-emerald-700" : tone === "amber" ? "font-semibold text-amber-800" : ""
+    }`;
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={!!pos}
+        aria-label={label}
+        onClick={(e) => {
+          if (pos) {
+            setPos(null);
+            return;
+          }
+          const r = e.currentTarget.getBoundingClientRect();
+          const up = r.bottom + 420 > window.innerHeight && r.top > 420;
+          setPos({ top: up ? r.top - 6 : r.bottom + 6, right: window.innerWidth - r.right, up });
+        }}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold ${
+          pos ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white" : "border-[color:var(--line)] bg-white hover:border-[color:var(--ink)]"
+        }`}
+      >
+        Ações <span aria-hidden className="text-[10px]">▾</span>
+      </button>
+      {pos
+        ? createPortal(
+        <>
+          <div className="fixed inset-0 z-40" onMouseDown={() => setPos(null)} aria-hidden />
+          <div
+            role="menu"
+            className="fixed z-50 w-64 overflow-hidden rounded-2xl border border-[color:var(--line)] bg-white py-1.5 text-left shadow-xl"
+            style={{ right: pos.right, ...(pos.up ? { bottom: window.innerHeight - pos.top } : { top: pos.top }) }}
+          >
+            {list.map((it, i) =>
+              !it ? (
+                <div key={`sep${i}`} className="my-1 h-px bg-[color:var(--line)]" />
+              ) : it.href ? (
+                <a key={it.label} role="menuitem" href={it.href} target="_blank" rel="noreferrer" onClick={() => setPos(null)} className={itemCls(it.tone)}>
+                  {it.label} <span className="text-[color:var(--ink-soft)]">↗</span>
+                </a>
+              ) : (
+                <button
+                  key={it.label}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setPos(null);
+                    it.onClick?.();
+                  }}
+                  className={itemCls(it.tone)}
+                >
+                  {it.label}
+                  {it.hint ? <span className="block text-[11px] font-normal text-[color:var(--ink-soft)]">{it.hint}</span> : null}
+                </button>
+              ),
+            )}
+          </div>
+        </>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+function Checkbox({
+  checked,
+  indeterminate,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      ref={(el) => {
+        if (el) el.indeterminate = !!indeterminate;
+      }}
+      onChange={onChange}
+      aria-label={label}
+      className="h-4 w-4 cursor-pointer rounded accent-[color:var(--ink)]"
+    />
+  );
+}
 
 export default function LeadsPage() {
   const router = useRouter();
@@ -84,7 +227,10 @@ export default function LeadsPage() {
   const [niche, setNiche] = useState("all");
   const [interest, setInterest] = useState<LeadInterest | "none" | "all">("all");
   const [sort, setSort] = useState<Sort>("prioridade");
-  const [limit, setLimit] = useState(PAGE);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const [modal, setModal] = useState<ModalState>(null);
   const [history, setHistory] = useState<History>(null);
@@ -156,6 +302,85 @@ export default function LeadsPage() {
     return list;
   }, [leads, view, q, status, niche, interest, sort]);
 
+  const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const safePage = Math.min(page, pages);
+  const pageRows = visible.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const pageAllSelected = pageRows.length > 0 && pageRows.every((l) => selected.has(l.id));
+  const pageSomeSelected = pageRows.some((l) => selected.has(l.id));
+  const selectedQueued = [...selected].filter((id) => queued.has(id)).length;
+
+  function toggleOne(id: number) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function togglePage() {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (pageAllSelected) pageRows.forEach((l) => next.delete(l.id));
+      else pageRows.forEach((l) => next.add(l.id));
+      return next;
+    });
+  }
+
+  async function bulk(patchBody: Patch | null, label: string, cancelQueue = false, ids = [...selected]): Promise<number> {
+    if (!ids.length) return 0;
+    setBulkBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/leads/bulk", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids, patch: patchBody ?? undefined, cancelQueue }),
+      });
+      const json = (await res.json()) as { leads?: Lead[]; cancelled?: number; error?: string };
+      if (!res.ok) {
+        setError(json.error || "Ação em massa falhou");
+        return 0;
+      }
+      const byId = new Map((json.leads || []).map((l) => [l.id, l]));
+      setLeads((list) => list.map((l) => byId.get(l.id) ?? l));
+      if (cancelQueue) {
+        setQueued((q) => {
+          const next = new Set(q);
+          ids.forEach((id) => next.delete(id));
+          return next;
+        });
+      }
+      setNotice(`${label}: ${cancelQueue ? `${json.cancelled ?? 0} mensagem(ns) canceladas` : `${byId.size} lead(s)`}`);
+      return byId.size;
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function bulkMarkContacted() {
+    const chosen = leads.filter((l) => selected.has(l.id));
+    const fresh = chosen.filter((l) => BEFORE_CONTACT.includes(l.status)).map((l) => l.id);
+    const skipped = chosen.length - fresh.length;
+    if (!fresh.length) {
+      setNotice("Todos os selecionados já estavam abordados ou além. Use \"Registrar contato hoje\".");
+      return;
+    }
+    if (!confirm(`Marcar ${fresh.length} lead(s) como abordado${skipped ? ` (${skipped} já abordados ficam como estão)` : ""}?`)) return;
+    await bulk({ status: "abordado", touch: true, event_note: "abordagem manual pelo celular (em massa)" }, "Marcados como abordado", false, fresh);
+  }
+
+  async function copySelectedNumbers() {
+    const lines = leads
+      .filter((l) => selected.has(l.id))
+      .map((l) => {
+        const nmb = displayNumber(l);
+        return nmb ? `${shortName(l.name)}: ${nmb}` : null;
+      })
+      .filter(Boolean);
+    await copy(lines.join("\n"), `${lines.length} número(s)`);
+  }
+
   const filtersActive = q || status !== "all" || niche !== "all" || interest !== "all";
 
   function clearFilters() {
@@ -163,7 +388,7 @@ export default function LeadsPage() {
     setStatus("all");
     setNiche("all");
     setInterest("all");
-    setLimit(PAGE);
+    setPage(1);
   }
 
   async function openLead(kind: "abordar" | "resultado" | "detalhes" | "respostas", id: number) {
@@ -236,7 +461,7 @@ export default function LeadsPage() {
   const sample = current ?? visible[0] ?? leads[0] ?? null;
 
   return (
-    <main className="mx-auto min-h-screen max-w-7xl px-4 py-8 md:px-8">
+    <main className="mx-auto min-h-screen max-w-[1480px] px-4 py-8 md:px-8">
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -277,7 +502,7 @@ export default function LeadsPage() {
             type="button"
             onClick={() => {
               setView(v.id);
-              setLimit(PAGE);
+              setPage(1);
             }}
             aria-pressed={view === v.id}
             className={`rounded-2xl border p-2.5 text-left transition sm:p-3 ${
@@ -304,7 +529,7 @@ export default function LeadsPage() {
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
-            setLimit(PAGE);
+            setPage(1);
           }}
           className={`${input} w-full sm:w-56`}
         />
@@ -361,84 +586,113 @@ export default function LeadsPage() {
         </p>
       ) : null}
 
-      {/* Lista no celular */}
-      <div className="mt-3 grid grid-cols-1 gap-2 md:hidden">
-        {loading ? <p className="py-6 text-center text-sm text-[color:var(--ink-soft)]">Carregando…</p> : null}
-        {!loading && !visible.length ? (
-          <p className="py-6 text-center text-sm text-[color:var(--ink-soft)]">Nenhum lead neste filtro.</p>
-        ) : null}
-        {visible.slice(0, limit).map((lead) => {
-          const n = lead.niche ? NICHE_BY_ID[lead.niche] : null;
-          const waiting = lead.status === "abordado" && (daysSince(lead.last_contact_at) ?? 0) >= WAIT_DAYS;
-          return (
-            <div key={lead.id} className="min-w-0 rounded-2xl border border-[color:var(--line)] bg-white/70 p-3">
-              <button type="button" onClick={() => void openLead("detalhes", lead.id)} className="block w-full text-left">
-                <span className="block truncate font-semibold">{shortName(lead.name)}</span>
-                <span className="block truncate text-xs text-[color:var(--ink-soft)]">
-                  #{lead.id} · {n ? n.label : lead.category || "outro"} · {lead.neighborhood || lead.city}
-                  {lead.rating != null ? ` · ★ ${lead.rating.toFixed(1)}` : ""}
-                </span>
-              </button>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <StatusBadge status={lead.status} />
-                <InterestBadge interest={lead.interest} />
-                {queued.has(lead.id) ? <span className="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800">na fila</span> : null}
-                <span className={`ml-auto text-xs ${waiting ? "font-semibold text-amber-700" : "text-[color:var(--ink-soft)]"}`}>
-                  {ago(lead.last_contact_at)}
-                </span>
-              </div>
-              <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => void openLead("abordar", lead.id)}
-                  className="rounded-full bg-emerald-600 py-2 text-xs font-semibold text-white"
-                >
-                  Abordar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void openLead("resultado", lead.id)}
-                  className="rounded-full border border-[color:var(--line)] bg-white py-2 text-xs font-semibold"
-                >
-                  Atualizar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void openLead("respostas", lead.id)}
-                  className="rounded-full border border-[color:var(--line)] bg-white py-2 text-xs font-semibold"
-                >
-                  Respostas
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Ações em massa */}
+      {selected.size ? (
+        <div className="sticky top-20 z-30 mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--ink)] bg-[color:var(--ink)] px-3 py-2.5 text-white shadow-lg">
+          <span className="text-sm font-semibold">
+            {selected.size} selecionado{selected.size > 1 ? "s" : ""}
+          </span>
+          {selected.size < visible.length ? (
+            <button type="button" className="text-xs underline opacity-80 hover:opacity-100" onClick={() => setSelected(new Set(visible.map((l) => l.id)))}>
+              selecionar todos os {visible.length} do filtro
+            </button>
+          ) : null}
+          <span className="mx-1 hidden h-5 w-px bg-white/25 sm:block" />
+          <button type="button" disabled={bulkBusy} className={bulkBtn} onClick={() => void bulkMarkContacted()}>
+            Marcar abordado
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            className={bulkBtn}
+            onClick={() => void bulk({ touch: true, event_note: "contato manual registrado em massa" }, "Contato de hoje registrado")}
+          >
+            Registrar contato hoje
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            className={bulkBtn}
+            onClick={() =>
+              confirm(`Marcar ${selected.size} lead(s) como sem interesse (recusou)?`) &&
+              void bulk({ interest: "nao", status: "recusou", touch: true, event_note: "sem interesse (em massa)" }, "Marcados como sem interesse")
+            }
+          >
+            Sem interesse
+          </button>
+          <select
+            disabled={bulkBusy}
+            value=""
+            onChange={(e) => {
+              const s = e.target.value as LeadStatus;
+              if (s && confirm(`Mudar ${selected.size} lead(s) para "${LEAD_STATUS_LABEL[s]}"?`)) {
+                void bulk({ status: s, event_note: "status alterado em massa" }, `Status: ${LEAD_STATUS_LABEL[s]}`);
+              }
+            }}
+            className="rounded-full border border-white/30 bg-transparent px-3 py-1.5 text-xs font-semibold text-white [&>option]:text-black"
+            aria-label="Mudar status dos selecionados"
+          >
+            <option value="">Mudar status…</option>
+            {LEAD_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {LEAD_STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+          {selectedQueued ? (
+            <button
+              type="button"
+              disabled={bulkBusy}
+              className={bulkBtn}
+              onClick={() =>
+                confirm(`Tirar ${selectedQueued} lead(s) da fila de disparos automáticos? As mensagens aprovadas deles não serão enviadas.`) &&
+                void bulk(null, "Retirados da fila automática", true)
+              }
+            >
+              Tirar da fila automática ({selectedQueued})
+            </button>
+          ) : null}
+          <button type="button" className={bulkBtn} onClick={() => void copySelectedNumbers()}>
+            Copiar números
+          </button>
+          <button type="button" className="ml-auto text-xs font-semibold underline opacity-80 hover:opacity-100" onClick={() => setSelected(new Set())}>
+            limpar seleção
+          </button>
+        </div>
+      ) : null}
 
       {/* Tabela */}
-      <div className="mt-3 hidden overflow-x-auto md:block rounded-2xl border border-[color:var(--line)] bg-white/70">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-[color:var(--line)] text-[11px] uppercase tracking-wider text-[color:var(--ink-soft)]">
-            <tr>
-              <th className="px-3 py-2.5 font-semibold">Empresa</th>
-              <th className="px-3 py-2.5 font-semibold">Nota</th>
-              <th className="px-3 py-2.5 font-semibold">Status</th>
-              <th className="px-3 py-2.5 font-semibold">Interesse</th>
-              <th className="px-3 py-2.5 font-semibold">Último contato</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Ações</th>
+      <div className="mt-3 overflow-x-auto rounded-2xl border border-[color:var(--line)] bg-white/80">
+        <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+          <thead className="bg-[color:var(--bg-deep)] text-xs font-bold text-[color:var(--ink)]">
+            <tr className="[&>th]:px-3 [&>th]:py-3">
+              <th className="w-10 !pl-4">
+                <Checkbox
+                  checked={pageAllSelected}
+                  indeterminate={!pageAllSelected && pageSomeSelected}
+                  onChange={togglePage}
+                  label="Selecionar leads desta página"
+                />
+              </th>
+              <th>Empresa</th>
+              <th className={thDiv}>Contato</th>
+              <th className={thDiv}>Redes sociais</th>
+              <th className={thDiv}>Status</th>
+              <th className={thDiv}>Última abordagem</th>
+              <th className={`${thDiv} md:sticky md:right-0 z-10 bg-[color:var(--bg-deep)] text-right !pr-4 shadow-[-10px_0_12px_-12px_rgba(0,0,0,0.35)]`}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-[color:var(--ink-soft)]">
+                <td colSpan={7} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
                   Carregando…
                 </td>
               </tr>
             ) : null}
             {!loading && !visible.length ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
+                <td colSpan={7} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
                   Nenhum lead neste filtro.{" "}
                   {filtersActive || view !== "todos" ? (
                     <button
@@ -455,12 +709,21 @@ export default function LeadsPage() {
                 </td>
               </tr>
             ) : null}
-            {visible.slice(0, limit).map((lead) => {
+            {pageRows.map((lead) => {
               const n = lead.niche ? NICHE_BY_ID[lead.niche] : null;
               const waiting = lead.status === "abordado" && (daysSince(lead.last_contact_at) ?? 0) >= WAIT_DAYS;
+              const number = displayNumber(lead);
+              const ig = lead.instagram?.match(/instagram\.com\/([^/?#]+)/i)?.[1];
+              const isSel = selected.has(lead.id);
               return (
-                <tr key={lead.id} className="border-b border-[color:var(--line)] last:border-0 hover:bg-white">
-                  <td className="px-3 py-2.5">
+                <tr
+                  key={lead.id}
+                  className={`border-t border-[color:var(--line)] align-middle [&>td]:px-3 [&>td]:py-3 ${isSel ? "bg-amber-50" : "hover:bg-white"}`}
+                >
+                  <td className="!pl-4">
+                    <Checkbox checked={isSel} onChange={() => toggleOne(lead.id)} label={`Selecionar ${lead.name}`} />
+                  </td>
+                  <td>
                     <button type="button" onClick={() => void openLead("detalhes", lead.id)} className="flex items-center gap-2.5 text-left">
                       {lead.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element -- logo externo, miniatura
@@ -471,76 +734,130 @@ export default function LeadsPage() {
                         </span>
                       )}
                       <span className="min-w-0">
-                        <span className="block max-w-[260px] truncate font-semibold hover:underline">{shortName(lead.name)}</span>
-                        <span className="block max-w-[260px] truncate text-xs text-[color:var(--ink-soft)]">
+                        <span className="block max-w-[230px] truncate font-semibold hover:underline">{shortName(lead.name)}</span>
+                        <span className="block max-w-[230px] truncate text-xs text-[color:var(--ink-soft)]">
                           #{lead.id} · {n ? n.label : lead.category || "outro"} · {lead.neighborhood || lead.city}
+                          {lead.rating != null ? ` · ★ ${lead.rating.toFixed(1)}` : ""}
                         </span>
                       </span>
                     </button>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-xs">
-                    {lead.rating != null ? (
-                      <>
-                        <b className="text-sm">★ {lead.rating.toFixed(1)}</b>{" "}
-                        <span className="text-[color:var(--ink-soft)]">({lead.reviews_count ?? 0})</span>
-                      </>
+                  <td className="whitespace-nowrap">
+                    {number ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-mono text-[13px]">{number}</span>
+                        <button
+                          type="button"
+                          onClick={() => void copy(number, `Número de ${shortName(lead.name)}`)}
+                          title="Copiar número"
+                          aria-label={`Copiar número de ${lead.name}`}
+                          className="rounded-md border border-[color:var(--line)] bg-white px-1.5 py-0.5 text-[11px] font-semibold hover:border-[color:var(--ink)]"
+                        >
+                          copiar
+                        </button>
+                      </span>
                     ) : (
-                      <span className="text-[color:var(--ink-soft)]">—</span>
+                      <span className="text-xs text-[color:var(--ink-soft)]">sem telefone</span>
                     )}
-                    <span className="mt-0.5 flex gap-1 text-[10px] font-semibold">
-                      {lead.whatsapp ? <span className="rounded bg-emerald-100 px-1 text-emerald-800">WA</span> : null}
-                      {lead.instagram ? <span className="rounded bg-pink-100 px-1 text-pink-800">IG</span> : null}
-                      {lead.demo_url ? <span className="rounded bg-sky-100 px-1 text-sky-800">demo</span> : null}
-                      {queued.has(lead.id) ? <span className="rounded bg-amber-100 px-1 text-amber-800">na fila</span> : null}
+                    <span className="mt-0.5 block text-[11px] text-[color:var(--ink-soft)]">
+                      {lead.whatsapp ? (
+                        <a href={waLink(lead) ?? undefined} target="_blank" rel="noreferrer" className="font-semibold text-emerald-700 hover:underline">
+                          WhatsApp ↗
+                        </a>
+                      ) : (
+                        "fixo / sem WhatsApp"
+                      )}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={lead.status} />
-                    {lead.status === "recusou" && lead.demo_url && (daysSince(lead.updated_at) ?? 0) >= 7 ? (
-                      <span className="mt-0.5 block text-[10px] font-semibold text-rose-700" title={`Rode /remove-demo ${lead.id} em demos/`}>
-                        remover demo
-                      </span>
-                    ) : null}
+                  <td>
+                    <span className="flex flex-wrap gap-1 text-[11px] font-semibold">
+                      {lead.instagram ? (
+                        <a href={lead.instagram} target="_blank" rel="noreferrer" className="rounded-full bg-pink-100 px-2 py-0.5 text-pink-800 hover:underline">
+                          {ig ? `@${ig}` : "Instagram"}
+                        </a>
+                      ) : null}
+                      {lead.maps_url ? (
+                        <a href={lead.maps_url} target="_blank" rel="noreferrer" className="rounded-full bg-stone-100 px-2 py-0.5 text-stone-700 hover:underline">
+                          Maps
+                        </a>
+                      ) : null}
+                      {lead.website_raw && lead.website_raw !== lead.instagram ? (
+                        <a href={lead.website_raw} target="_blank" rel="noreferrer" className="rounded-full bg-stone-100 px-2 py-0.5 text-stone-700 hover:underline">
+                          Link
+                        </a>
+                      ) : null}
+                      {lead.demo_url ? (
+                        <a href={lead.demo_url} target="_blank" rel="noreferrer" className="rounded-full bg-sky-100 px-2 py-0.5 text-sky-800 hover:underline">
+                          Demo
+                        </a>
+                      ) : null}
+                      {!lead.instagram && !lead.maps_url && !lead.demo_url ? <span className="text-[color:var(--ink-soft)]">—</span> : null}
+                    </span>
                   </td>
-                  <td className="px-3 py-2.5">
-                    <InterestBadge interest={lead.interest} />
+                  <td>
+                    <span className="flex flex-col items-start gap-1">
+                      <StatusBadge status={lead.status} />
+                      {lead.interest ? <InterestBadge interest={lead.interest} /> : null}
+                      {queued.has(lead.id) ? (
+                        <span className="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800" title="Tem mensagem aprovada na fila automática">
+                          na fila automática
+                        </span>
+                      ) : null}
+                      {lead.status === "recusou" && lead.demo_url && (daysSince(lead.updated_at) ?? 0) >= 7 ? (
+                        <span className="text-[10px] font-semibold text-rose-700" title={`Rode /remove-demo ${lead.id} em demos/`}>
+                          remover demo
+                        </span>
+                      ) : null}
+                    </span>
                   </td>
-                  <td className={`whitespace-nowrap px-3 py-2.5 text-xs ${waiting ? "font-semibold text-amber-700" : "text-[color:var(--ink-soft)]"}`}>
-                    {ago(lead.last_contact_at)}
-                    {waiting ? " · lembrete?" : ""}
+                  <td className="whitespace-nowrap">
+                    {lead.last_contact_at ? (
+                      <>
+                        <span className="block text-[13px] font-semibold">
+                          {new Date(lead.last_contact_at).toLocaleDateString("pt-BR")}{" "}
+                          <span className="font-normal text-[color:var(--ink-soft)]">
+                            {new Date(lead.last_contact_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </span>
+                        <span className={`block text-[11px] ${waiting ? "font-semibold text-amber-700" : "text-[color:var(--ink-soft)]"}`}>
+                          {ago(lead.last_contact_at).replace(/^hoje, .*/, "hoje")}
+                          {waiting ? " · lembrete" : ""}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-[color:var(--ink-soft)]">nunca abordado</span>
+                    )}
                   </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => void openLead("abordar", lead.id)}
-                        className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
-                      >
-                        Abordar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void openLead("resultado", lead.id)}
-                        className="rounded-full border border-[color:var(--line)] bg-white px-3 py-1.5 text-xs font-semibold hover:border-[color:var(--ink)]"
-                      >
-                        Atualizar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void openLead("respostas", lead.id)}
-                        className="rounded-full border border-[color:var(--line)] bg-white px-3 py-1.5 text-xs font-semibold hover:border-[color:var(--ink)]"
-                      >
-                        Respostas
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void openLead("detalhes", lead.id)}
-                        aria-label={`Detalhes de ${lead.name}`}
-                        className="rounded-full border border-[color:var(--line)] bg-white px-2.5 py-1.5 text-xs font-semibold hover:border-[color:var(--ink)]"
-                      >
-                        ⋯
-                      </button>
-                    </div>
+                  <td className={`md:sticky md:right-0 !pr-4 text-right shadow-[-10px_0_12px_-12px_rgba(0,0,0,0.35)] ${isSel ? "bg-amber-50" : "bg-white"}`}>
+                    <RowMenu
+                      label={`Ações para ${lead.name}`}
+                      items={[
+                        { label: "Abordar (mensagem padrão)", hint: "abrir canais e mensagem", tone: "green", onClick: () => void openLead("abordar", lead.id) },
+                        { label: "Atualizar resultado", hint: "respondeu, interesse, fechou…", onClick: () => void openLead("resultado", lead.id) },
+                        { label: "Respostas prontas", hint: "o que mandar em cada situação", onClick: () => void openLead("respostas", lead.id) },
+                        null,
+                        ...(number ? [{ label: "Copiar número", onClick: () => void copy(number, `Número de ${shortName(lead.name)}`) }] : []),
+                        ...(lead.whatsapp ? [{ label: "Abrir conversa no WhatsApp", href: waLink(lead) ?? undefined }] : []),
+                        ...(lead.instagram ? [{ label: "Abrir Instagram", href: lead.instagram }] : []),
+                        ...(lead.maps_url ? [{ label: "Abrir no Google Maps", href: lead.maps_url }] : []),
+                        ...(lead.demo_url ? [{ label: "Ver demo", href: lead.demo_url }] : []),
+                        null,
+                        { label: "Registrar contato hoje", onClick: () => void patch(lead.id, { touch: true, event_note: "contato manual registrado" }) },
+                        ...(queued.has(lead.id)
+                          ? [
+                              {
+                                label: "Tirar da fila automática",
+                                tone: "amber" as const,
+                                onClick: () =>
+                                  confirm(`Tirar ${shortName(lead.name)} da fila de disparos automáticos?`) &&
+                                  void bulk(null, "Retirado da fila automática", true, [lead.id]),
+                              },
+                            ]
+                          : []),
+                        { label: "Copiar /landing-demo", onClick: () => void copy(`/landing-demo ${lead.id}`, "Comando") },
+                        { label: "Detalhes e edição", onClick: () => void openLead("detalhes", lead.id) },
+                      ]}
+                    />
                   </td>
                 </tr>
               );
@@ -548,11 +865,47 @@ export default function LeadsPage() {
           </tbody>
         </table>
       </div>
-      {visible.length > limit ? (
-        <div className="mt-3 text-center">
-          <button type="button" onClick={() => setLimit((n) => n + PAGE)} className={btnGhost}>
-            Mostrar mais ({visible.length - limit})
-          </button>
+
+      {/* Paginação */}
+      {visible.length ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <span className="text-xs text-[color:var(--ink-soft)]">
+            {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, visible.length)} de {visible.length}
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className={`${input} ml-2 py-1 text-xs`}
+              aria-label="Leads por página"
+            >
+              {[20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n} por página
+                </option>
+              ))}
+            </select>
+          </span>
+          <nav className="flex items-center gap-1" aria-label="Páginas">
+            <button type="button" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} className={pageBtn(false)} aria-label="Página anterior">
+              ‹
+            </button>
+            {pageList(safePage, pages).map((p, i) =>
+              p === 0 ? (
+                <span key={`e${i}`} className="px-1 text-[color:var(--ink-soft)]">
+                  …
+                </span>
+              ) : (
+                <button key={p} type="button" onClick={() => setPage(p)} className={pageBtn(p === safePage)} aria-current={p === safePage ? "page" : undefined}>
+                  {p}
+                </button>
+              ),
+            )}
+            <button type="button" disabled={safePage >= pages} onClick={() => setPage(safePage + 1)} className={pageBtn(false)} aria-label="Próxima página">
+              ›
+            </button>
+          </nav>
         </div>
       ) : null}
 
