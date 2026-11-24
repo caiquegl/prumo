@@ -42,12 +42,12 @@ type ApifyPlace = {
 };
 
 /**
- * Tokens da Apify em rodízio (pedido do Caique, 2026-11-23): APIFY_TOKEN e APIFY_TOKEN_2.
+ * Tokens da Apify em rodízio (pedido do Caique, 2026-11-23): APIFY_TOKEN, APIFY_TOKEN_2 e, desde 2026-11-24, APIFY_TOKEN_3.
  * Quando o crédito do mês de um acaba, passa para o outro; quando esse acabar, volta para o primeiro
  * (que pode ter renovado o ciclo). O token "atual" fica em memória durante a execução.
  */
 function tokens(): string[] {
-  const list = [process.env.APIFY_TOKEN, process.env.APIFY_TOKEN_2].map((t) => t?.trim()).filter(Boolean) as string[];
+  const list = [process.env.APIFY_TOKEN, process.env.APIFY_TOKEN_2, process.env.APIFY_TOKEN_3].map((t) => t?.trim()).filter(Boolean) as string[];
   if (!list.length) throw new Error("APIFY_TOKEN ausente (console.apify.com → Settings → API & Integrations)");
   return list;
 }
