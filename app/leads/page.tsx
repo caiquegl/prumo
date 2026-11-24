@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { FIT_EXPLAINER, leadFit, type Fit } from "@/lib/leads/fit";
 import { NICHE_BY_ID, NICHES } from "@/lib/leads/niches";
 import { LEAD_STATUSES, LEAD_STATUS_LABEL, type Lead, type LeadEvent, type LeadInterest, type LeadStatus } from "@/lib/leads/types";
 import { shortName } from "@/lib/outreach/messages";
@@ -59,7 +60,7 @@ const VIEWS: Array<{ id: View; label: string; hint: string; test: (l: Lead) => b
   { id: "hoje", label: "Contatos hoje", hint: "falei hoje", test: (l) => isToday(l.last_contact_at), tone: "text-sky-700" },
 ];
 
-type Sort = "prioridade" | "ultimo_contato" | "nota" | "recentes";
+type Sort = "chance" | "prioridade" | "ultimo_contato" | "nota" | "recentes";
 type ModalState =
   | { kind: "abordar" | "resultado" | "detalhes" | "respostas"; id: number }
   | { kind: "respostas-geral" }
@@ -93,6 +94,39 @@ function displayNumber(lead: Lead): string | null {
   if (d.length === 13 && d.startsWith("55")) return `+55 (${d.slice(2, 4)}) ${d.slice(4, 9)}-${d.slice(9)}`;
   if (d.length === 12 && d.startsWith("55")) return `+55 (${d.slice(2, 4)}) ${d.slice(4, 8)}-${d.slice(8)}`;
   return lead.phone || (d ? `+${d}` : null);
+}
+
+const TIER_STYLE: Record<Fit["tier"], { cls: string; bar: string; label: string }> = {
+  alta: { cls: "text-emerald-800", bar: "bg-emerald-500", label: "alta" },
+  media: { cls: "text-amber-800", bar: "bg-amber-400", label: "média" },
+  baixa: { cls: "text-stone-600", bar: "bg-stone-400", label: "baixa" },
+  fora: { cls: "text-stone-400", bar: "bg-stone-300", label: "fora" },
+};
+
+function FitBadge({ fit }: { fit: Fit }) {
+  const st = TIER_STYLE[fit.tier];
+  const title =
+    fit.tier === "fora"
+      ? `Fora da lista: ${fit.note}`
+      : `Chance de fechar: ${fit.score}/100\n` + fit.parts.map((p) => `${p.label}: ${p.points}/${p.max} · ${p.why}`).join("\n");
+  if (fit.tier === "fora") {
+    return (
+      <span title={title} className="text-[11px] text-[color:var(--ink-soft)]">
+        {fit.note}
+      </span>
+    );
+  }
+  return (
+    <span title={title} className="block w-[76px] cursor-help">
+      <span className={`flex items-baseline gap-1 ${st.cls}`}>
+        <b className="text-base">{fit.score}</b>
+        <span className="text-[10px] font-semibold uppercase">{st.label}</span>
+      </span>
+      <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+        <span className={`block h-full rounded-full ${st.bar}`} style={{ width: `${fit.score}%` }} />
+      </span>
+    </span>
+  );
 }
 
 type MenuItem = { label: string; hint?: string; tone?: "green" | "amber"; onClick?: () => unknown; href?: string } | null;
@@ -226,7 +260,7 @@ export default function LeadsPage() {
   const [status, setStatus] = useState<LeadStatus | "all">("all");
   const [niche, setNiche] = useState("all");
   const [interest, setInterest] = useState<LeadInterest | "none" | "all">("all");
-  const [sort, setSort] = useState<Sort>("prioridade");
+  const [sort, setSort] = useState<Sort>("chance");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -282,6 +316,8 @@ export default function LeadsPage() {
     [leads],
   );
 
+  const fits = useMemo(() => new Map(leads.map((l) => [l.id, leadFit(l)])), [leads]);
+
   const visible = useMemo(() => {
     const term = q.trim().toLowerCase().replace(/^#/, "");
     const termDigits = term.replace(/\D/g, "");
@@ -299,11 +335,17 @@ export default function LeadsPage() {
       return termDigits.length >= 4 && [l.whatsapp, l.phone].some((v) => v?.replace(/\D/g, "").includes(termDigits));
     });
     const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
-    if (sort === "ultimo_contato") list.sort((a, b) => time(b.last_contact_at) - time(a.last_contact_at));
+    if (sort === "chance") {
+      list.sort((a, b) => {
+        const fa = fits.get(a.id)!, fb = fits.get(b.id)!;
+        const out = Number(fa.tier === "fora") - Number(fb.tier === "fora");
+        return out || fb.score - fa.score || (b.reviews_count ?? 0) - (a.reviews_count ?? 0);
+      });
+    } else if (sort === "ultimo_contato") list.sort((a, b) => time(b.last_contact_at) - time(a.last_contact_at));
     else if (sort === "nota") list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (b.reviews_count ?? 0) - (a.reviews_count ?? 0));
     else if (sort === "recentes") list.sort((a, b) => time(b.created_at) - time(a.created_at));
     return list;
-  }, [leads, view, q, status, niche, interest, sort]);
+  }, [leads, view, q, status, niche, interest, sort, fits]);
 
   const pages = Math.max(1, Math.ceil(visible.length / pageSize));
   const safePage = Math.min(page, pages);
@@ -566,7 +608,8 @@ export default function LeadsPage() {
           <option value="none">Não informado</option>
         </select>
         <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className={input} aria-label="Ordenar">
-          <option value="prioridade">Ordenar: prioridade</option>
+          <option value="chance">Ordenar: chance de fechar</option>
+          <option value="prioridade">Ordenar: nicho prioritário</option>
           <option value="ultimo_contato">Ordenar: último contato</option>
           <option value="nota">Ordenar: nota no Google</option>
           <option value="recentes">Ordenar: coletados recentes</option>
@@ -587,6 +630,20 @@ export default function LeadsPage() {
             ×
           </button>
         </p>
+      ) : null}
+
+      {sort === "chance" ? (
+        <details className="mt-2 rounded-2xl border border-[color:var(--line)] bg-white/50 px-4 py-2 text-xs">
+          <summary className="cursor-pointer font-semibold">
+            Como a &quot;chance de fechar&quot; é calculada (0 a 100) · base: 104 abordados, 4 responderam com interesse
+          </summary>
+          <ul className="mt-2 grid list-disc gap-1 pl-4 text-[color:var(--ink-soft)]">
+            {FIT_EXPLAINER.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[color:var(--ink-soft)]">Alta = 75+ (já responderam), média = 60 a 74, baixa = abaixo de 60. Passe o mouse na nota de cada lead para ver a conta.</p>
+        </details>
       ) : null}
 
       {/* Ações em massa */}
@@ -666,7 +723,7 @@ export default function LeadsPage() {
 
       {/* Tabela */}
       <div className="mt-3 overflow-x-auto rounded-2xl border border-[color:var(--line)] bg-white/80">
-        <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
           <thead className="bg-[color:var(--bg-deep)] text-xs font-bold text-[color:var(--ink)]">
             <tr className="[&>th]:px-3 [&>th]:py-3">
               <th className="w-10 !pl-4">
@@ -678,6 +735,7 @@ export default function LeadsPage() {
                 />
               </th>
               <th>Empresa</th>
+              <th className={thDiv}>Chance</th>
               <th className={thDiv}>Contato</th>
               <th className={thDiv}>Redes sociais</th>
               <th className={thDiv}>Status</th>
@@ -688,14 +746,14 @@ export default function LeadsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
+                <td colSpan={8} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
                   Carregando…
                 </td>
               </tr>
             ) : null}
             {!loading && !visible.length ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
+                <td colSpan={8} className="px-3 py-8 text-center text-[color:var(--ink-soft)]">
                   Nenhum lead neste filtro.{" "}
                   {filtersActive || view !== "todos" ? (
                     <button
@@ -744,6 +802,9 @@ export default function LeadsPage() {
                         </span>
                       </span>
                     </button>
+                  </td>
+                  <td>
+                    <FitBadge fit={fits.get(lead.id)!} />
                   </td>
                   <td className="whitespace-nowrap">
                     {number ? (

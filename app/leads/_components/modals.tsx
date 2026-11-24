@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { leadFit } from "@/lib/leads/fit";
 import { DEFAULT_AREAS, NICHE_BY_ID, NICHES } from "@/lib/leads/niches";
 import {
   LEAD_STATUSES,
@@ -529,10 +530,38 @@ export function DetailsModal({
         </div>
 
         <div className="md:col-span-2">
+          <FitBreakdown lead={lead} />
+        </div>
+
+        <div className="md:col-span-2">
           <HistoryList history={history} />
         </div>
       </div>
     </Modal>
+  );
+}
+
+function FitBreakdown({ lead }: { lead: Lead }) {
+  const fit = leadFit(lead);
+  return (
+    <div className="rounded-2xl border border-[color:var(--line)] bg-white/60 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--ink-soft)]">
+        Chance de fechar: {fit.tier === "fora" ? fit.note : `${fit.score}/100`}
+      </p>
+      {fit.parts.length ? (
+        <ul className="mt-2 grid gap-1.5 text-xs">
+          {fit.parts.map((p) => (
+            <li key={p.label} className="grid grid-cols-[86px_44px_1fr] items-center gap-2">
+              <span className="font-semibold">{p.label}</span>
+              <span className="tabular-nums">
+                {p.points}/{p.max}
+              </span>
+              <span className="text-[color:var(--ink-soft)]">{p.why}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
