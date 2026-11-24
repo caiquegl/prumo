@@ -315,3 +315,32 @@ export async function lastSentAt(leadId: number): Promise<Date | null> {
 export async function markInboxHandled(leadId: number) {
   await db()`UPDATE wa_inbox SET handled = true WHERE lead_id = ${leadId}`;
 }
+
+/** Leads com mensagem automática aprovada esperando envio (evita mandar em dobro pelo celular). */
+export async function queuedLeadIds(): Promise<number[]> {
+  await ensureOutreachSchema();
+  const rows = (await db()`
+    SELECT DISTINCT lead_id FROM outreach_queue WHERE status IN ('approved', 'sending')`) as Array<{ lead_id: number }>;
+  return rows.map((r) => r.lead_id);
+}
+
+export type LeadMessage = { id: string; dir: "out" | "in"; text: string; at: string; status: string; kind: string };
+
+/** Conversa registrada de um lead: o que a automação enviou/agendou e o que chegou pelo webhook. */
+export async function leadMessages(leadId: number): Promise<LeadMessage[]> {
+  await ensureOutreachSchema();
+  const sql = db();
+  const out = (await sql`
+    SELECT id, kind, text, status, COALESCE(sent_at, approved_at, created_at) AS at
+    FROM outreach_queue WHERE lead_id = ${leadId} AND status <> 'cancelled'`) as Array<{
+    id: number; kind: string; text: string; status: string; at: string;
+  }>;
+  const inbox = (await sql`
+    SELECT id, text, received_at AS at, auto FROM wa_inbox WHERE lead_id = ${leadId}`) as Array<{
+    id: number; text: string; at: string; auto: boolean;
+  }>;
+  return [
+    ...out.map((m) => ({ id: `o${m.id}`, dir: "out" as const, text: m.text, at: m.at, status: m.status, kind: m.kind })),
+    ...inbox.map((m) => ({ id: `i${m.id}`, dir: "in" as const, text: m.text, at: m.at, status: m.auto ? "auto" : "recebida", kind: "inbox" })),
+  ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+}

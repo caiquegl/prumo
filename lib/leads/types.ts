@@ -28,6 +28,18 @@ export function isLeadStatus(raw: unknown): raw is LeadStatus {
   return typeof raw === "string" && (LEAD_STATUSES as readonly string[]).includes(raw);
 }
 
+/** Resposta do cliente na abordagem manual: tem interesse, não tem, ou ainda não sabe. */
+export const LEAD_INTERESTS = ["sim", "talvez", "nao"] as const;
+export type LeadInterest = (typeof LEAD_INTERESTS)[number];
+export const LEAD_INTEREST_LABEL: Record<LeadInterest, string> = {
+  sim: "Tem interesse",
+  talvez: "Talvez / pensando",
+  nao: "Sem interesse",
+};
+export function isLeadInterest(raw: unknown): raw is LeadInterest {
+  return typeof raw === "string" && (LEAD_INTERESTS as readonly string[]).includes(raw);
+}
+
 export type LeadSource = "google" | "apify" | "manual";
 
 export type Lead = {
@@ -66,6 +78,10 @@ export type Lead = {
   notes: string | null;
   search_query: string | null;
   contacted_at: string | null;
+  /** Última vez que o Caique falou com o lead (registrado no painel); cai para contacted_at se vazio. */
+  last_contact_at: string | null;
+  /** Interesse informado pelo Caique depois da conversa. */
+  interest: LeadInterest | null;
   created_at: string;
   updated_at: string;
 };

@@ -81,20 +81,26 @@ export const TEMPLATE_FIELDS: Record<string, string> = {
   "{nota}": "\" com nota 5,0 👏\" quando a nota é 4,5 ou mais; vazio se não",
   "{acao}": "o que o cliente faz depois (agendar, pedir um orçamento, fechar a festa…)",
   "{bairro}": "bairro ou cidade",
+  "{link}": "link da demo (só quando já existe uma)",
 };
 
-/** Modelos padrão (o painel /leads/disparos sobrescreve; balões separados por uma linha "---"). */
+/**
+ * Modelos padrão (o painel /leads/disparos sobrescreve; balões separados por uma linha "---").
+ * tpl_manual = mensagem única (um balão) que o Caique copia e manda do celular pelo painel /leads.
+ */
 export const DEFAULT_TEMPLATES = {
   tpl_cold:
     "Oi, tudo bem? Pesquisei “{busca}” no Google e a {nome} apareceu{nota}, mas sem um site pra quem quer conhecer melhor vocês antes de {acao}.\n---\nSou o Caique, da Web Prumo. Posso montar, sem compromisso, uma ideia de como ficaria a página de vocês e te mostrar por aqui. Topa?",
   tpl_followup1:
     "Oi! Passando só pra saber se viu minha mensagem 🙂 Se quiser, monto a página da {nome} e você só dá uma olhada, sem compromisso.",
+  tpl_manual:
+    "Oi, tudo bem? Sou o Caique, da Web Prumo. Pesquisei “{busca}” no Google e a {nome} apareceu{nota}, mas sem um site pra quem quer conhecer melhor vocês antes de {acao}. Posso montar, sem compromisso, uma ideia de como ficaria a página de vocês e te mostrar por aqui. Topa?",
   tpl_followup2:
     "Vou encerrar por aqui pra não incomodar. Se um dia quiser ver como ficaria a página da {nome}, é só me chamar. Sucesso! 🙂",
 } as const;
 export type TemplateKey = keyof typeof DEFAULT_TEMPLATES;
 
-type TplLead = Pick<Lead, "name" | "rating" | "niche" | "category" | "neighborhood" | "city">;
+type TplLead = Pick<Lead, "name" | "rating" | "niche" | "category" | "neighborhood" | "city"> & { demo_url?: string | null };
 
 function placeOf(lead: TplLead): string {
   const city = (lead.city ?? "").split(",")[0].trim();
@@ -112,8 +118,9 @@ export function renderTemplate(tpl: string, lead: TplLead): string {
     "{nota}": lead.rating && lead.rating >= 4.5 ? ` com nota ${lead.rating.toFixed(1).replace(".", ",")} 👏` : "",
     "{acao}": (lead.niche && NEXT_STEP[lead.niche]) || "entrar em contato",
     "{bairro}": place,
+    "{link}": lead.demo_url ?? "",
   };
-  return tpl.replace(/\{(nome|busca|nota|acao|bairro)\}/g, (m) => fields[m] ?? m).trim();
+  return tpl.replace(/\{(nome|busca|nota|acao|bairro|link)\}/g, (m) => fields[m] ?? m).trim();
 }
 
 /** Primeiro contato com o modelo padrão (o runner/painel usam o modelo salvo em outreach_settings). */

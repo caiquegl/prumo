@@ -9,6 +9,7 @@ export async function loadTemplates(): Promise<Record<TemplateKey, string> & { f
     tpl_cold: pick("tpl_cold"),
     tpl_followup1: pick("tpl_followup1"),
     tpl_followup2: pick("tpl_followup2"),
+    tpl_manual: pick("tpl_manual"),
     followups_enabled: s.followups_enabled === "true",
   };
 }

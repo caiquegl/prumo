@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/guard";
+import { leadMessages } from "@/lib/outreach/store";
 import { deleteLead, getLead, leadEvents, parseLeadPatch, updateLead } from "@/lib/leads/store";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -19,7 +20,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   if (!id) return badId();
   const lead = await getLead(id);
   if (!lead) return notFound();
-  return NextResponse.json({ lead, events: await leadEvents(id) });
+  const [events, messages] = await Promise.all([leadEvents(id), leadMessages(id)]);
+  return NextResponse.json({ lead, events, messages });
 }
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {

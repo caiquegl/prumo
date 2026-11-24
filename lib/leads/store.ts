@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { classifyNiche } from "./niches";
-import { isLeadStatus, type Lead, type LeadEvent, type LeadStatus } from "./types";
+import { isLeadInterest, isLeadStatus, type Lead, type LeadInterest, type LeadEvent, type LeadStatus } from "./types";
 
 let ready = false;
 
@@ -43,6 +43,8 @@ export async function ensureLeadsSchema() {
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS niche TEXT`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS niche_rank INTEGER`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS brand_colors JSONB`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS last_contact_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS interest TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS leads_status_score_idx ON leads (status, score DESC)`;
   await sql`
     CREATE TABLE IF NOT EXISTS lead_events (
@@ -78,7 +80,8 @@ export async function listLeads(opts?: {
   const rows = (await db()`
     SELECT id, place_id, source, niche, niche_rank, name, category, phone, whatsapp, address, neighborhood, city, lat, lng,
            rating, reviews_count, maps_url, opening_hours, instagram, website_raw, logo_url, brand_colors,
-           score, status, demo_slug, demo_url, price_quoted, notes, search_query, contacted_at, created_at, updated_at
+           score, status, demo_slug, demo_url, price_quoted, notes, search_query, contacted_at,
+           COALESCE(last_contact_at, contacted_at) AS last_contact_at, interest, created_at, updated_at
     FROM leads
     WHERE (${status}::text IS NULL OR status = ${status})
       AND (${q}::text IS NULL OR name ILIKE ${q} OR neighborhood ILIKE ${q} OR category ILIKE ${q} OR city ILIKE ${q})
@@ -127,7 +130,7 @@ export async function getLead(id: number): Promise<Lead | null> {
   if (!rows[0]) return null;
   const { raw: _raw, ...rest } = rows[0];
   void _raw;
-  return normalize(rest);
+  return normalize({ ...rest, last_contact_at: rest.last_contact_at ?? rest.contacted_at ?? null });
 }
 
 export async function leadEvents(id: number): Promise<LeadEvent[]> {
@@ -146,6 +149,8 @@ export type LeadInput = Omit<
   | "price_quoted"
   | "notes"
   | "contacted_at"
+  | "last_contact_at"
+  | "interest"
   | "logo_url"
   | "brand_colors"
   | "niche"
@@ -208,6 +213,9 @@ export type LeadPatch = {
   logo_url?: string | null;
   brand_colors?: string[] | null;
   event_note?: string | null;
+  interest?: LeadInterest | null;
+  /** true = registra "falei com o lead agora" (last_contact_at = agora). */
+  touch?: boolean;
 };
 
 export function parseLeadPatch(body: Record<string, unknown>): LeadPatch | string {
@@ -228,6 +236,12 @@ export function parseLeadPatch(body: Record<string, unknown>): LeadPatch | strin
   str("whatsapp");
   str("logo_url");
   str("event_note");
+  if (body.interest !== undefined) {
+    if (body.interest === null || body.interest === "") patch.interest = null;
+    else if (isLeadInterest(body.interest)) patch.interest = body.interest;
+    else return `interest inválido: ${String(body.interest)}`;
+  }
+  if (body.touch === true) patch.touch = true;
   if (body.brand_colors !== undefined) {
     if (body.brand_colors === null) patch.brand_colors = null;
     else if (
@@ -259,6 +273,9 @@ export async function updateLead(id: number, patch: LeadPatch): Promise<Lead | n
   const status = pick("status", patch.status);
   const contactedAt =
     status === "abordado" && !current.contacted_at ? new Date().toISOString() : current.contacted_at;
+  const becameContacted = status === "abordado" && current.status !== "abordado";
+  const lastContact =
+    patch.touch || becameContacted ? new Date().toISOString() : current.last_contact_at;
 
   await db()`
     UPDATE leads SET
@@ -275,11 +292,13 @@ export async function updateLead(id: number, patch: LeadPatch): Promise<Lead | n
         return v ? JSON.stringify(v) : null;
       })()}::jsonb,
       contacted_at = ${contactedAt},
+      last_contact_at = ${lastContact},
+      interest = ${pick("interest", patch.interest)},
       updated_at = now()
     WHERE id = ${id}
   `;
 
-  if (status !== current.status || patch.event_note) {
+  if (status !== current.status || patch.event_note || patch.touch) {
     await db()`
       INSERT INTO lead_events (lead_id, from_status, to_status, note)
       VALUES (${id}, ${current.status}, ${status}, ${patch.event_note ?? null})
