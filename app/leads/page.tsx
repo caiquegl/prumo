@@ -283,7 +283,8 @@ export default function LeadsPage() {
   );
 
   const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
+    const term = q.trim().toLowerCase().replace(/^#/, "");
+    const termDigits = term.replace(/\D/g, "");
     const test = VIEWS.find((v) => v.id === view)!.test;
     const list = leads.filter((l) => {
       if (!test(l)) return false;
@@ -293,7 +294,9 @@ export default function LeadsPage() {
       if (interest === "none" && l.interest) return false;
       if (interest !== "all" && interest !== "none" && l.interest !== interest) return false;
       if (!term) return true;
-      return [l.name, l.neighborhood, l.category, l.city, String(l.id)].some((v) => v?.toLowerCase().includes(term));
+      if ([l.name, l.neighborhood, l.category, l.city, String(l.id)].some((v) => v?.toLowerCase().includes(term))) return true;
+      // telefone: compara só os dígitos (aceita "(11) 99835-2989", "11998352989", "+55 11…" ou um trecho com 4+ dígitos)
+      return termDigits.length >= 4 && [l.whatsapp, l.phone].some((v) => v?.replace(/\D/g, "").includes(termDigits));
     });
     const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
     if (sort === "ultimo_contato") list.sort((a, b) => time(b.last_contact_at) - time(a.last_contact_at));
@@ -525,13 +528,13 @@ export default function LeadsPage() {
       {/* Filtros */}
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-white/50 p-3">
         <input
-          placeholder="Buscar nome, bairro, #id"
+          placeholder="Buscar nome, bairro, telefone ou #id"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
             setPage(1);
           }}
-          className={`${input} w-full sm:w-56`}
+          className={`${input} w-full sm:w-72`}
         />
         <select value={niche} onChange={(e) => setNiche(e.target.value)} className={input} aria-label="Nicho">
           <option value="all">Todos os nichos</option>
