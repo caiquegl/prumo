@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { ensureLeadsSchema } from "@/lib/leads/store";
+import type { Lead } from "@/lib/leads/types";
 
 /**
  * Fila de disparos de WhatsApp aprovados pelo Caique + caixa de entrada das respostas dos leads.
@@ -370,4 +371,24 @@ export async function cancelQueuedForLeads(leadIds: number[]): Promise<number> {
     UPDATE outreach_queue SET status = 'cancelled'
     WHERE lead_id = ANY(${leadIds}) AND status IN ('draft', 'approved') RETURNING id`) as Array<{ id: number }>;
   return r.length;
+}
+
+/**
+ * Coloca leads na fila de primeiro contato JÁ APROVADOS com a mensagem padrão (o Caique escolhe os leads e confirma
+ * o texto no painel). Só leads antes do contato, com WhatsApp e sem nada pendente na fila.
+ */
+export async function enqueueCold(leadIds: number[], render: (lead: Lead) => string): Promise<number> {
+  await ensureOutreachSchema();
+  if (!leadIds.length) return 0;
+  const leads = (await db()`
+    SELECT l.* FROM leads l
+    WHERE l.id = ANY(${leadIds}) AND l.status IN ('sem_site', 'criando', 'publicado') AND l.whatsapp IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM outreach_queue q WHERE q.lead_id = l.id AND q.status IN ('draft', 'approved', 'sending', 'sent'))`) as Lead[];
+  // mantém a ordem escolhida no painel (a fila sai por approved_at)
+  const order = new Map(leadIds.map((id, i) => [id, i]));
+  leads.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  for (const lead of leads) {
+    await addApproved(lead.id, "cold", render(lead));
+  }
+  return leads.length;
 }

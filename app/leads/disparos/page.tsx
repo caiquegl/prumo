@@ -123,7 +123,7 @@ export default function DisparosPage() {
           <p className="text-sm font-semibold tracking-[0.2em] text-[color:var(--ink-soft)]">PROSPECÇÃO</p>
           <h1 className="display mt-2 text-4xl md:text-5xl">Disparos</h1>
           <p className="mt-2 max-w-xl text-[color:var(--ink-soft)]">
-            Nada sai sem a sua aprovação. Aprovados saem até 8 por hora no horário comercial, 1 min entre cada lead e 30 s entre os balões.
+            Nada sai sem a sua aprovação. Aprovados saem 1 por hora no horário comercial (seg–sex 9h–17h, sáb 9h–11h), 30 s entre os balões.
           </p>
         </div>
         <a href="/leads" className={pill}>

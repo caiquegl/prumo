@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { FIT_EXPLAINER, leadFit, type Fit } from "@/lib/leads/fit";
 import { NICHE_BY_ID, NICHES } from "@/lib/leads/niches";
 import { LEAD_STATUSES, LEAD_STATUS_LABEL, type Lead, type LeadEvent, type LeadInterest, type LeadStatus } from "@/lib/leads/types";
-import { shortName } from "@/lib/outreach/messages";
+import { renderTemplate, shortName } from "@/lib/outreach/messages";
 import type { LeadMessage } from "@/lib/outreach/store";
 import {
   ApproachModal,
@@ -372,6 +372,45 @@ export default function LeadsPage() {
     });
   }
 
+  async function bulkEnqueue() {
+    const chosen = leads.filter((l) => selected.has(l.id));
+    const ok = chosen.filter((l) => BEFORE_CONTACT.includes(l.status) && !!l.whatsapp && !queued.has(l.id));
+    if (!ok.length) {
+      setNotice("Nenhum selecionado pode ir para a fila (precisa estar antes do contato, ter WhatsApp e não estar na fila).");
+      return;
+    }
+    const sample = renderTemplate(template || defaultTemplate, ok[0]!);
+    const skipped = chosen.length - ok.length;
+    if (
+      !confirm(
+        `Agendar ${ok.length} lead(s) para o disparo automático, 1 por hora em horário comercial` +
+          ` (seg–sex 9h–17h, sáb 9h–11h; uns ${Math.ceil(ok.length / 9)} dia(s) útil(eis)).` +
+          (skipped ? `\n${skipped} selecionado(s) ficam de fora (já abordados, sem WhatsApp ou já na fila).` : "") +
+          `\n\nMensagem que vai sair (exemplo para ${ok[0]!.name}):\n\n${sample}`,
+      )
+    )
+      return;
+    setBulkBusy(true);
+    setError("");
+    try {
+      const ids = ok.map((l) => l.id);
+      const res = await fetch("/api/leads/bulk", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids, enqueue: true }),
+      });
+      const json = (await res.json()) as { enqueued?: number; error?: string };
+      if (!res.ok) {
+        setError(json.error || "Não consegui agendar");
+        return;
+      }
+      setQueued((q) => new Set([...q, ...ids]));
+      setNotice(`${json.enqueued ?? 0} lead(s) na fila: sai 1 por hora no horário comercial.`);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function bulk(patchBody: Patch | null, label: string, cancelQueue = false, ids = [...selected]): Promise<number> {
     if (!ids.length) return 0;
     setBulkBusy(true);
@@ -658,6 +697,9 @@ export default function LeadsPage() {
             </button>
           ) : null}
           <span className="mx-1 hidden h-5 w-px bg-white/25 sm:block" />
+          <button type="button" disabled={bulkBusy} className={bulkBtn} onClick={() => void bulkEnqueue()}>
+            Agendar disparo (1/hora)
+          </button>
           <button type="button" disabled={bulkBusy} className={bulkBtn} onClick={() => void bulkMarkContacted()}>
             Marcar abordado
           </button>

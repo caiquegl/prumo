@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     queueCounts(),
     loadTemplates(),
   ]);
-  const eta = estimateEta(approved, { sentToday: counts.sent_today ?? 0, dailyCap: Number(process.env.OUTREACH_DAILY_CAP || 64) });
+  const eta = estimateEta(approved, { sentToday: counts.sent_today ?? 0, dailyCap: Number(process.env.OUTREACH_DAILY_CAP || 9) });
   return NextResponse.json({ drafts, approved, done: done.reverse(), inbox, counts, eta, templates, defaults: DEFAULT_TEMPLATES, fields: TEMPLATE_FIELDS });
 }
 

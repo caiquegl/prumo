@@ -37,8 +37,8 @@ export function estimateEta(
   opts: { now?: Date; perRun?: number; dailyCap?: number; sentToday?: number } = {},
 ): Record<number, string> {
   const now = opts.now ?? new Date();
-  const perRun = opts.perRun ?? 8;
-  const cap = opts.dailyCap ?? 64;
+  const perRun = opts.perRun ?? 1;
+  const cap = opts.dailyCap ?? 9;
   const out: Record<number, string> = {};
   const perDay = new Map<string, number>([[spParts(now).ymd, opts.sentToday ?? 0]]);
   let idx = 0;

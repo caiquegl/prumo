@@ -1,14 +1,14 @@
 /**
  * Disparo de hora em hora (GitHub Actions `.github/workflows/outreach.yml`, ou manual):
- * coloca na fila os follow-ups vencidos (se ligados no painel) e envia até N itens JÁ APROVADOS (follow-ups primeiro,
+ * coloca na fila os follow-ups vencidos (se ligados no painel) e envia até N itens JÁ APROVADOS (padrão 1 por hora, pedido do Caique em 2026-11-25) (follow-ups primeiro,
  * depois primeiros contatos).
  *
- *   npx tsx --env-file=.env.local scripts/outreach-run.mts [--max 8] [--force] [--dry]
+ *   npx tsx --env-file=.env.local scripts/outreach-run.mts [--max 1] [--force] [--dry]
  *
  * Ritmo (pedido do Caique): 1 min entre um lead e o próximo, 30 s entre os balões de cada mensagem.
  *
  * Travas: só horário comercial (America/Sao_Paulo: seg–sex 9h–18h, sáb 9h–12h) salvo --force; teto diário
- * OUTREACH_DAILY_CAP (padrão 64); para o lote inteiro se o WhatsApp não estiver "open" ou cair no meio.
+ * OUTREACH_DAILY_CAP (padrão 9); para o lote inteiro se o WhatsApp não estiver "open" ou cair no meio.
  * Nunca envia rascunho: só itens com status "approved".
  */
 import { ensureOpen, LEAD_GAP_MS, sendItem, StopAll } from "@/lib/outreach/send";
@@ -22,10 +22,10 @@ const flag = (n: string, d: number) => {
   const i = args.indexOf(`--${n}`);
   return i >= 0 ? Number(args[i + 1]) : d;
 };
-const MAX = flag("max", 8);
+const MAX = flag("max", 1);
 const FORCE = args.includes("--force");
 const DRY = args.includes("--dry");
-const CAP = Number(process.env.OUTREACH_DAILY_CAP || 64);
+const CAP = Number(process.env.OUTREACH_DAILY_CAP || 9);
 
 function spNow() {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short", hour: "numeric", hour12: false }).formatToParts(new Date());
