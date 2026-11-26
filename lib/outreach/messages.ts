@@ -34,6 +34,9 @@ const SEARCH_TERM: Record<string, string> = {
   desentupidora: "desentupidora",
   vidracaria: "vidraçaria",
   marmoraria: "marmoraria",
+  fotografo: "fotógrafo de eventos",
+  pet: "banho e tosa",
+  fitness: "personal trainer",
 };
 
 /** O que o cliente quer fazer depois de conhecer o negócio. */
@@ -50,6 +53,9 @@ const NEXT_STEP: Record<string, string> = {
   desentupidora: "chamar",
   vidracaria: "pedir um orçamento",
   marmoraria: "pedir um orçamento",
+  fotografo: "pedir um orçamento",
+  pet: "agendar",
+  fitness: "marcar uma aula",
 };
 
 const ACCENTS: Record<string, string> = { Japao: "Japão", Tatuape: "Tatuapé", Assuncao: "Assunção", Sao: "São", Joao: "João", Conceicao: "Conceição" };
