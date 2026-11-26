@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       max:
-        description: "máximo neste lote"
+        description: "ignorado (trava fixa de 1 por rodada no script; só vale com force=true)"
         default: "1"
       force:
         description: "ignorar horário comercial (true/false)"

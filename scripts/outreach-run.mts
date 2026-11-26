@@ -13,7 +13,7 @@
  */
 import { ensureOpen, LEAD_GAP_MS, sendItem, StopAll } from "@/lib/outreach/send";
 import { enqueueDueFollowups } from "@/lib/outreach/followups";
-import { nextApprovedOutbound, queueCounts } from "@/lib/outreach/store";
+import { lastOutboundAt, nextApprovedOutbound, queueCounts } from "@/lib/outreach/store";
 import { notifyNumber, sendText } from "@/lib/whatsapp/evolution";
 import { shortName } from "@/lib/outreach/messages";
 
@@ -22,8 +22,14 @@ const flag = (n: string, d: number) => {
   const i = args.indexOf(`--${n}`);
   return i >= 0 ? Number(args[i + 1]) : d;
 };
-const MAX = flag("max", 1);
 const FORCE = args.includes("--force");
+/**
+ * Trava fixa: 1 primeiro contato por rodada, seja qual for o --max recebido (o cron-job.org manda inputs max=8 e
+ * em 2026-11-26 isso disparou 4 seguidos). Só --force libera mais.
+ */
+const MAX = FORCE ? flag("max", 1) : Math.min(1, flag("max", 1));
+/** Intervalo mínimo entre dois envios (rodada extra/teste no meio da hora não dispara de novo). */
+const MIN_GAP_MS = 50 * 60_000;
 const DRY = args.includes("--dry");
 const CAP = Number(process.env.OUTREACH_DAILY_CAP || 9);
 
@@ -63,6 +69,11 @@ async function main() {
   if (fu.enabled) console.log(`follow-ups colocados na fila: ${fu.followup1} lembretes (3º dia), ${fu.followup2} encerramentos (7º dia)`);
   const counts = await queueCounts();
   const room = Math.max(0, CAP - (counts.sent_today ?? 0));
+  const last = await lastOutboundAt();
+  if (!FORCE && last && Date.now() - last.getTime() < MIN_GAP_MS) {
+    console.log(`último envio há ${Math.round((Date.now() - last.getTime()) / 60_000)} min (< 50) — nada a fazer`);
+    return;
+  }
   const target = Math.min(MAX, room);
   // pega alguns a mais: se um número não tem WhatsApp, o próximo da fila sai na mesma rodada (não perde a hora)
   const items = target ? await nextApprovedOutbound(target + 3) : [];

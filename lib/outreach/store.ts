@@ -392,3 +392,11 @@ export async function enqueueCold(leadIds: number[], render: (lead: Lead) => str
   }
   return leads.length;
 }
+
+/** Último envio automático (qualquer tipo, menos respostas) — o runner respeita um intervalo mínimo entre rodadas. */
+export async function lastOutboundAt(): Promise<Date | null> {
+  await ensureOutreachSchema();
+  const r = (await db()`
+    SELECT MAX(sent_at) AS at FROM outreach_queue WHERE status = 'sent' AND kind <> 'reply'`) as Array<{ at: Date | null }>;
+  return r[0]?.at ? new Date(r[0].at) : null;
+}
