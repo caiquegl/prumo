@@ -63,8 +63,10 @@ async function main() {
   if (fu.enabled) console.log(`follow-ups colocados na fila: ${fu.followup1} lembretes (3º dia), ${fu.followup2} encerramentos (7º dia)`);
   const counts = await queueCounts();
   const room = Math.max(0, CAP - (counts.sent_today ?? 0));
-  const items = await nextApprovedOutbound(Math.min(MAX, room));
-  console.log(`aprovados na fila: ${counts.approved ?? 0} · enviados hoje: ${counts.sent_today ?? 0}/${CAP} · neste lote: ${items.length}`);
+  const target = Math.min(MAX, room);
+  // pega alguns a mais: se um número não tem WhatsApp, o próximo da fila sai na mesma rodada (não perde a hora)
+  const items = target ? await nextApprovedOutbound(target + 3) : [];
+  console.log(`aprovados na fila: ${counts.approved ?? 0} · enviados hoje: ${counts.sent_today ?? 0}/${CAP} · neste lote: até ${target}`);
   if (!items.length) return;
   if (DRY) {
     for (const it of items) console.log(`[dry] #${it.id} → ${it.lead_name} (+${it.lead_whatsapp})`);
@@ -75,11 +77,14 @@ async function main() {
   try {
     await wakeEvolution();
     await ensureOpen();
+    let sentCount = 0;
     for (const [i, it] of items.entries()) {
-      if (i) await sleep(LEAD_GAP_MS);
+      if (sentCount >= target) break;
+      if (i && results.at(-1)?.status === "ok") await sleep(LEAD_GAP_MS);
       try {
         await ensureOpen();
         const sent = await sendItem(it);
+        if (sent) sentCount++;
         results.push({ it, status: sent ? "ok" : "pulado", why: sent ? undefined : "não está mais aprovado ou sem WhatsApp" });
         console.log(sent ? `enviado #${it.id} → ${it.lead_name}` : `pulado #${it.id} (${it.lead_name}): não está mais aprovado ou sem WhatsApp`);
       } catch (e) {
@@ -93,7 +98,7 @@ async function main() {
     console.error("PARANDO o lote: WhatsApp desconectado/deslogado. Reparear (whatsapp.mts qr) antes de continuar.");
     process.exitCode = 1;
     const done = new Set(results.map((r) => r.it.id));
-    for (const it of items) if (!done.has(it.id)) results.push({ it, status: "nao_enviado", why: "lote parado" });
+    for (const it of items.slice(0, target)) if (!done.has(it.id)) results.push({ it, status: "nao_enviado", why: "lote parado" });
     await notifySummary(results, `⚠️ Lote parado: ${(e as Error).message}`);
     return;
   }
